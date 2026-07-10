@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/providers/subscription_provider.dart';
 import '../../core/providers/credit_provider.dart';
@@ -20,113 +21,169 @@ class PremiumOfferScreen extends StatefulWidget {
 class _PremiumOfferScreenState extends State<PremiumOfferScreen> {
   final PageController _pageController = PageController(viewportFraction: 0.85);
   int _currentPage = 0;
+  bool _isProcessingMock = false;
+
+  void _grantMockPremium(String tier) async {
+    final userProvider = context.read<UserProvider>();
+    final uid = userProvider.currentUser?.uid;
+    if (uid == null) return;
+    
+    setState(() {
+      _isProcessingMock = true;
+    });
+
+    try {
+      await FirebaseFirestore.instance.collection('users').doc(uid).update({
+        'isPremium': true,
+        'subscriptionTier': tier,
+        'premiumSince': FieldValue.serverTimestamp(),
+      });
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('🎉 Tebrikler! Test amaçlı ${tier.toUpperCase()} Premium tanımlandı.'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+        Navigator.pop(context); // Ekranı kapat
+      }
+    } catch (e) {
+      LogService.e("Error granting mock premium", e);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Yetki güncelleme sırasında bir hata oluştu.'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isProcessingMock = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Consumer<SubscriptionProvider>(
-          builder: (context, provider, child) {
-            if (provider.isLoading) {
-              return const Center(child: CircularProgressIndicator(color: AppColors.primary));
-            }
+      body: Stack(
+        children: [
+          SafeArea(
+            child: Consumer<SubscriptionProvider>(
+              builder: (context, provider, child) {
+                if (provider.isLoading) {
+                  return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+                }
 
-            return Column(
-              children: [
-                // Top Bar
-                _buildHeader(context, provider),
+                return Column(
+                  children: [
+                    // Top Bar
+                    _buildHeader(context, provider),
 
-                // Promo Banner
-                _buildPromoBanner(),
+                    // Promo Banner
+                    _buildPromoBanner(),
 
-                Expanded(
-                  child: PageView(
-                    controller: _pageController,
-                    onPageChanged: (index) => setState(() => _currentPage = index),
-                    children: [
-                      _buildPlanCard(
-                        title: 'GOLD',
-                        color: AppColors.primary,
-                        icon: Icons.star_rounded,
-                        features: TierLimits.getFeaturesFor('gold'),
-                        products: provider.products.where((p) => p.id.contains('gold')).toList(),
-                        provider: provider,
-                      ),
-                      _buildPlanCard(
-                        title: 'PLATINUM',
-                        color: const Color(0xFFE5E4E2),
-                        icon: Icons.workspace_premium_rounded,
-                        features: TierLimits.getFeaturesFor('platinum'),
-                        products: provider.products.where((p) => p.id.contains('platinum')).toList(),
-                        provider: provider,
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Page Indicator
-                _buildIndicator(),
-
-                // İzle & Kazan butonu
-                Consumer<SubscriptionProvider>(
-                  builder: (context, sub, _) {
-                    if (sub.currentTier != 'free') return const SizedBox.shrink();
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 40),
-                      child: GestureDetector(
-                        onTap: () => Navigator.push(
-                          context, 
-                          MaterialPageRoute(builder: (_) => const WatchAndEarnScreen()),
-                        ),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-                            boxShadow: [AppColors.neoShadowSmall],
+                    Expanded(
+                      child: PageView(
+                        controller: _pageController,
+                        onPageChanged: (index) => setState(() => _currentPage = index),
+                        children: [
+                          _buildPlanCard(
+                            title: 'GOLD',
+                            color: AppColors.primary,
+                            icon: Icons.star_rounded,
+                            features: TierLimits.getFeaturesFor('gold'),
+                            products: provider.products.where((p) => p.id.contains('gold')).toList(),
+                            provider: provider,
                           ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(Icons.play_circle_filled_rounded, color: Colors.black, size: 20),
-                              const SizedBox(width: 8),
-                              Text(
-                                'REKLAM İZLE & KREDİ KAZAN',
-                                style: GoogleFonts.outfit(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w900,
-                                  color: Colors.black,
-                                ),
-                              ),
-                            ],
+                          _buildPlanCard(
+                            title: 'PLATINUM',
+                            color: const Color(0xFFC0C0C0), // Silver-ish
+                            icon: Icons.workspace_premium_rounded,
+                            features: TierLimits.getFeaturesFor('platinum'),
+                            products: provider.products.where((p) => p.id.contains('platinum')).toList(),
+                            provider: provider,
                           ),
-                        ),
+                        ],
                       ),
-                    );
-                  },
-                ),
-                const SizedBox(height: 12),
-
-                // Restore Button
-                TextButton(
-                  onPressed: () => provider.restorePurchases(),
-                  child: Text(
-                    'SATIN ALIMLARI GERİ YÜKLE',
-                    style: GoogleFonts.outfit(
-                      fontSize: 12,
-                      color: Colors.black.withValues(alpha: 0.4),
-                      fontWeight: FontWeight.w900,
                     ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-              ],
-            );
-          },
-        ),
+
+                    // Page Indicator
+                    _buildIndicator(),
+
+                    // İzle & Kazan butonu (Freemium için)
+                    Consumer<SubscriptionProvider>(
+                      builder: (context, sub, _) {
+                        if (sub.currentTier != 'free') return const SizedBox.shrink();
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 40),
+                          child: GestureDetector(
+                            onTap: () => Navigator.push(
+                              context, 
+                              MaterialPageRoute(builder: (_) => const WatchAndEarnScreen()),
+                            ),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: const Color(0xFFEEEEEE), width: 1.0),
+                                boxShadow: [AppColors.neoShadowSmall],
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(Icons.play_circle_filled_rounded, color: Colors.black, size: 20),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'REKLAM İZLE & KREDİ KAZAN',
+                                    style: GoogleFonts.outfit(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w900,
+                                      color: Colors.black,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Restore Button
+                    TextButton(
+                      onPressed: () => provider.restorePurchases(),
+                      child: Text(
+                        'SATIN ALIMLARI GERİ YÜKLE',
+                        style: GoogleFonts.outfit(
+                          fontSize: 12,
+                          color: Colors.black.withValues(alpha: 0.4),
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                );
+              },
+            ),
+          ),
+          if (_isProcessingMock)
+            Container(
+              color: Colors.black54,
+              child: const Center(
+                child: CircularProgressIndicator(color: AppColors.primary),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -324,28 +381,7 @@ class _PremiumOfferScreenState extends State<PremiumOfferScreen> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: InkWell(
-        onTap: () async {
-          // Demo Upgrade Process
-          provider.updateTier(tier);
-          
-          try {
-            await ProfileService().updateProfile(
-              isPremium: true,
-              subscriptionTier: tier,
-            );
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('DEMO KABUL EDİLDİ: ${tier.toUpperCase()} AKTİF!', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.w900)),
-                  backgroundColor: Colors.green,
-                ),
-              );
-              Navigator.pop(context); // Close the premium modal
-            }
-          } catch (e) {
-            LogService.e('Demo purchase error', e);
-          }
-        },
+        onTap: () => _grantMockPremium(tier),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           decoration: BoxDecoration(

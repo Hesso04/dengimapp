@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../core/theme/app_colors.dart';
 import '../auth/models/user_profile.dart';
 import '../auth/services/profile_service.dart';
@@ -34,8 +34,9 @@ class DiscoverScreen extends StatefulWidget {
 }
 
 class _DiscoverScreenState extends State<DiscoverScreen> {
-  final CardSwiperController _cardController = CardSwiperController();
   final TextEditingController _searchController = TextEditingController();
+  final Set<String> _dismissedUserIds = {};
+  final List<String> _historyOfSwipedUserIds = [];
   
   FilterSettings _filterSettings = FilterSettings();
   bool _isRefreshing = false;
@@ -139,60 +140,150 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     }
   }
 
-  Future<bool> _onSwipe(int previousIndex, int? currentIndex, CardSwiperDirection direction) async {
-    HapticFeedback.mediumImpact();
-    
-    final discoveryProvider = context.read<DiscoveryProvider>();
-    final targetUser = discoveryProvider.users[previousIndex];
-    String swipeType = 'dislike';
-    if (direction == CardSwiperDirection.right) swipeType = 'like';
-    if (direction == CardSwiperDirection.top) swipeType = 'super_like';
-    
-    try {
-      final userProvider = context.read<UserProvider>();
-      final currentUser = userProvider.currentUser;
-      final userTier = currentUser?.subscriptionTier ?? 'free';
+  Future<void> _onLikeUser(UserProfile user) async {
+    await _performSwipeAction(user, 'like');
+  }
 
-      final success = await discoveryProvider.swipeUser(
-        targetUser.uid, 
-        swipeType, 
-        userTier: userTier
-      );
-      
-      if (!success && swipeType != 'dislike') {
-        // Limit reached, show offer
-        if (mounted) {
-           Navigator.push(context, MaterialPageRoute(builder: (_) => const PremiumOfferScreen()));
+  Future<void> _onDislikeUser(UserProfile user) async {
+    await _performSwipeAction(user, 'dislike');
+  }
+
+  Future<void> _onSuperLikeUser(UserProfile user) async {
+    final userProvider = context.read<UserProvider>();
+    final currentUser = userProvider.currentUser;
+    final userTier = currentUser?.subscriptionTier ?? 'free';
+
+    if (TierLimits.canSuperLike(userTier)) {
+      await _performSuperLike(user);
+    } else {
+      final creditProvider = context.read<CreditProvider>();
+      if (creditProvider.balance >= CreditService.costSuperLike) {
+        final success = await creditProvider.spendSuperLike();
+        if (success) {
+          await _performSuperLike(user);
         }
-        return false; // Swipe failed
-      }
-
-      final isMatch = success; // Success means swipe recorded, might be match
-      
-      // Geri bildirim göster (match değilse ve beğeni ise)
-      if (mounted && !isMatch && swipeType != 'dislike') {
-        if (direction == CardSwiperDirection.right) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('💛 ${targetUser.name} beğenildi!'),
-              backgroundColor: AppColors.surfaceLight,
-              duration: const Duration(milliseconds: 800),
-              behavior: SnackBarBehavior.floating,
-              margin: const EdgeInsets.only(bottom: 120, left: 20, right: 20),
-            ),
+      } else {
+        if (mounted) {
+          PremiumRequiredModal.show(
+            context,
+            featureName: 'Super Like',
+            requiredTier: 'gold',
+            creditCost: CreditService.costSuperLike,
           );
         }
       }
-      
-      // Re-fetch isMatch real status if needed, but swipeUser returns if it was a match
+    }
+  }
+
+  Future<void> _performSuperLike(UserProfile user) async {
+    await _performSwipeAction(user, 'super_like');
+  }
+
+  Future<void> _performSwipeAction(UserProfile user, String action) async {
+    HapticFeedback.mediumImpact();
+    
+    setState(() {
+      _dismissedUserIds.add(user.uid);
+      _historyOfSwipedUserIds.add(user.uid);
+    });
+
+    final discoveryProvider = context.read<DiscoveryProvider>();
+    final userProvider = context.read<UserProvider>();
+    final userTier = userProvider.currentUser?.subscriptionTier ?? 'free';
+
+    try {
+      final success = await discoveryProvider.swipeUser(
+        user.uid,
+        action,
+        userTier: userTier,
+      );
+
+      if (!success && action != 'dislike') {
+        setState(() {
+          _dismissedUserIds.remove(user.uid);
+          _historyOfSwipedUserIds.remove(user.uid);
+        });
+        if (mounted) {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const PremiumOfferScreen()));
+        }
+        return;
+      }
+
+      // Check if it was a match. Let's assume matches logic inside provider works.
+      // If matches, show animation.
+      final isMatch = success; // or fetch real status if needed
       if (isMatch) {
-        _showMatchAnimation(targetUser);
+        _showMatchAnimation(user);
       }
     } catch (e) {
-      LogService.e("Swipe action failed", e);
+      LogService.e("Swipe action failed for list view", e);
+      setState(() {
+        _dismissedUserIds.remove(user.uid);
+        _historyOfSwipedUserIds.remove(user.uid);
+      });
     }
-    
-    return true; 
+  }
+
+  Future<void> _performUndo() async {
+    if (_historyOfSwipedUserIds.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Geri alınacak bir hareket bulunamadı.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    final userProvider = context.read<UserProvider>();
+    final currentUser = userProvider.currentUser;
+    final tier = currentUser?.subscriptionTier ?? 'free';
+
+    if (TierLimits.canUndo(tier)) {
+      await _executeUndo();
+    } else {
+      final creditProvider = context.read<CreditProvider>();
+      if (creditProvider.balance >= CreditService.costUndo) {
+        final success = await creditProvider.spendUndo();
+        if (success) {
+          await _executeUndo();
+        }
+      } else {
+        if (mounted) {
+          PremiumRequiredModal.show(
+            context,
+            featureName: 'Geri Alma (Undo)',
+            requiredTier: 'gold',
+            creditCost: CreditService.costUndo,
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _executeUndo() async {
+    final targetUid = _historyOfSwipedUserIds.removeLast();
+    setState(() {
+      _dismissedUserIds.remove(targetUid);
+    });
+
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(context.read<UserProvider>().currentUser?.uid)
+          .collection('swipes')
+          .doc(targetUid)
+          .delete();
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Son işlem geri alındı.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (e) {
+      LogService.e("Undo action failed", e);
+    }
   }
 
   void _showMatchAnimation(UserProfile user) {
@@ -208,24 +299,12 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
 
   @override
   void dispose() {
-    _cardController.dispose();
     _searchController.dispose();
     super.dispose();
   }
 
-  void _onLike() {
-    HapticFeedback.mediumImpact();
-    _cardController.swipe(CardSwiperDirection.right);
-  }
-
-  void _onDislike() {
-    HapticFeedback.lightImpact();
-    _cardController.swipe(CardSwiperDirection.left);
-  }
-
   void _onUndo() {
-    HapticFeedback.lightImpact();
-    _cardController.undo();
+    _performUndo();
   }
 
   void _onBoost() async {
@@ -420,6 +499,8 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
       backgroundColor: Colors.white,
       body: Consumer<DiscoveryProvider>(
         builder: (context, provider, child) {
+          final visibleUsersCount = provider.users.where((u) => !_dismissedUserIds.contains(u.uid)).length;
+
           return Stack(
             children: [
               RefreshIndicator(
@@ -460,49 +541,43 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                         ],
                       ),
                     ),
-                    SliverFillRemaining(
-                      hasScrollBody: false,
-                      child: Column(
-                        children: [
-                          Expanded(
-                            child: provider.isLoading && !_isRefreshing
-                                ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
-                                : provider.users.isEmpty
-                                    ? DiscoverEmptyState(onShowFilters: _showFilters)
-                                    : Padding(
-                                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                                        child: CardSwiper(
-                                          controller: _cardController,
-                                          cardsCount: provider.users.length,
-                                          numberOfCardsDisplayed: 3,
-                                          backCardOffset: const Offset(0, 30),
-                                          padding: EdgeInsets.zero,
-                                          onSwipe: _onSwipe,
-                                          allowedSwipeDirection: const AllowedSwipeDirection.only(
-                                            left: true,
-                                            right: true,
-                                          ),
-                                          cardBuilder: (context, index, percentThresholdX, percentThresholdY) {
-                                            final user = provider.users[index];
-                                            return DiscoverUserCard(
-                                              user: user,
-                                              percentX: percentThresholdX.toDouble() ?? 0.0,
-                                              percentY: percentThresholdY.toDouble() ?? 0.0,
-                                              onTap: () => _onCardTap(user),
-                                            );
-                                          },
-                                        ),
-                                      ),
+                    if (provider.isLoading && !_isRefreshing)
+                      const SliverFillRemaining(
+                        child: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+                      )
+                    else if (visibleUsersCount == 0)
+                      SliverFillRemaining(
+                        hasScrollBody: false,
+                        child: DiscoverEmptyState(onShowFilters: _showFilters),
+                      )
+                    else
+                      SliverPadding(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        sliver: SliverList(
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) {
+                              final user = provider.users[index];
+                              final isDismissed = _dismissedUserIds.contains(user.uid);
+
+                              return AnimatedDismissibleCard(
+                                key: ValueKey('dismiss_${user.uid}'),
+                                isDismissed: isDismissed,
+                                onDismissFinished: () {
+                                  // Re-evaluation occurs reactively
+                                },
+                                child: DiscoverUserCard(
+                                  user: user,
+                                  onTap: () => _onCardTap(user),
+                                  onLike: () => _onLikeUser(user),
+                                  onDislike: () => _onDislikeUser(user),
+                                  onSuperLike: () => _onSuperLikeUser(user),
+                                ),
+                              );
+                            },
+                            childCount: provider.users.length,
                           ),
-                          SwipeActionButtons(
-                            onUndo: _onUndo,
-                            onDislike: _onDislike,
-                            onLike: _onLike,
-                          ),
-                          const SafeArea(bottom: true, child: SizedBox(height: 24)),
-                        ],
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ),
@@ -519,7 +594,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
+                        border: Border.all(color: const Color(0xFFEEEEEE), width: 1.0),
                         boxShadow: [AppColors.neoShadowSmall],
                       ),
                       child: Row(
@@ -545,6 +620,59 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                   ),
                 ),
 
+              // Yüzen Aksiyon Butonları (Undo & Boost) - Sağ Altta
+              Positioned(
+                bottom: 24,
+                right: 16,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (_historyOfSwipedUserIds.isNotEmpty) ...[
+                      GestureDetector(
+                        onTap: _onUndo,
+                        child: Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.9),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.black.withOpacity(0.08)),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.15),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(Icons.undo_rounded, color: Colors.amber, size: 22),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    GestureDetector(
+                      onTap: _onBoost,
+                      child: Container(
+                        width: 52,
+                        height: 52,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.purple.withOpacity(0.3),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(Icons.bolt_rounded, color: Colors.purpleAccent, size: 28),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
               // Match overlay (B&W)
               if (_showMatch && _matchedUser != null)
                 MatchOverlay(
@@ -556,6 +684,78 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
           );
         },
       ),
+    );
+  }
+}
+
+class AnimatedDismissibleCard extends StatefulWidget {
+  final Widget child;
+  final bool isDismissed;
+  final VoidCallback onDismissFinished;
+
+  const AnimatedDismissibleCard({
+    super.key,
+    required this.child,
+    required this.isDismissed,
+    required this.onDismissFinished,
+  });
+
+  @override
+  State<AnimatedDismissibleCard> createState() => _AnimatedDismissibleCardState();
+}
+
+class _AnimatedDismissibleCardState extends State<AnimatedDismissibleCard> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _heightFactor;
+  late final Animation<double> _opacity;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 350),
+    );
+    _heightFactor = Tween<double>(begin: 1.0, end: 0.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+    _opacity = Tween<double>(begin: 1.0, end: 0.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant AnimatedDismissibleCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isDismissed && !oldWidget.isDismissed) {
+      _controller.forward().then((_) => widget.onDismissFinished());
+    } else if (!widget.isDismissed && oldWidget.isDismissed) {
+      _controller.reverse();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        if (_heightFactor.value == 0) return const SizedBox.shrink();
+        return Opacity(
+          opacity: _opacity.value,
+          child: SizeTransition(
+            sizeFactor: _heightFactor,
+            axis: Axis.vertical,
+            child: child,
+          ),
+        );
+      },
+      child: widget.child,
     );
   }
 }

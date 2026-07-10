@@ -12,13 +12,19 @@ class DiscoverUserCard extends StatefulWidget {
   final double percentX;
   final double percentY;
   final VoidCallback onTap;
+  final VoidCallback onLike;
+  final VoidCallback onDislike;
+  final VoidCallback onSuperLike;
 
   const DiscoverUserCard({
     super.key,
     required this.user,
-    required this.percentX,
-    required this.percentY,
+    this.percentX = 0.0,
+    this.percentY = 0.0,
     required this.onTap,
+    required this.onLike,
+    required this.onDislike,
+    required this.onSuperLike,
   });
 
   @override
@@ -266,6 +272,33 @@ class _DiscoverUserCardState extends State<DiscoverUserCard> {
                     );
                   }
                 ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildMiniCircleButton(
+                      onTap: widget.onDislike,
+                      icon: Icons.close_rounded,
+                      color: Colors.redAccent,
+                      iconSize: 22,
+                      size: 48,
+                    ),
+                    _buildMiniCircleButton(
+                      onTap: widget.onSuperLike,
+                      icon: Icons.star_rounded,
+                      color: Colors.amber,
+                      iconSize: 24,
+                      size: 52,
+                    ),
+                    _buildMiniCircleButton(
+                      onTap: widget.onLike,
+                      icon: Icons.favorite_rounded,
+                      color: AppColors.primary,
+                      iconSize: 24,
+                      size: 52,
+                    ),
+                  ],
+                ),
               ],
             ],
           ),
@@ -334,5 +367,38 @@ class _DiscoverUserCardState extends State<DiscoverUserCard> {
       case 'unsure': return '🤷‍♂️ Belirsiz';
       default: return '';
     }
+  }
+
+  Widget _buildMiniCircleButton({
+    required VoidCallback onTap,
+    required IconData icon,
+    required Color color,
+    double iconSize = 20,
+    double size = 44,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.05),
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.black.withValues(alpha: 0.08)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Icon(
+          icon,
+          color: color,
+          size: iconSize,
+        ),
+      ),
+    );
   }
 }

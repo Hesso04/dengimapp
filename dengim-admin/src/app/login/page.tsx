@@ -179,7 +179,7 @@ export default function LoginPage() {
             router.push('/');
         } catch (createErr: any) {
             if (createErr.code === 'auth/email-already-in-use') {
-                setError('Bu e-posta kayıtlı ancak şifre yanlış. Lütfen "admin123" ile deneyin.');
+                setError('Bu e-posta adresi zaten kayıtlı fakat girilen şifre yanlış.');
             } else {
                 setError('Hesap oluşturulamadı: ' + createErr.message);
             }
