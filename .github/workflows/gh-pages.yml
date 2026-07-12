@@ -15,37 +15,21 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: 'stable'
-          
-      - name: Enable Web
-        run: flutter config --enable-web
-
-      - name: Get Dependencies
-        run: flutter pub get
-
-      - name: Build Web
-        run: |
-          flutter build web --release --base-href "/dengim/"
-
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '20'
 
-      - name: Build Admin Panel
+      - name: Build Next.js Site (Landing & Admin)
         run: |
           cd dengim-admin
           npm install
           npm run build
-          cd ..
-          mkdir -p build/web/admin
-          cp -r dengim-admin/out/* build/web/admin/
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./build/web
+          publish_dir: ./dengim-admin/out
+          cname: dengim.app
           force_orphan: true

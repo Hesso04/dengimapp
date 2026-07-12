@@ -2,8 +2,6 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: 'export',
-  basePath: '/dengim/admin',
-  assetPrefix: '/dengim/admin/',
   images: {
     unoptimized: true,
     remotePatterns: [
