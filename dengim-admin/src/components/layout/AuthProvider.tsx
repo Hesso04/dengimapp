@@ -46,7 +46,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 // Eğer zaten master-admin olarak içerideysek dokunma
                 if (currentState?.id !== 'master-admin') {
                     setCurrentAdmin(null);
-                    if (pathname !== '/admin/login') {
+                    // Yalnızca /admin rotalarındayken logine yönlendir
+                    if (pathname?.startsWith('/admin') && pathname !== '/admin/login') {
                         router.push('/admin/login');
                     }
                 }
