@@ -77,8 +77,7 @@ export const UserService = {
             const q = query(
                 collection(db, USERS_COLLECTION),
                 where("isVerified", "==", false),
-                orderBy("createdAt", "desc"),
-                limit(50)
+                limit(200)
             );
             const snapshot = await getDocs(q);
             const users: User[] = [];
@@ -94,7 +93,7 @@ export const UserService = {
                     status: 'pending'
                 } as unknown as User);
             });
-            return users;
+            return users.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()).slice(0, 50);
         } catch (e) {
             console.error("Pending Verifications Error:", e);
             return [];
@@ -133,7 +132,7 @@ export const UserService = {
         try {
             const q = query(
                 collection(db, USERS_COLLECTION),
-                where("bio", "!=", ""),
+                where("bioFlagged", "==", true),
                 limit(50)
             );
             const snapshot = await getDocs(q);

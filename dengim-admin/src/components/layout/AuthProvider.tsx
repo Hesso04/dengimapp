@@ -20,9 +20,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
             if (currentState?.id === 'master-admin') {
                 setLoading(false);
-                // Eğer login sayfasındaysak yönlendir
-                if (pathname === '/login') {
-                    router.push('/');
+                // Eğer admin/login sayfasındaysak yönlendir
+                if (pathname === '/admin/login') {
+                    router.push('/admin');
                 }
                 return;
             }
@@ -38,16 +38,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     });
                 }
 
-                if (pathname === '/login') {
-                    router.push('/');
+                if (pathname === '/admin/login') {
+                    router.push('/admin');
                 }
             } else {
                 // Kullanıcı çıkış yapmış veya giriş yok
-                // Eğer zaten master-admin olarak içerideysek dokunma (Bu blok gereksiz olabilir ama garanti olsun)
+                // Eğer zaten master-admin olarak içerideysek dokunma
                 if (currentState?.id !== 'master-admin') {
                     setCurrentAdmin(null);
-                    if (pathname !== '/login') {
-                        router.push('/login');
+                    if (pathname !== '/admin/login') {
+                        router.push('/admin/login');
                     }
                 }
             }
@@ -57,7 +57,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return () => unsubscribe();
     }, [router, pathname, currentAdmin, setCurrentAdmin]);
 
-    if (loading) {
+    // Sadece /admin rotalarını koru (Landing page vb. koruma dışı kalır)
+    const isAdminRoute = pathname?.startsWith('/admin');
+
+    if (isAdminRoute && loading) {
         return (
             <div className="flex min-h-screen items-center justify-center bg-background-dark">
                 <div className="flex flex-col items-center gap-4">
@@ -66,6 +69,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 </div>
             </div>
         );
+    }
+
+    // Admin rotası değilse direkt çocukları render et
+    if (!isAdminRoute) {
+        return <>{children}</>;
     }
 
     return <>{children}</>;

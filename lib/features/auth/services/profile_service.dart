@@ -115,7 +115,7 @@ class ProfileService {
       throw Exception("Upload returned null");
     } catch (e) {
       LogService.e("Upload failed (XFile), reverting to placeholder. UserId: $userId", e);
-      return 'https://ui-avatars.com/api/?name=${userId}&background=random&color=fff&size=128&font-size=0.4';
+      return 'https://ui-avatars.com/api/?name=$userId&background=random&color=fff&size=128&font-size=0.4';
     }
   }
 
@@ -139,7 +139,7 @@ class ProfileService {
       throw Exception("Byte upload returned null");
     } catch (e) {
       LogService.e("Upload failed (Bytes), reverting to placeholder. UserId: $userId", e);
-      return 'https://ui-avatars.com/api/?name=${userId}&background=random&color=fff&size=128&font-size=0.4';
+      return 'https://ui-avatars.com/api/?name=$userId&background=random&color=fff&size=128&font-size=0.4';
     }
   }
 
@@ -313,12 +313,12 @@ class ProfileService {
       // İsme göre arama (case-insensitive için küçük harfe dönüştürülmüş alan gerekebilir)
       // Firestore'da full-text search yok, bu yüzden prefix search yapıyoruz
       final queryLower = query.toLowerCase();
-      final queryUpper = query.toLowerCase() + '\uf8ff';
+      final queryUpper = '${query.toLowerCase()}\uf8ff';
       
       final snapshot = await _firestore
           .collection('users')
           .where('name', isGreaterThanOrEqualTo: query)
-          .where('name', isLessThanOrEqualTo: query + '\uf8ff')
+          .where('name', isLessThanOrEqualTo: '$query\uf8ff')
           .limit(20)
           .get();
 

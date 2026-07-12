@@ -175,13 +175,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   context, 
                   "Kullanım Koşulları", 
                   Icons.description_outlined,
-                  onTap: () => _launchUrl("https://www.dengimapp.com/terms"),
+                  onTap: () => _launchUrl("https://dengim.app/terms"),
                 ),
                 _buildSettingItem(
                   context, 
                   "Gizlilik Politikası", 
                   Icons.policy_outlined,
-                  onTap: () => _launchUrl("https://www.dengimapp.com/privacy"),
+                  onTap: () => _launchUrl("https://dengim.app/privacy"),
                 ),
 
                 const SizedBox(height: 32),
@@ -455,15 +455,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Future<void> _launchUrl(String url) async {
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else {
+  Future<void> _launchUrl(String urlString) async {
+    final Uri url = Uri.parse(urlString);
+    try {
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+      } else {
+        if (mounted) {
+          ErrorHandler.showError(context, "Bağlantı açılamıyor. Lütfen daha sonra tekrar deneyin.");
+        }
+      }
+    } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Bağlantı açılamadı')),
-        );
+        ErrorHandler.showError(context, "Bağlantı açılamıyor. Lütfen daha sonra tekrar deneyin.");
       }
     }
   }

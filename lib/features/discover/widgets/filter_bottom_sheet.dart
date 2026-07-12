@@ -103,7 +103,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
       height: MediaQuery.of(context).size.height * 0.9,
       decoration: const BoxDecoration(
         color: Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
         border: Border(top: BorderSide(color: Color(0xFFEEEEEE), width: 1.0)),
       ),
       child: Stack(

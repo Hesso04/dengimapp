@@ -5,11 +5,11 @@ import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/providers/subscription_provider.dart';
+import '../../core/providers/user_provider.dart';
 import '../../core/providers/credit_provider.dart';
 import '../../core/constants/tier_limits.dart';
 import '../../core/utils/log_service.dart';
 import '../ads/screens/watch_and_earn_screen.dart';
-import '../auth/services/profile_service.dart';
 
 class PremiumOfferScreen extends StatefulWidget {
   const PremiumOfferScreen({super.key});

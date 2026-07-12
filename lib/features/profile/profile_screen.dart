@@ -225,7 +225,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               label: 'PAYLAŞ',
                               onTap: () {
                                 if (profile != null) {
-                                  Share.share('DENGİM uygulamasında beni bul! Kullanıcı Adım: ${profile.name} \n\nHemen indir: https://dengimapp.com');
+                                  Share.share('DENGİM uygulamasında beni bul! Kullanıcı Adım: ${profile.name} \n\nHemen indir: https://dengim.app');
                                 }
                               },
                             ),
@@ -359,7 +359,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required VoidCallback onTap,
     Color? color,
     Color? textColor,
-    Color? borderColor,
   }) {
     return GestureDetector(
       onTap: onTap,

@@ -22,7 +22,7 @@ class MapScreen extends StatefulWidget {
 
 class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   final MapController _mapController = MapController();
-  double _initialZoom = 13.0;
+  final double _initialZoom = 13.0;
 
   @override
   void initState() {

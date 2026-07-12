@@ -993,8 +993,7 @@ class _ActionButton extends StatelessWidget {
     required this.icon,
     required this.color,
     required this.onTap,
-    this.isMain = false,
-  });
+  }) : isMain = false;
 
   @override
   Widget build(BuildContext context) {

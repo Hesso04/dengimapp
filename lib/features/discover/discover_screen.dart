@@ -25,6 +25,8 @@ import 'widgets/discover_empty_state.dart';
 import 'widgets/match_overlay.dart';
 import 'widgets/discover_search_bar.dart';
 import 'widgets/discover_user_card.dart';
+import 'widgets/advanced_filters_modal.dart';
+import '../../core/widgets/shimmer_card.dart';
 
 class DiscoverScreen extends StatefulWidget {
   const DiscoverScreen({super.key});
@@ -243,7 +245,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
       await _executeUndo();
     } else {
       final creditProvider = context.read<CreditProvider>();
-      if (creditProvider.balance >= CreditService.costUndo) {
+      if (creditProvider.balance >= CreditService.costUndoSwipe) {
         final success = await creditProvider.spendUndo();
         if (success) {
           await _executeUndo();
@@ -254,7 +256,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
             context,
             featureName: 'Geri Alma (Undo)',
             requiredTier: 'gold',
-            creditCost: CreditService.costUndo,
+            creditCost: CreditService.costUndoSwipe,
           );
         }
       }
@@ -542,8 +544,17 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                       ),
                     ),
                     if (provider.isLoading && !_isRefreshing)
-                      const SliverFillRemaining(
-                        child: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+                      SliverPadding(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        sliver: SliverList(
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) => const Padding(
+                              padding: EdgeInsets.only(bottom: 16),
+                              child: ShimmerCard(height: 560), // Match the typical card height
+                            ),
+                            childCount: 2, // Show 2 skeleton cards
+                          ),
+                        ),
                       )
                     else if (visibleUsersCount == 0)
                       SliverFillRemaining(
@@ -634,12 +645,12 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                           width: 48,
                           height: 48,
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.9),
+                            color: Colors.white.withValues(alpha: 0.9),
                             shape: BoxShape.circle,
-                            border: Border.all(color: Colors.black.withOpacity(0.08)),
+                            border: Border.all(color: Colors.black.withValues(alpha: 0.08)),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.15),
+                                color: Colors.black.withValues(alpha: 0.15),
                                 blurRadius: 10,
                                 offset: const Offset(0, 4),
                               ),
@@ -660,7 +671,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.purple.withOpacity(0.3),
+                              color: Colors.purple.withValues(alpha: 0.3),
                               blurRadius: 12,
                               offset: const Offset(0, 4),
                             ),

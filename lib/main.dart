@@ -182,6 +182,7 @@ class _DengimAppState extends State<DengimApp> with WidgetsBindingObserver {
           debugShowCheckedModeBanner: false,
           navigatorKey: navigatorKey,
           theme: AppTheme.lightTheme,
+          themeMode: ThemeMode.light, // Karanlık mod desteği tam eklenene kadar light mod zorunlu
           builder: (context, child) => ResponsiveCenterWrapper(
             child: NetworkWrapper(child: child!),
           ),
@@ -234,7 +235,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   }
 
   Future<void> _checkFirstTime() async {
-    await Future.delayed(const Duration(seconds: 2));
+    await Future.delayed(const Duration(milliseconds: 500));
 
     try {
       final prefs = await SharedPreferences.getInstance();

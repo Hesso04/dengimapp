@@ -28,18 +28,9 @@ subprojects {
     }
 }
 
-// Redirect build output to ASCII-only path if project path contains non-ASCII chars (e.g. Turkish 'ü')
-val projectPath = rootProject.projectDir.absolutePath
-val hasNonAscii = projectPath.any { it.code > 127 }
-
-val newBuildDir: Directory = if (hasNonAscii) {
-    // Local Windows: use ASCII-safe temp path
-    rootProject.layout.projectDirectory.dir("C:/tmp/dengim-build")
-} else {
-    // CI (Linux): use relative path
-    rootProject.layout.buildDirectory.dir("../../build").get()
-}
-rootProject.layout.buildDirectory.value(newBuildDir)
+// Force build output to ASCII-only path to avoid Turkish character issues
+// val newBuildDir: Directory = rootProject.layout.projectDirectory.dir("C:/tmp/dengim-build")
+// rootProject.layout.buildDirectory.value(newBuildDir)
 
 subprojects {
     if (project.name != "app") {
@@ -47,10 +38,10 @@ subprojects {
     }
 }
 
-subprojects {
-    val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
-    project.layout.buildDirectory.value(newSubprojectBuildDir)
-}
+// subprojects {
+//     val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
+//     project.layout.buildDirectory.value(newSubprojectBuildDir)
+// }
 
 tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)

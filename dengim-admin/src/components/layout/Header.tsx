@@ -5,15 +5,15 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 
 const pageTitles: Record<string, string> = {
-    '/': 'Dashboard',
-    '/users': 'Kullanıcı Yönetimi',
-    '/moderation': 'Moderasyon',
-    '/reports': 'Raporlar & Şikayetler',
-    '/premium': 'Premium Yönetimi',
-    '/analytics': 'Analitik & Raporlama',
-    '/notifications': 'Bildirim Merkezi',
-    '/support': 'Destek Sistemi',
-    '/settings': 'Ayarlar',
+    '/admin': 'Dashboard',
+    '/admin/users': 'Kullanıcı Yönetimi',
+    '/admin/moderation': 'Moderasyon',
+    '/admin/reports': 'Raporlar & Şikayetler',
+    '/admin/premium': 'Premium Yönetimi',
+    '/admin/analytics': 'Analitik & Raporlama',
+    '/admin/notifications': 'Bildirim Merkezi',
+    '/admin/support': 'Destek Sistemi',
+    '/admin/settings': 'Ayarlar',
 };
 
 export function Header() {
@@ -21,7 +21,7 @@ export function Header() {
     const { toggleSidebar, currentAdmin, unreadNotificationCount } = useAdminStore();
 
     const pageTitle = Object.entries(pageTitles).find(
-        ([path]) => pathname === path || (path !== '/' && pathname.startsWith(path))
+        ([path]) => pathname === path || (path !== '/admin' && pathname.startsWith(path))
     )?.[1] || 'Dashboard';
 
     return (
@@ -37,8 +37,8 @@ export function Header() {
                 <div>
                     <h1 className="text-lg font-bold text-white">{pageTitle}</h1>
                     <div className="hidden md:flex items-center text-xs text-slate-400 gap-1">
-                        <Link href="/" className="hover:text-primary">Dashboard</Link>
-                        {pathname !== '/' && (
+                        <Link href="/admin" className="hover:text-primary">Dashboard</Link>
+                        {pathname !== '/admin' && (
                             <>
                                 <span>/</span>
                                 <span className="text-primary">{pageTitle}</span>
@@ -69,7 +69,7 @@ export function Header() {
 
                 {/* Notifications */}
                 <Link
-                    href="/notifications"
+                    href="/admin/notifications"
                     className="relative p-2.5 text-slate-400 hover:text-primary hover:bg-white/5 rounded-xl transition-colors"
                 >
                     <span className="material-symbols-outlined">notifications</span>

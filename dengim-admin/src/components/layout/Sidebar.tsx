@@ -30,55 +30,55 @@ export function Sidebar() {
         {
             label: 'Dashboard',
             icon: 'dashboard',
-            href: '/',
+            href: '/admin',
         },
         {
             label: 'Kullanıcılar',
             icon: 'group',
-            href: '/users',
+            href: '/admin/users',
         },
         {
             label: 'Moderasyon',
             icon: 'verified_user',
-            href: '/moderation',
+            href: '/admin/moderation',
             badge: counts.moderation > 0 ? counts.moderation : undefined,
         },
         {
             label: 'Raporlar',
             icon: 'report',
-            href: '/reports',
+            href: '/admin/reports',
             badge: counts.reports > 0 ? counts.reports : undefined,
         },
         {
             label: 'Premium',
             icon: 'diamond',
-            href: '/premium',
+            href: '/admin/premium',
         },
         {
             label: 'Analitik',
             icon: 'analytics',
-            href: '/analytics',
+            href: '/admin/analytics',
         },
         {
             label: 'Bildirimler',
-            icon: 'campaign',
-            href: '/notifications',
+            icon: 'notifications',
+            href: '/admin/notifications',
+        },
+        {
+            label: 'İçerik/Kaynak',
+            icon: 'source_environment',
+            href: '/admin/resources',
         },
         {
             label: 'Destek',
             icon: 'support_agent',
-            href: '/support',
+            href: '/admin/support',
             badge: counts.support > 0 ? counts.support : undefined,
         },
         {
-            label: 'Kaynak Yönetimi',
-            icon: 'folder_shared',
-            href: '/resources',
-        },
-        {
-            label: 'Ayarlar',
+            label: 'Sistem Ayarları',
             icon: 'settings',
-            href: '/settings',
+            href: '/admin/settings',
         },
     ];
 

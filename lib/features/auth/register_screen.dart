@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
 import 'services/auth_service.dart';
 import '../create_profile/create_profile_screen.dart';
+import '../../core/utils/firebase_error_localizer.dart';
 // import '../../features/main/main_scaffold.dart'; // Artık kullanılmıyor olabilir ama kalsın
 
 class RegisterScreen extends StatefulWidget {
@@ -58,7 +59,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     } catch (e) {
       if (mounted) {
           setState(() => _isLoading = false);
-          _showError('Kayıt başarısız: ${e.toString()}');
+          _showError(FirebaseErrorLocalizer.localize(e));
       }
     }
   }

@@ -22,8 +22,7 @@ export const VerificationService = {
             const q = query(
                 collection(db, COLLECTION),
                 where("status", "==", "pending"),
-                orderBy("createdAt", "desc"),
-                limit(limitCount)
+                limit(200)
             );
 
             const snapshot = await getDocs(q);
@@ -39,7 +38,7 @@ export const VerificationService = {
                 } as unknown as VerificationRequest);
             });
 
-            return requests;
+            return requests.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()).slice(0, limitCount);
         } catch (error) {
             console.error("Error fetching verification requests:", error);
             return [];

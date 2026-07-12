@@ -9,6 +9,7 @@ import '../../features/main/main_scaffold.dart';
 import 'package:provider/provider.dart';
 import '../../core/providers/user_provider.dart';
 import '../../core/utils/log_service.dart';
+import '../../core/utils/firebase_error_localizer.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -35,7 +36,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
       setState(() => _isLoading = false);
       LogService.e("Google Sign In Error", e);
-      _showError('Giriş başarısız: ${e.toString()}');
+      _showError(FirebaseErrorLocalizer.localize(e));
     }
   }
 
@@ -118,142 +119,153 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           
           SafeArea(
-            child: Column(
-              children: [
-                const Spacer(),
-                
-                // Hero Section
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 40),
-                  child: Column(
-                    children: [
-                      Container(
-                        width: 120,
-                        height: 120,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(32),
-                          border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-                          boxShadow: [AppColors.neoShadowLarge],
-                        ),
-                        child: const Center(
-                          child: Icon(
-                            Icons.local_fire_department_rounded, 
-                            color: Colors.black, 
-                            size: 70,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                    child: IntrinsicHeight(
+                      child: Column(
+                        children: [
+                          const Spacer(),
+                          
+                          // Hero Section
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 40),
+                            child: Column(
+                              children: [
+                                Container(
+                                  width: 120,
+                                  height: 120,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(32),
+                                    border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
+                                    boxShadow: [AppColors.neoShadowLarge],
+                                  ),
+                                  child: const Center(
+                                    child: Icon(
+                                      Icons.local_fire_department_rounded, 
+                                      color: Colors.black, 
+                                      size: 70,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 48),
+                                // Brand Name Plate
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black, // Sleek black badge
+                                    borderRadius: BorderRadius.circular(16),
+                                    boxShadow: [AppColors.neoShadow],
+                                  ),
+                                  child: Text(
+                                    'DENGİM',
+                                    style: GoogleFonts.outfit(
+                                      fontSize: 48,
+                                      fontWeight: FontWeight.w900,
+                                      color: Colors.white, // White text
+                                      letterSpacing: -2,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 20),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
+                                    borderRadius: BorderRadius.circular(12),
+                                    boxShadow: [AppColors.neoShadowSmall],
+                                  ),
+                                  child: Text(
+                                    'RUH EŞİNİ BUL.',
+                                    style: GoogleFonts.outfit(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w800,
+                                      color: Colors.black,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      ),
-                      const SizedBox(height: 48),
-                      // Brand Name Plate
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                        decoration: BoxDecoration(
-                          color: Colors.black, // Sleek black badge
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [AppColors.neoShadow],
-                        ),
-                        child: Text(
-                          'DENGİM',
-                          style: GoogleFonts.outfit(
-                            fontSize: 48,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.white, // White text
-                            letterSpacing: -2,
+                          
+                          const SizedBox(height: 64),
+                          
+                          // Action Buttons
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 32),
+                            child: Column(
+                              children: [
+                                _LoginButton(
+                                  icon: Icons.account_circle_rounded,
+                                  text: 'Google ile Giriş Yap',
+                                  color: Colors.white,
+                                  textColor: Colors.black,
+                                  onTap: _signInWithGoogle,
+                                ),
+                                const SizedBox(height: 16),
+                                _LoginButton(
+                                  icon: Icons.alternate_email_rounded,
+                                  text: 'E-Posta ile Giriş Yap',
+                                  color: Colors.black,
+                                  textColor: Colors.white,
+                                  onTap: _showEmailLoginForm,
+                                ),
+                                const SizedBox(height: 24),
+                                GestureDetector(
+                                  onTap: () {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(builder: (context) => const RegisterScreen()),
+                                    );
+                                  },
+                                  child: Text(
+                                    "HESABIN YOK MU? KAYIT OL",
+                                    style: GoogleFonts.outfit(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w900,
+                                      color: Colors.black,
+                                      decoration: TextDecoration.underline,
+                                      decorationThickness: 2,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [AppColors.neoShadowSmall],
-                        ),
-                        child: Text(
-                          'RUH EŞİNİ BUL.',
-                          style: GoogleFonts.outfit(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.black,
+                          
+                          const Spacer(),
+                          
+                          // Footer
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(48, 0, 48, 32),
+                            child: Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.6),
+                                border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                'Devam ederek Kullanım Koşullarını ve Gizlilik Politikamızı kabul etmiş olursunuz.',
+                                textAlign: TextAlign.center,
+                                style: GoogleFonts.outfit(
+                                  fontSize: 12,
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.w700,
+                                  height: 1.4,
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
-                
-                const SizedBox(height: 64),
-                
-                // Action Buttons
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 32),
-                  child: Column(
-                    children: [
-                      _LoginButton(
-                        icon: Icons.account_circle_rounded,
-                        text: 'Google ile Giriş Yap',
-                        color: Colors.white,
-                        textColor: Colors.black,
-                        onTap: _signInWithGoogle,
-                      ),
-                      const SizedBox(height: 16),
-                      _LoginButton(
-                        icon: Icons.alternate_email_rounded,
-                        text: 'E-Posta ile Giriş Yap',
-                        color: Colors.black,
-                        textColor: Colors.white,
-                        onTap: _showEmailLoginForm,
-                      ),
-                      const SizedBox(height: 24),
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(builder: (context) => const RegisterScreen()),
-                          );
-                        },
-                        child: Text(
-                          "HESABIN YOK MU? KAYIT OL",
-                          style: GoogleFonts.outfit(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.black,
-                            decoration: TextDecoration.underline,
-                            decorationThickness: 2,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                
-                const Spacer(),
-                
-                // Footer
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(48, 0, 48, 32),
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.6),
-                      border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-                      borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Text(
-                      'Devam ederek Kullanım Koşullarını ve Gizlilik Politikamızı kabul etmiş olursunuz.',
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.outfit(
-                        fontSize: 12,
-                        color: Colors.black,
-                        fontWeight: FontWeight.w700,
-                        height: 1.4,
-                      ),
-                    ),
                   ),
-                ),
-              ],
+                );
+              },
             ),
           ),
         ],

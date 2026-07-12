@@ -335,8 +335,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           child: Container(color: Colors.black, height: 1),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -395,8 +397,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildSectionHeader(String title) {
     return Padding(
@@ -756,6 +759,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         controller: controller,
         maxLines: maxLines,
         keyboardType: keyboardType,
+        textInputAction: maxLines > 1 ? TextInputAction.newline : TextInputAction.next,
         style: GoogleFonts.outfit(color: Colors.black, fontWeight: FontWeight.bold),
         onChanged: (_) => _hasChanges = true,
         decoration: InputDecoration(

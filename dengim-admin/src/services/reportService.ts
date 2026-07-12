@@ -45,8 +45,7 @@ export const ReportService = {
                 try {
                     let q = query(
                         collection(db, collName),
-                        orderBy("createdAt", "desc"),
-                        limit(limitCount)
+                        limit(200)
                     );
 
                     if (status !== 'all') {
