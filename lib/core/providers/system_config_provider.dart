@@ -15,9 +15,9 @@ class SystemConfigProvider extends ChangeNotifier {
   int _dailyLikeLimit = 25;
   
   // Uygulama Kaynakları (resources)
-  String _privacyPolicyUrl = 'https://dengim.space/privacy';
-  String _termsOfServiceUrl = 'https://dengim.space/terms';
-  String _supportEmail = 'support@dengim.space';
+  String _privacyPolicyUrl = 'https://dengim.app/privacy';
+  String _termsOfServiceUrl = 'https://dengim.app/terms';
+  String _supportEmail = 'support@dengim.app';
   String _appVersion = '1.0.0';
   bool _isMaintenanceMode = false;
   String _maintenanceMessage = 'Şu anda bakım çalışması yapıyoruz.';

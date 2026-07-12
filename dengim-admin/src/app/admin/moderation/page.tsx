@@ -288,32 +288,50 @@ export default function ModerationPage() {
                                 )}
 
                                 {activeTab === 'id_verify' && (
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                         {verificationRequests.length > 0 ? verificationRequests.map((req: VerificationRequest) => (
-                                            <div key={req.id} className="bg-surface-dark rounded-2xl border border-white/10 overflow-hidden group">
-                                                <div className="aspect-[3/4] relative bg-white/5">
-                                                    <img src={req.selfieUrl} alt={req.email} className="w-full h-full object-cover" />
-                                                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
-                                                        <button
-                                                            onClick={() => handleVerificationAction(req.id, req.userId, 'approve')}
-                                                            className="h-14 w-14 rounded-full bg-emerald-500 flex items-center justify-center text-white hover:bg-emerald-400"
-                                                            title="Onayla"
-                                                        >
-                                                            <span className="material-symbols-outlined">check</span>
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleVerificationAction(req.id, req.userId, 'reject')}
-                                                            className="h-14 w-14 rounded-full bg-rose-500 flex items-center justify-center text-white hover:bg-rose-400"
-                                                            title="Reddet"
-                                                        >
-                                                            <span className="material-symbols-outlined">close</span>
-                                                        </button>
+                                            <div key={req.id} className="bg-surface-dark rounded-2xl border border-white/10 overflow-hidden flex flex-col justify-between">
+                                                <div>
+                                                    {/* Split Images: Left Profile, Right Selfie */}
+                                                    <div className="grid grid-cols-2 aspect-[4/3] relative bg-white/5 border-b border-white/5">
+                                                        <div className="relative border-r border-white/10">
+                                                            {req.userProfilePhoto ? (
+                                                                <img src={req.userProfilePhoto} alt="Profil" className="w-full h-full object-cover" />
+                                                            ) : (
+                                                                <div className="w-full h-full flex flex-col items-center justify-center text-white/20">
+                                                                    <span className="material-symbols-outlined text-4xl">person</span>
+                                                                    <span className="text-[10px]">Profil Resmi Yok</span>
+                                                                </div>
+                                                            )}
+                                                            <div className="absolute top-2 left-2 bg-black/75 backdrop-blur px-2 py-0.5 rounded text-[10px] font-bold text-white uppercase">Profil Resmi</div>
+                                                        </div>
+                                                        <div className="relative">
+                                                            <img src={req.selfieUrl} alt="Selfie" className="w-full h-full object-cover" />
+                                                            <div className="absolute top-2 left-2 bg-primary/75 backdrop-blur px-2 py-0.5 rounded text-[10px] font-bold text-black uppercase">Çekilen Selfie</div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="p-4">
+                                                        <h4 className="font-bold text-white text-base truncate">{req.userName || req.email}</h4>
+                                                        <p className="text-xs text-white/40">{req.email}</p>
+                                                        <p className="text-[10px] text-white/30 mt-1">İstek: {formatRelativeTime(req.createdAt)}</p>
                                                     </div>
                                                 </div>
-                                                <div className="p-4">
-                                                    <h4 className="font-bold text-white text-sm truncate">{req.email}</h4>
-                                                    <p className="text-xs text-white/40">{formatRelativeTime(req.createdAt)}</p>
-                                                    <Badge className="mt-2" variant="warning">Onay Bekliyor</Badge>
+                                                {/* Action Buttons - Always Visible in Card Footer */}
+                                                <div className="p-4 pt-0 border-t border-white/5 mt-auto flex gap-2">
+                                                    <button
+                                                        onClick={() => handleVerificationAction(req.id, req.userId, 'approve')}
+                                                        className="flex-1 h-10 bg-emerald-500 hover:bg-emerald-400 text-white font-bold rounded-xl flex items-center justify-center gap-1.5 transition-colors text-sm"
+                                                    >
+                                                        <span className="material-symbols-outlined text-lg">check</span>
+                                                        Onayla
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleVerificationAction(req.id, req.userId, 'reject')}
+                                                        className="flex-1 h-10 bg-rose-500 hover:bg-rose-400 text-white font-bold rounded-xl flex items-center justify-center gap-1.5 transition-colors text-sm"
+                                                    >
+                                                        <span className="material-symbols-outlined text-lg">close</span>
+                                                        Reddet
+                                                    </button>
                                                 </div>
                                             </div>
                                         )) : (

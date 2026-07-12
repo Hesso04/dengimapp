@@ -347,7 +347,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: GoogleFonts.outfit(fontSize: 14, color: Colors.black.withValues(alpha: 0.5), fontWeight: FontWeight.w800)),
-          Text(value, style: GoogleFonts.outfit(fontSize: 14, color: Colors.black, fontWeight: FontWeight.w900)),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              style: GoogleFonts.outfit(fontSize: 14, color: Colors.black, fontWeight: FontWeight.w900),
+            ),
+          ),
         ],
       ),
     );

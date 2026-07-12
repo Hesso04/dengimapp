@@ -116,7 +116,22 @@ export const AnalyticsService = {
             };
         } catch (error) {
             console.error("Dashboard Stats Error:", error);
-            return {} as DashboardStats;
+            return {
+                totalUsers: 0,
+                activeUsers: 0,
+                premiumUsers: 0,
+                totalMatches: 0,
+                totalMessages: 0,
+                pendingReports: 0,
+                pendingVerifications: 0,
+                newUsersToday: 0,
+                newUsersThisWeek: 0,
+                newUsersThisMonth: 0,
+                mrr: 0,
+                arr: 0,
+                churnRate: 0,
+                conversionRate: 0
+            };
         }
     },
 

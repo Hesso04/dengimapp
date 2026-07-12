@@ -13,9 +13,9 @@ class ConfigService {
   bool isCreditsEnabled = false;
 
   // Resources
-  String privacyPolicyUrl = "https://dengim.space/privacy";
-  String termsOfServiceUrl = "https://dengim.space/terms";
-  String supportEmail = "support@dengim.space";
+  String privacyPolicyUrl = "https://dengim.app/privacy";
+  String termsOfServiceUrl = "https://dengim.app/terms";
+  String supportEmail = "support@dengim.app";
   String appVersion = "1.0.0";
   bool maintenanceMode = false;
   String maintenanceMessage = "Bakımdayız.";

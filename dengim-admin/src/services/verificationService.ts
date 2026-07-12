@@ -1,6 +1,7 @@
 import {
     collection,
     getDocs,
+    getDoc,
     doc,
     updateDoc,
     query,
@@ -26,17 +27,32 @@ export const VerificationService = {
             );
 
             const snapshot = await getDocs(q);
-            const requests: VerificationRequest[] = [];
 
-            snapshot.forEach((doc) => {
-                const data = doc.data();
-                requests.push({
-                    id: doc.id,
-                    ...data,
-                    createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
-                    resolvedAt: data.resolvedAt?.toDate ? data.resolvedAt.toDate() : undefined,
-                } as unknown as VerificationRequest);
-            });
+            const requests: VerificationRequest[] = await Promise.all(
+                snapshot.docs.map(async (d) => {
+                    const data = d.data();
+                    let userProfilePhoto = "";
+                    let userName = "Bilinmeyen Kullanıcı";
+                    try {
+                        const userDoc = await getDoc(doc(db, USERS_COLLECTION, data.userId));
+                        if (userDoc.exists()) {
+                            const userData = userDoc.data();
+                            userProfilePhoto = userData.photos?.[0] || userData.imageUrl || "";
+                            userName = userData.name || "Bilinmeyen Kullanıcı";
+                        }
+                    } catch (err) {
+                        console.error("Error fetching user profile for verification request:", err);
+                    }
+                    return {
+                        id: d.id,
+                        ...data,
+                        userProfilePhoto,
+                        userName,
+                        createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
+                        resolvedAt: data.resolvedAt?.toDate ? data.resolvedAt.toDate() : undefined,
+                    } as unknown as VerificationRequest;
+                })
+            );
 
             return requests.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()).slice(0, limitCount);
         } catch (error) {

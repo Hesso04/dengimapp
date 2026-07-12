@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useState } from 'react';
 import { Sidebar } from '@/components/layout/Sidebar';
@@ -74,28 +74,28 @@ export default function Dashboard() {
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                                 <StatCard
                                     title="Toplam Kullanıcı"
-                                    value={stats?.totalUsers.toString() || '0'}
+                                    value={stats?.totalUsers?.toString() || '0'}
                                     subValue={`${stats?.newUsersToday || 0} bugün`}
                                     icon={<span className="material-symbols-outlined text-2xl">group</span>}
                                     borderColor="border-l-primary"
                                 />
                                 <StatCard
                                     title="Bu Hafta Yeni"
-                                    value={stats?.newUsersThisWeek.toString() || '0'}
+                                    value={stats?.newUsersThisWeek?.toString() || '0'}
                                     subValue={`${stats?.newUsersThisMonth || 0} bu ay`}
                                     icon={<span className="material-symbols-outlined text-2xl">person_add</span>}
                                     borderColor="border-l-emerald-500"
                                 />
                                 <StatCard
                                     title="Premium Üyeler"
-                                    value={stats?.premiumUsers.toString() || '0'}
+                                    value={stats?.premiumUsers?.toString() || '0'}
                                     subValue={`${((stats?.premiumUsers || 0) / (stats?.totalUsers || 1) * 100).toFixed(1)}% dönüşüm`}
                                     icon={<span className="material-symbols-outlined text-2xl">diamond</span>}
                                     borderColor="border-l-amber-500"
                                 />
                                 <StatCard
                                     title="Eşleşmeler"
-                                    value={stats?.totalMatches.toString() || '0'}
+                                    value={stats?.totalMatches?.toString() || '0'}
                                     subValue="Tüm zamanlar"
                                     icon={<span className="material-symbols-outlined text-2xl">favorite</span>}
                                     borderColor="border-l-rose-500"

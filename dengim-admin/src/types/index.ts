@@ -42,6 +42,8 @@ export interface VerificationRequest {
     createdAt: Date;
     resolvedAt?: Date;
     rejectionReason?: string;
+    userProfilePhoto?: string;
+    userName?: string;
 }
 
 // Report Types

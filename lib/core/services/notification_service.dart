@@ -198,7 +198,7 @@ class NotificationService {
       }
 
       // 2. Next.js API'ye HTTP POST at
-      final url = Uri.parse('https://dengim-admin.vercel.app/api/send-push');
+      final url = Uri.parse('https://dengim.app/api/send-push');
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},

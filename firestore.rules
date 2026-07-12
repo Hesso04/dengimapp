@@ -11,6 +11,12 @@ service cloud.firestore {
       return request.auth.uid == userId;
     }
 
+    function isAdmin() {
+      return isAuthenticated() && 
+             (exists(/databases/$(database)/documents/admins/$(request.auth.token.email)) ||
+              request.auth.token.email == 'omerbedirhano@gmail.com');
+    }
+
     function isValidProfile() {
       let data = request.resource.data;
       return data.name is string && data.name.size() >= 2 &&
@@ -96,9 +102,9 @@ service cloud.firestore {
     }
 
     
-    // Global Deny
+    // Global Access for Admins & Fallback Deny
     match /{document=**} {
-      allow read, write: if false;
+      allow read, write: if isAdmin();
     }
 
     // Reports & Moderation

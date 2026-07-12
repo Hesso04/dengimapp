@@ -88,7 +88,7 @@ class AuthService {
       if (user != null) {
         // 1. Vercel uzerindeki API'ye silme istegi at
         try {
-          final url = Uri.parse('https://dengim-admin.vercel.app/api/delete-account');
+          final url = Uri.parse('https://dengim.app/api/delete-account');
           await http.post(
             url,
             headers: {'Content-Type': 'application/json'},
