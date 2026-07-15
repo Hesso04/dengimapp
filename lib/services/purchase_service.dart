@@ -81,8 +81,8 @@ class PurchaseService {
     await _iap.restorePurchases();
   }
 
-  void _listenToPurchaseUpdated(List<PurchaseDetails> purchaseDetailsList) {
-    purchaseDetailsList.forEach((PurchaseDetails purchaseDetails) async {
+  void _listenToPurchaseUpdated(List<PurchaseDetails> purchaseDetailsList) async {
+    for (var purchaseDetails in purchaseDetailsList) {
       if (purchaseDetails.status == PurchaseStatus.pending) {
         // Show loading in UI if needed
       } else {
@@ -102,7 +102,7 @@ class PurchaseService {
           await _iap.completePurchase(purchaseDetails);
         }
       }
-    });
+    }
   }
 
   Future<bool> _verifyPurchase(PurchaseDetails purchaseDetails) async {

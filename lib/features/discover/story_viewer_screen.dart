@@ -372,13 +372,14 @@ class _StoryViewerScreenState extends State<StoryViewerScreen> with TickerProvid
              final currentUser = context.read<UserProvider>().currentUser;
              if (currentUser != null) {
                 try {
+                  final messenger = ScaffoldMessenger.of(context);
                   final chatId = await _chatService.startChat(targetUserId);
                   await _chatService.sendMessage(
                     chatId, 
                     "❤️",
                     targetUserId
                   );
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  messenger.showSnackBar(
                     const SnackBar(content: Text('❤️ gönderildi')),
                   );
                 } catch (e) {
@@ -502,7 +503,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen> with TickerProvid
           .get();
       return snapshot.docs;
     } catch (e) {
-      print("Error fetching viewers: $e");
+      debugPrint("Error fetching viewers: $e");
       return [];
     }
   }

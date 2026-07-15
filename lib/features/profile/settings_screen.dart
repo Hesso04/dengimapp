@@ -9,6 +9,7 @@ import '../auth/login_screen.dart';
 import 'blocked_users_screen.dart';
 import 'package:provider/provider.dart';
 import '../../core/providers/user_provider.dart';
+import '../../core/providers/theme_provider.dart';
 import 'verification_screen.dart';
 import '../auth/services/profile_service.dart';
 import '../payment/premium_offer_screen.dart';
@@ -28,6 +29,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = context.watch<ThemeProvider>();
+    String themeLabel = 'Cihaz Teması';
+    if (themeProvider.themeMode == ThemeMode.light) themeLabel = 'Açık';
+    if (themeProvider.themeMode == ThemeMode.dark) themeLabel = 'Koyu';
     return Scaffold(
       backgroundColor: AppColors.scaffold,
       appBar: AppBar(
@@ -52,7 +57,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: Stack(
         children: [
           SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+            padding: EdgeInsets.only(
+              left: 24,
+              right: 24,
+              top: 24,
+              bottom: 24 + MediaQuery.of(context).padding.bottom,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -168,6 +178,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   },
                 ),
                 _buildSettingItem(context, "Dil Seçeneği", Icons.language, trailing: "Türkçe"),
+                _buildSettingItem(
+                  context,
+                  "Tema Görünümü",
+                  Icons.palette_outlined,
+                  trailing: themeLabel,
+                  onTap: () => _showThemeSelectionDialog(context, themeProvider),
+                ),
                 
                 const SizedBox(height: 32),
                 _buildSectionHeader("HUKUKİ"),
@@ -403,7 +420,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _showChangePasswordDialog() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(24),
@@ -417,7 +434,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         actions: [
           TextButton(
             child: Text("İPTAL", style: GoogleFonts.outfit(color: AppColors.textSecondary, fontWeight: FontWeight.w900)),
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -431,17 +448,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
               elevation: 0,
             ),
             onPressed: () async {
-              Navigator.pop(context);
+              final messenger = ScaffoldMessenger.of(context);
+              Navigator.pop(dialogContext);
               try {
                 await AuthService().resetPassword(_userEmail);
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      backgroundColor: Colors.black,
-                      content: Text('ŞİFRE SIFIRLAMA E-POSTASI GÖNDERİLDİ!', style: GoogleFonts.outfit(fontWeight: FontWeight.w900)),
-                    ),
-                  );
-                }
+                messenger.showSnackBar(
+                  SnackBar(
+                    backgroundColor: Colors.black,
+                    content: Text('ŞİFRE SIFIRLAMA E-POSTASI GÖNDERİLDİ!', style: GoogleFonts.outfit(fontWeight: FontWeight.w900)),
+                  ),
+                );
               } catch (e) {
                 if (mounted) {
                   ErrorHandler.showError(context, "Hata: $e");
@@ -651,6 +667,102 @@ class _SettingsScreenState extends State<SettingsScreen> {
             )
           );
         },
+      ),
+    );
+  }
+
+  void _showThemeSelectionDialog(BuildContext context, ThemeProvider themeProvider) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+          side: const BorderSide(color: Color(0xFFEEEEEE), width: 1.0),
+        ),
+        title: Text(
+          "TEMA SEÇİNİZ",
+          style: GoogleFonts.outfit(color: Theme.of(context).textTheme.bodyLarge?.color, fontWeight: FontWeight.w900),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildThemeOptionTile(
+              context,
+              title: "AÇIK TEMA",
+              icon: Icons.light_mode_outlined,
+              isSelected: themeProvider.themeMode == ThemeMode.light,
+              onTap: () {
+                themeProvider.setThemeMode(ThemeMode.light);
+                Navigator.pop(context);
+              },
+            ),
+            const SizedBox(height: 12),
+            _buildThemeOptionTile(
+              context,
+              title: "KOYU TEMA",
+              icon: Icons.dark_mode_outlined,
+              isSelected: themeProvider.themeMode == ThemeMode.dark,
+              onTap: () {
+                themeProvider.setThemeMode(ThemeMode.dark);
+                Navigator.pop(context);
+              },
+            ),
+            const SizedBox(height: 12),
+            _buildThemeOptionTile(
+              context,
+              title: "CİHAZ TEMASI",
+              icon: Icons.brightness_auto_outlined,
+              isSelected: themeProvider.themeMode == ThemeMode.system,
+              onTap: () {
+                themeProvider.setThemeMode(ThemeMode.system);
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildThemeOptionTile(
+    BuildContext context, {
+    required String title,
+    required IconData icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary : (isDark ? const Color(0xFF1B1B1D) : Colors.white),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFEEEEEE), width: 1.0),
+          boxShadow: isSelected ? null : [AppColors.neoShadowSmall],
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: isSelected ? Colors.white : (isDark ? Colors.white : Colors.black), size: 24),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                title,
+                style: GoogleFonts.outfit(
+                  color: isSelected ? Colors.white : (isDark ? Colors.white : Colors.black),
+                  fontWeight: FontWeight.w900,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+            if (isSelected)
+              const Icon(Icons.check_circle, color: Colors.white, size: 20),
+          ],
+        ),
       ),
     );
   }

@@ -7,6 +7,7 @@ import '../auth/services/profile_service.dart';
 import '../../core/providers/user_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:geolocator/geolocator.dart';
 
 class CreateProfileScreen extends StatefulWidget {
   const CreateProfileScreen({super.key});
@@ -16,12 +17,36 @@ class CreateProfileScreen extends StatefulWidget {
 }
 
 class _CreateProfileScreenState extends State<CreateProfileScreen> {
-  final _formKey = GlobalKey<FormState>();
   final ImagePicker _picker = ImagePicker();
   final ProfileService _profileService = ProfileService();
   final PageController _pageController = PageController();
   int _currentPage = 0;
   final int _totalPages = 5;
+
+  Future<void> _fetchAndSaveLocation() async {
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) return;
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) return;
+      }
+
+      if (permission == LocationPermission.deniedForever) return;
+
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.low,
+          timeLimit: Duration(seconds: 5),
+        ),
+      );
+      await _profileService.updateLocation(position.latitude, position.longitude);
+    } catch (e) {
+      debugPrint("Failed to fetch location during registration: $e");
+    }
+  }
   
   // Controllers
   final TextEditingController _nameController = TextEditingController();
@@ -77,14 +102,6 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
     try { return DateTime(year, month, day); } catch (e) { return null; }
   }
 
-  int? _calculateAge() {
-    final birthDate = _getBirthDateFromFields();
-    if (birthDate == null) return null;
-    final now = DateTime.now();
-    int age = now.year - birthDate.year;
-    if (now.month < birthDate.month || (now.month == birthDate.month && now.day < birthDate.day)) age--;
-    return age;
-  }
 
   String? _selectedGender;
   String? _selectedRelationshipGoal;
@@ -162,11 +179,22 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
       
       for (int i = 0; i < _profilePhotos.length; i++) {
         if (_photoBytes.containsKey(i)) {
-          uploadFutures.add(_profileService.uploadProfilePhotoBytes(_photoBytes[i]!, uid));
+          // Set a 8-second timeout for each individual image upload to prevent a single hanging request
+          // from blocking the entire profile creation flow.
+          uploadFutures.add(
+            _profileService.uploadProfilePhotoBytes(_photoBytes[i]!, uid)
+              .timeout(
+                const Duration(seconds: 8),
+                onTimeout: () {
+                  debugPrint("Photo upload timed out at index $i, using placeholder");
+                  return 'https://ui-avatars.com/api/?name=${_nameController.text.isNotEmpty ? _nameController.text[0] : "D"}&background=random&color=fff&size=128&font-size=0.4';
+                },
+              ),
+          );
         }
       }
       if (uploadFutures.isNotEmpty) {
-        photoUrls = await Future.wait(uploadFutures).timeout(const Duration(seconds: 30));
+        photoUrls = await Future.wait(uploadFutures);
       }
 
       await _profileService.createProfile(
@@ -182,6 +210,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
         education: _educationController.text.trim(),
       );
 
+      await _fetchAndSaveLocation();
       await userProvider.loadCurrentUser();
       if (mounted) {
         Navigator.of(context).pushAndRemoveUntil(
@@ -213,6 +242,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
         job: _jobController.text.trim(),
         education: '',
       );
+      await _fetchAndSaveLocation();
       await userProvider.loadCurrentUser();
       if (mounted) {
         Navigator.of(context).pushAndRemoveUntil(
@@ -227,22 +257,39 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
     }
   }
 
+  bool _isTransitioning = false;
+
   void _nextPage() {
+    if (_isTransitioning || _isLoading) return;
     if (_currentPage < _totalPages - 1) {
-      _pageController.nextPage(duration: const Duration(milliseconds: 400), curve: Curves.easeInOut);
+      setState(() => _isTransitioning = true);
+      _pageController.nextPage(duration: const Duration(milliseconds: 400), curve: Curves.easeInOut)
+          .then((_) {
+            if (mounted) setState(() => _isTransitioning = false);
+          });
     } else {
       _submitProfile();
     }
   }
 
   void _prevPage() {
+    if (_isTransitioning || _isLoading) return;
     if (_currentPage > 0) {
-      _pageController.previousPage(duration: const Duration(milliseconds: 400), curve: Curves.easeInOut);
+      setState(() => _isTransitioning = true);
+      _pageController.previousPage(duration: const Duration(milliseconds: 400), curve: Curves.easeInOut)
+          .then((_) {
+            if (mounted) setState(() => _isTransitioning = false);
+          });
     }
   }
 
   void _showPage(int index) {
-    _pageController.animateToPage(index, duration: const Duration(milliseconds: 400), curve: Curves.easeInOut);
+    if (_isLoading) return;
+    setState(() => _isTransitioning = true);
+    _pageController.animateToPage(index, duration: const Duration(milliseconds: 400), curve: Curves.easeInOut)
+        .then((_) {
+          if (mounted) setState(() => _isTransitioning = false);
+        });
   }
 
   @override

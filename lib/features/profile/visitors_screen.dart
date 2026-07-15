@@ -163,6 +163,7 @@ class _VisitorCard extends StatelessWidget {
               CachedNetworkImage(
                 imageUrl: user.imageUrl,
                 fit: BoxFit.cover,
+                memCacheWidth: 250,
                 placeholder: (context, url) => Container(color: Colors.black12),
               ),
               if (!isPremium)
@@ -210,7 +211,7 @@ class _VisitorCard extends StatelessWidget {
                       ),
                       if (isPremium)
                         Text(
-                          "${user.age} • ${user.location ?? user.country}",
+                          "${user.age} • ${user.location}",
                           style: GoogleFonts.outfit(
                             color: Colors.white.withValues(alpha: 0.8),
                             fontSize: 12,

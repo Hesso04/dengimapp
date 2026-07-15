@@ -10,7 +10,6 @@ import '../../main.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -98,21 +97,20 @@ class NotificationService {
         .collection('users')
         .doc(user.uid)
         .collection('notifications')
-        .where('isRead', isEqualTo: false)
         .orderBy('createdAt', descending: true)
         .snapshots()
         .listen((snapshot) {
       for (var change in snapshot.docChanges) {
         if (change.type == DocumentChangeType.added) {
           final data = change.doc.data();
-          if (data != null) {
+          if (data != null && data['isRead'] == false && data['isNotified'] != true) {
             _showLocalNotification(
               id: change.doc.id.hashCode,
               title: data['title'] ?? 'Yeni Bildirim',
               body: data['body'] ?? '',
             );
-            // Mark as read after showing
-            change.doc.reference.update({'isRead': true});
+            // Mark as notified (NOT as read) to avoid duplicate popups
+            change.doc.reference.update({'isNotified': true});
           }
         }
       }
@@ -186,38 +184,11 @@ class NotificationService {
     required String body,
     Map<String, dynamic>? data,
   }) async {
-    try {
-      // 1. Karşı tarafın FCM Token'ını veritabanından al
-      final doc = await _firestore.collection('users').doc(targetUid).get();
-      if (!doc.exists) return;
-      
-      final String? fcmToken = doc.data()?['fcmToken'];
-      if (fcmToken == null || fcmToken.isEmpty) {
-        LogService.w("Target user has no FCM token");
-        return;
-      }
-
-      // 2. Next.js API'ye HTTP POST at
-      final url = Uri.parse('https://dengim.app/api/send-push');
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'token': fcmToken,
-          'title': title,
-          'body': body,
-          'data': data ?? {},
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        LogService.i("Push notification successfully sent via Next.js API.");
-      } else {
-        LogService.e("Failed to send push notification: ${response.statusCode} - ${response.body}");
-      }
-    } catch (e) {
-      LogService.e("Error triggering Push API", e);
-    }
+    // Not: Push bildirimleri artık Firebase Cloud Functions Firestore Trigger tetikleyicisi
+    // (onNotificationCreated) tarafından otomatik olarak gönderilmektedir. 
+    // Veritabanına bildirim belgesi eklendiği anda tetiklenir, bu yüzden artık 
+    // istemci tarafında statik /api/send-push endpoint'ine HTTP isteği atmaya gerek yoktur.
+    LogService.d("Push notification handled via Firebase Cloud Functions Firestore trigger.");
   }
 
   void dispose() {

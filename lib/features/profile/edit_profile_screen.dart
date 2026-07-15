@@ -244,6 +244,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     setState(() => _isSaving = true);
 
     try {
+      final userProvider = context.read<UserProvider>();
       await ProfileService().updateProfile(
         name: _nameController.text.trim(),
         bio: _bioController.text.trim().isNotEmpty ? _bioController.text.trim() : null,
@@ -259,7 +260,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       );
 
       // Refresh provider
-      await context.read<UserProvider>().loadCurrentUser();
+      await userProvider.loadCurrentUser();
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -338,8 +339,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       body: GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-        child: Column(
+          padding: EdgeInsets.only(
+            left: 24,
+            right: 24,
+            top: 24,
+            bottom: 24 + MediaQuery.of(context).padding.bottom,
+          ),
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Photos Section

@@ -40,7 +40,6 @@ class ChatDetailScreen extends StatefulWidget {
 class _ChatDetailScreenState extends State<ChatDetailScreen> {
   final ChatService _chatService = ChatService();
   final ScrollController _scrollController = ScrollController();
-  final TypingIndicatorService _typingService = TypingIndicatorService();
   
   ChatMessage? _replyingTo;
   
@@ -83,39 +82,6 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     super.dispose();
   }
 
-  void _showMessageOptions(ChatMessage message) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.delete_outline, color: Colors.red),
-              title: Text(
-                'Mesajı Sil',
-                style: GoogleFonts.outfit(color: Colors.red, fontWeight: FontWeight.w800),
-              ),
-              onTap: () async {
-                Navigator.pop(context);
-                await _chatService.deleteMessage(widget.chatId, message.id);
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Mesaj silindi')),
-                  );
-                }
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   void _showChatOptions() {
     showModalBottomSheet(
       context: context,
@@ -145,7 +111,9 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                 style: GoogleFonts.outfit(color: Colors.orange, fontWeight: FontWeight.w800),
               ),
               onTap: () async {
-                Navigator.pop(context);
+                final navigator = Navigator.of(context);
+                final messenger = ScaffoldMessenger.of(context);
+                navigator.pop();
                 final confirm = await showDialog<bool>(
                   context: context,
                   builder: (context) => AlertDialog(
@@ -175,12 +143,10 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                 
                 if (confirm == true) {
                   await _chatService.blockUser(widget.otherUserId);
-                  if (mounted) {
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('${widget.otherUserName} engellendi')),
-                    );
-                  }
+                  navigator.pop();
+                  messenger.showSnackBar(
+                    SnackBar(content: Text('${widget.otherUserName} engellendi')),
+                  );
                 }
               },
             ),
@@ -191,7 +157,8 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                 style: GoogleFonts.outfit(color: Colors.red, fontWeight: FontWeight.w800),
               ),
               onTap: () async {
-                Navigator.pop(context);
+                final navigator = Navigator.of(context);
+                navigator.pop();
                 final confirm = await showDialog<bool>(
                   context: context,
                   builder: (context) => AlertDialog(
@@ -221,9 +188,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                 
                 if (confirm == true) {
                   await _chatService.deleteConversation(widget.chatId);
-                  if (mounted) {
-                    Navigator.pop(context);
-                  }
+                  navigator.pop();
                 }
               },
             ),

@@ -6,6 +6,7 @@ import '../auth/login_screen.dart';
 import 'settings_screen.dart';
 import 'edit_profile_screen.dart';
 import 'visitors_screen.dart';
+import 'follows_list_screen.dart';
 
 import 'package:provider/provider.dart';
 import '../../core/providers/user_provider.dart';
@@ -69,6 +70,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
         if (relGoalId == 'casual') relGoal = 'Eğlence 🥂';
         if (relGoalId == 'chat') relGoal = 'Sohbet ☕';
         if (relGoalId == 'unsure') relGoal = 'Belirsiz 🤷‍♂️';
+
+        // Format joined date
+        String joinedDate = 'Belirtilmedi';
+        if (profile?.createdAt != null) {
+          final months = [
+            'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 
+            'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'
+          ];
+          joinedDate = "${months[profile!.createdAt.month - 1]} ${profile.createdAt.year}";
+        }
 
 
         return Scaffold(
@@ -176,6 +187,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ],
                       ),
 
+                      const SizedBox(height: 16),
+                      _buildFollowStatsRow(context, profile),
+
                       const SizedBox(height: 32),
                       _buildProfileCompletionCard(profile),
                       
@@ -185,7 +199,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                       const SizedBox(height: 40),
                       _buildSectionHeader('DETAYLAR'),
-                      _buildDetailsCard(job, education, interests, zodiac, relGoal),
+                      _buildDetailsCard(job, education, interests, zodiac, relGoal, joinedDate),
 
                       if (profile?.profileVoiceUrl != null) ...[
                         const SizedBox(height: 40),
@@ -316,13 +330,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildDetailsCard(String job, String education, String interests, String zodiac, String relGoal) {
+  Widget _buildDetailsCard(String job, String education, String interests, String zodiac, String relGoal, String joinedDate) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(AppColors.neoRadius),
-        border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
+        border: Border.all(color: const Color(0xFFEEEEEE), width: 1.0),
         boxShadow: [AppColors.neoShadowSmall],
       ),
       child: Column(
@@ -331,7 +345,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _buildDetailRow('EĞİTİM', education),
           if (zodiac.isNotEmpty) _buildDetailRow('BURÇ', zodiac),
           if (relGoal != 'Belirtilmedi') _buildDetailRow('İLİŞKİ HEDEFİ', relGoal),
-          _buildDetailRow('İLGİ ALANLARI', interests, isLast: true),
+          _buildDetailRow('İLGİ ALANLARI', interests),
+          _buildDetailRow('ÜYELİK TARİHİ', joinedDate, isLast: true),
         ],
       ),
     );
@@ -817,6 +832,106 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 fontSize: 11,
                 fontWeight: FontWeight.w900,
                 color: textColor,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFollowStatsRow(BuildContext context, dynamic profile) {
+    if (profile == null) return const SizedBox.shrink();
+
+    final followersCount = (profile.followers as List?)?.length ?? 0;
+    final followingCount = (profile.following as List?)?.length ?? 0;
+
+    return Row(
+      children: [
+        Expanded(
+          child: _buildStatCard(
+            label: 'TAKİPÇİ',
+            value: followersCount.toString(),
+            onTap: () {
+              final userProvider = context.read<UserProvider>();
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => FollowsListScreen(
+                    userId: profile.uid,
+                    type: 'followers',
+                    userName: profile.name,
+                  ),
+                ),
+              ).then((_) {
+                if (mounted) {
+                  userProvider.loadCurrentUser();
+                }
+              });
+            },
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildStatCard(
+            label: 'TAKİP EDİLEN',
+            value: followingCount.toString(),
+            onTap: () {
+              final userProvider = context.read<UserProvider>();
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => FollowsListScreen(
+                    userId: profile.uid,
+                    type: 'following',
+                    userName: profile.name,
+                  ),
+                ),
+              ).then((_) {
+                if (mounted) {
+                  userProvider.loadCurrentUser();
+                }
+              });
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatCard({
+    required String label,
+    required String value,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(AppColors.neoRadiusSmall),
+          border: Border.all(color: const Color(0xFFEEEEEE), width: 1.0),
+          boxShadow: [AppColors.neoShadowSmall],
+        ),
+        child: Column(
+          children: [
+            Text(
+              value,
+              style: GoogleFonts.outfit(
+                fontSize: 22,
+                fontWeight: FontWeight.w900,
+                color: Colors.black,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: GoogleFonts.outfit(
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textSecondary,
+                letterSpacing: 0.5,
               ),
             ),
           ],

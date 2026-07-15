@@ -8,6 +8,13 @@ import '../../features/ads/services/ad_service.dart';
 import '../../core/services/feature_flag_service.dart';
 
 
+class SwipeResult {
+  final bool success;
+  final bool isMatch;
+
+  const SwipeResult({required this.success, required this.isMatch});
+}
+
 class DiscoveryProvider extends ChangeNotifier {
   List<UserProfile> _users = [];
   List<UserProfile> _activeUsers = [];
@@ -36,15 +43,13 @@ class DiscoveryProvider extends ChangeNotifier {
     String? relationshipGoal,
     bool forceRefresh = false,
   }) async {
-    // forceRefresh değilse ve zaten yükleniyorsa çık
     if (_isLoading && !forceRefresh) return;
     
     _isLoading = true;
     notifyListeners();
 
     try {
-      // 1. Firebase'den gerçek kullanıcıları çek
-      List<UserProfile> realUsers = await _discoveryService.getUsersToMatch(
+      final loadedUsers = await _discoveryService.getUsersToMatch(
         gender: gender,
         minAge: minAge,
         maxAge: maxAge,
@@ -55,18 +60,11 @@ class DiscoveryProvider extends ChangeNotifier {
         onlineOnly: onlineOnly,
         relationshipGoal: relationshipGoal,
       );
-
-      _users = realUsers;
       
-      // 3. Aktif kullanıcılar için
-      List<UserProfile> realActiveUsers = await _discoveryService.getActiveUsers();
-      _activeUsers = realActiveUsers;
-      
-      LogService.i("Discovery loaded: ${_users.length} users, ${_activeUsers.length} active");
+      _users = loadedUsers;
+      _activeUsers = loadedUsers.where((u) => u.isOnline).toList();
     } catch (e) {
       LogService.e("Error loading discovery users", e);
-      
-
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -81,7 +79,7 @@ class DiscoveryProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> swipeUser(String targetUserId, String swipeType, {required String userTier}) async {    
+  Future<SwipeResult> swipeUser(String targetUserId, String swipeType, {required String userTier}) async {    
     try {
       // 1. Check Daily Limit
       if (userTier != 'platinum') {
@@ -90,7 +88,7 @@ class DiscoveryProvider extends ChangeNotifier {
           final superLimit = FeatureFlagService().getSuperLikesLimit(userTier);
           if (currentSuperCount >= superLimit) {
             LogService.w("Daily super like limit reached for tier: $userTier");
-            return false;
+            return const SwipeResult(success: false, isMatch: false);
           }
         } else {
           final currentCount = await _discoveryService.getDailySwipeCount();
@@ -98,21 +96,20 @@ class DiscoveryProvider extends ChangeNotifier {
           
           if (currentCount >= limit) {
             LogService.w("Daily swipe limit reached for tier: $userTier");
-            return false; 
+            return const SwipeResult(success: false, isMatch: false); 
           }
         }
       }
 
-      final success = await _discoveryService.swipeUser(targetUserId, swipeType: swipeType);
-      if (success) {
-        AnalyticsService().logSwipe(swipeType, targetUserId);
-        
-        // Increment counts
-        if (swipeType == 'super_like') {
-          await _discoveryService.incrementSuperLikeCount();
-        } else {
-          await _discoveryService.incrementSwipeCount();
-        }
+      final isMatch = await _discoveryService.swipeUser(targetUserId, swipeType: swipeType);
+      
+      AnalyticsService().logSwipe(swipeType, targetUserId);
+      
+      // Increment counts (the swipe succeeded)
+      if (swipeType == 'super_like') {
+        await _discoveryService.incrementSuperLikeCount();
+      } else {
+        await _discoveryService.incrementSwipeCount();
       }
 
       // --- AD LOGIC ---
@@ -125,10 +122,10 @@ class DiscoveryProvider extends ChangeNotifier {
         }
       }
 
-      return success;
+      return SwipeResult(success: true, isMatch: isMatch);
     } catch (e) {
       LogService.e("Error swiping user", e);
-      return false;
+      return const SwipeResult(success: false, isMatch: false);
     }
   }
 

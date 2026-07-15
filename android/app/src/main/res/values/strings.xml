@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Dengim</string>
+    <string name="facebook_app_id">1072712061919952</string>
+    <string name="fb_login_protocol_scheme">fb1072712061919952</string>
+    <string name="facebook_client_token">fc3349e52289f7dd0b4dc419f35a15d</string>
+</resources>

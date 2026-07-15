@@ -80,98 +80,102 @@ class _PremiumOfferScreenState extends State<PremiumOfferScreen> {
                   return const Center(child: CircularProgressIndicator(color: AppColors.primary));
                 }
 
-                return Column(
-                  children: [
-                    // Top Bar
-                    _buildHeader(context, provider),
+                return SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  child: Column(
+                    children: [
+                      // Top Bar
+                      _buildHeader(context, provider),
 
-                    // Promo Banner
-                    _buildPromoBanner(),
+                      // Promo Banner
+                      _buildPromoBanner(),
 
-                    Expanded(
-                      child: PageView(
-                        controller: _pageController,
-                        onPageChanged: (index) => setState(() => _currentPage = index),
-                        children: [
-                          _buildPlanCard(
-                            title: 'GOLD',
-                            color: AppColors.primary,
-                            icon: Icons.star_rounded,
-                            features: TierLimits.getFeaturesFor('gold'),
-                            products: provider.products.where((p) => p.id.contains('gold')).toList(),
-                            provider: provider,
-                          ),
-                          _buildPlanCard(
-                            title: 'PLATINUM',
-                            color: const Color(0xFFC0C0C0), // Silver-ish
-                            icon: Icons.workspace_premium_rounded,
-                            features: TierLimits.getFeaturesFor('platinum'),
-                            products: provider.products.where((p) => p.id.contains('platinum')).toList(),
-                            provider: provider,
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    // Page Indicator
-                    _buildIndicator(),
-
-                    // İzle & Kazan butonu (Freemium için)
-                    Consumer<SubscriptionProvider>(
-                      builder: (context, sub, _) {
-                        if (sub.currentTier != 'free') return const SizedBox.shrink();
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 40),
-                          child: GestureDetector(
-                            onTap: () => Navigator.push(
-                              context, 
-                              MaterialPageRoute(builder: (_) => const WatchAndEarnScreen()),
+                      SizedBox(
+                        height: 480,
+                        child: PageView(
+                          controller: _pageController,
+                          onPageChanged: (index) => setState(() => _currentPage = index),
+                          children: [
+                            _buildPlanCard(
+                              title: 'GOLD',
+                              color: AppColors.primary,
+                              icon: Icons.star_rounded,
+                              features: TierLimits.getFeaturesFor('gold'),
+                              products: provider.products.where((p) => p.id.contains('gold')).toList(),
+                              provider: provider,
                             ),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              width: double.infinity,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: const Color(0xFFEEEEEE), width: 1.0),
-                                boxShadow: [AppColors.neoShadowSmall],
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Icon(Icons.play_circle_filled_rounded, color: Colors.black, size: 20),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    'REKLAM İZLE & KREDİ KAZAN',
-                                    style: GoogleFonts.outfit(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w900,
-                                      color: Colors.black,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                            _buildPlanCard(
+                              title: 'PLATINUM',
+                              color: const Color(0xFFC0C0C0), // Silver-ish
+                              icon: Icons.workspace_premium_rounded,
+                              features: TierLimits.getFeaturesFor('platinum'),
+                              products: provider.products.where((p) => p.id.contains('platinum')).toList(),
+                              provider: provider,
                             ),
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Restore Button
-                    TextButton(
-                      onPressed: () => provider.restorePurchases(),
-                      child: Text(
-                        'SATIN ALIMLARI GERİ YÜKLE',
-                        style: GoogleFonts.outfit(
-                          fontSize: 12,
-                          color: Colors.black.withValues(alpha: 0.4),
-                          fontWeight: FontWeight.w900,
+                          ],
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                  ],
+
+                      // Page Indicator
+                      _buildIndicator(),
+
+                      // İzle & Kazan butonu (Freemium için)
+                      Consumer<SubscriptionProvider>(
+                        builder: (context, sub, _) {
+                          if (sub.currentTier != 'free') return const SizedBox.shrink();
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 40),
+                            child: GestureDetector(
+                              onTap: () => Navigator.push(
+                                context, 
+                                MaterialPageRoute(builder: (_) => const WatchAndEarnScreen()),
+                              ),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                width: double.infinity,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: const Color(0xFFEEEEEE), width: 1.0),
+                                  boxShadow: [AppColors.neoShadowSmall],
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(Icons.play_circle_filled_rounded, color: Colors.black, size: 20),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'REKLAM İZLE & KREDİ KAZAN',
+                                      style: GoogleFonts.outfit(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w900,
+                                        color: Colors.black,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Restore Button
+                      TextButton(
+                        onPressed: () => provider.restorePurchases(),
+                        child: Text(
+                          'SATIN ALIMLARI GERİ YÜKLE',
+                          style: GoogleFonts.outfit(
+                            fontSize: 12,
+                            color: Colors.black.withValues(alpha: 0.4),
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+                  ),
                 );
               },
             ),
@@ -311,68 +315,74 @@ class _PremiumOfferScreenState extends State<PremiumOfferScreen> {
         border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
         boxShadow: [AppColors.neoShadowSmall],
       ),
-      child: Column(
-        children: [
-          const SizedBox(height: 32),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-               color: color,
-               shape: BoxShape.circle,
-               border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-            ),
-            child: Icon(icon, color: color == AppColors.primary ? Colors.white : Colors.black, size: 40),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            title,
-            style: GoogleFonts.outfit(
-              fontSize: 28,
-              fontWeight: FontWeight.w900,
-              color: Colors.black,
-              letterSpacing: -1,
-            ),
-          ),
-          const SizedBox(height: 24),
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              itemCount: features.length,
-              itemBuilder: (context, index) {
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.check_circle_outline_rounded, color: Colors.black, size: 20),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          features[index].toUpperCase(),
-                          style: GoogleFonts.outfit(
-                            color: Colors.black,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w800,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: Column(
+            children: [
+              const SizedBox(height: 32),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                   color: color,
+                   shape: BoxShape.circle,
+                   border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
+                ),
+                child: Icon(icon, color: color == AppColors.primary ? Colors.white : Colors.black, size: 40),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                title,
+                style: GoogleFonts.outfit(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.black,
+                  letterSpacing: -1,
+                ),
+              ),
+              const SizedBox(height: 24),
+              // Features Column
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Column(
+                  children: List.generate(features.length, (index) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.check_circle_outline_rounded, color: Colors.black, size: 20),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              features[index].toUpperCase(),
+                              style: GoogleFonts.outfit(
+                                color: Colors.black,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
                           ),
-                        ),
+                        ],
                       ),
-                    ],
-                  ),
-                );
-              },
-            ),
+                    );
+                  }),
+                ),
+              ),
+              
+              // Demo Pricing Options
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  children: [
+                    _buildDemoPriceButton('1 AY (DEMO)', '₺0.00', color, provider, title.toLowerCase()),
+                    _buildDemoPriceButton('6 AY (DEMO)', '₺0.00', color, provider, title.toLowerCase()),
+                  ],
+                ),
+              ),
+            ],
           ),
-          
-          // Demo Pricing Options
-          Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              children: [
-                _buildDemoPriceButton('1 AY (DEMO)', '₺0.00', color, provider, title.toLowerCase()),
-                _buildDemoPriceButton('6 AY (DEMO)', '₺0.00', color, provider, title.toLowerCase()),
-              ],
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -415,47 +425,8 @@ class _PremiumOfferScreenState extends State<PremiumOfferScreen> {
     );
   }
 
-  Widget _buildPriceButton(ProductDetails product, Color color, SubscriptionProvider provider) {
-    String period = 'AY';
-    if (product.id.contains('3')) period = '3 AY';
-    if (product.id.contains('6')) period = '6 AY';
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: InkWell(
-        onTap: () => provider.buyProduct(product),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-            boxShadow: [AppColors.neoShadowSmall],
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                period,
-                style: GoogleFonts.outfit(
-                  color: color == AppColors.primary ? Colors.white : Colors.black,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              Text(
-                product.price,
-                style: GoogleFonts.outfit(
-                  color: color == AppColors.primary ? Colors.white : Colors.black,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 16,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+
 
   Widget _buildIndicator() {
     return Padding(

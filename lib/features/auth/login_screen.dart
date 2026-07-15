@@ -12,6 +12,8 @@ import '../../core/utils/log_service.dart';
 import '../../core/utils/firebase_error_localizer.dart';
 import 'package:flutter/gestures.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -22,24 +24,83 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final AuthService _authService = AuthService();
-  bool _isLoading = false;
 
   void _signInWithGoogle() async {
-    setState(() => _isLoading = true);
     try {
       final userCredential = await _authService.signInWithGoogle();
       if (userCredential != null) {
         if (!mounted) return;
         await _checkProfileAndNavigate();
-      } else {
-        setState(() => _isLoading = false);
       }
     } catch (e) {
       if (!mounted) return;
-      setState(() => _isLoading = false);
       LogService.e("Google Sign In Error", e);
       _showError(FirebaseErrorLocalizer.localize(e));
     }
+  }
+
+  void _signInWithFacebook() async {
+    try {
+      final userCredential = await _authService.signInWithFacebook();
+      if (userCredential != null) {
+        if (!mounted) return;
+        await _checkProfileAndNavigate();
+      }
+    } catch (e) {
+      if (!mounted) return;
+      LogService.e("Facebook Sign In Error", e);
+      _showError(FirebaseErrorLocalizer.localize(e));
+    }
+  }
+
+  void _showPhoneLoginForm() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+          left: 24,
+          right: 24,
+          top: 32,
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.scaffold,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+          border: const Border(top: BorderSide(color: Color(0xFFEEEEEE), width: 1.0)),
+        ),
+        child: _PhoneLoginForm(
+          authService: _authService,
+          onSuccess: _checkProfileAndNavigate,
+        ),
+      ),
+    );
+  }
+
+  void _showEmailLinkLoginForm() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+          left: 24,
+          right: 24,
+          top: 32,
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.scaffold,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+          border: const Border(top: BorderSide(color: Color(0xFFEEEEEE), width: 1.0)),
+        ),
+        child: _EmailLinkLoginForm(
+          authService: _authService,
+          onSuccess: _checkProfileAndNavigate,
+        ),
+      ),
+    );
   }
 
   Future<void> _checkProfileAndNavigate() async {
@@ -223,6 +284,30 @@ class _LoginScreenState extends State<LoginScreen> {
                             color: Colors.black,
                             textColor: Colors.white,
                             onTap: _showEmailLoginForm,
+                          ),
+                          const SizedBox(height: 16),
+                          _LoginButton(
+                            icon: Icons.phone_iphone_rounded,
+                            text: 'Telefon Numarası ile Giriş',
+                            color: Colors.white,
+                            textColor: Colors.black,
+                            onTap: _showPhoneLoginForm,
+                          ),
+                          const SizedBox(height: 16),
+                          _LoginButton(
+                            icon: Icons.link_rounded,
+                            text: 'E-Posta Linki (Şifresiz) Giriş',
+                            color: Colors.white,
+                            textColor: Colors.black,
+                            onTap: _showEmailLinkLoginForm,
+                          ),
+                          const SizedBox(height: 16),
+                          _LoginButton(
+                            icon: Icons.facebook_outlined,
+                            text: 'Facebook ile Giriş Yap',
+                            color: const Color(0xFF1877F2),
+                            textColor: Colors.white,
+                            onTap: _signInWithFacebook,
                           ),
                           const SizedBox(height: 24),
                           GestureDetector(
@@ -477,4 +562,447 @@ class DottedPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(CustomPainter oldDelegate) => false;
+}
+
+// Bottom Sheet Form for Phone / OTP Login
+class _PhoneLoginForm extends StatefulWidget {
+  final AuthService authService;
+  final VoidCallback onSuccess;
+
+  const _PhoneLoginForm({required this.authService, required this.onSuccess});
+
+  @override
+  State<_PhoneLoginForm> createState() => _PhoneLoginFormState();
+}
+
+class _PhoneLoginFormState extends State<_PhoneLoginForm> {
+  final _phoneController = TextEditingController();
+  final _codeController = TextEditingController();
+  bool _isLoading = false;
+  String? _error;
+  String? _verificationId;
+
+  @override
+  void dispose() {
+    _phoneController.dispose();
+    _codeController.dispose();
+    super.dispose();
+  }
+
+  void _sendCode() async {
+    final phone = _phoneController.text.trim();
+    if (phone.isEmpty) {
+      setState(() => _error = "Lütfen telefon numaranızı girin.");
+      return;
+    }
+
+    // Format phone if it doesn't start with +
+    final formattedPhone = phone.startsWith('+') ? phone : '+$phone';
+
+    setState(() { _isLoading = true; _error = null; });
+    try {
+      await widget.authService.verifyPhoneNumber(
+        phoneNumber: formattedPhone,
+        onCodeSent: (verId) {
+          if (mounted) {
+            setState(() {
+              _verificationId = verId;
+              _isLoading = false;
+              _error = null;
+            });
+          }
+        },
+        onVerificationFailed: (e) {
+          if (mounted) {
+            setState(() {
+              _isLoading = false;
+              _error = FirebaseErrorLocalizer.localize(e);
+            });
+          }
+        },
+        onVerificationCompleted: (credential) async {
+          // Auto login on native devices if detected
+          try {
+            await FirebaseAuth.instance.signInWithCredential(credential);
+            if (mounted) {
+              Navigator.pop(context);
+              widget.onSuccess();
+            }
+          } catch (e) {
+            if (mounted) {
+              setState(() {
+                _isLoading = false;
+                _error = FirebaseErrorLocalizer.localize(e);
+              });
+            }
+          }
+        },
+      );
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _error = FirebaseErrorLocalizer.localize(e);
+        });
+      }
+    }
+  }
+
+  void _verifyCode() async {
+    final code = _codeController.text.trim();
+    if (code.isEmpty || _verificationId == null) {
+      setState(() => _error = "Lütfen doğrulama kodunu girin.");
+      return;
+    }
+
+    setState(() { _isLoading = true; _error = null; });
+    try {
+      await widget.authService.signInWithPhoneCode(
+        verificationId: _verificationId!,
+        smsCode: code,
+      );
+      if (mounted) {
+        Navigator.pop(context);
+        widget.onSuccess();
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _error = FirebaseErrorLocalizer.localize(e);
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final showOtpField = _verificationId != null;
+
+    return SingleChildScrollView(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            showOtpField ? 'SMS KODUNU GİRİN' : 'TELEFON İLE GİRİŞ',
+            style: GoogleFonts.outfit(
+              fontSize: 28,
+              fontWeight: FontWeight.w900,
+              color: Colors.black,
+              letterSpacing: -1,
+            ),
+          ),
+          const SizedBox(height: 24),
+          if (_error != null)
+            Container(
+              padding: const EdgeInsets.all(12),
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: AppColors.red.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.red.withValues(alpha: 0.3), width: 1.0),
+              ),
+              child: Text(_error!, style: const TextStyle(color: Colors.black, fontSize: 14, fontWeight: FontWeight.w900)),
+            ),
+          
+          if (!showOtpField) ...[
+            TextField(
+              controller: _phoneController,
+              keyboardType: TextInputType.phone,
+              style: GoogleFonts.outfit(color: Colors.black, fontWeight: FontWeight.w600),
+              decoration: const InputDecoration(
+                hintText: 'Telefon Numarası (Örn: +905551234567)',
+                prefixIcon: Icon(Icons.phone_outlined, color: Colors.black),
+              ),
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton(
+              onPressed: _isLoading ? null : _sendCode,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                minimumSize: const Size(double.infinity, 64),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppColors.neoRadius),
+                ),
+                elevation: 0,
+              ),
+              child: _isLoading 
+                ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3)) 
+                : Text('KOD GÖNDER', style: GoogleFonts.outfit(fontWeight: FontWeight.w900, fontSize: 20)),
+            ),
+          ] else ...[
+            TextField(
+              controller: _codeController,
+              keyboardType: TextInputType.number,
+              style: GoogleFonts.outfit(color: Colors.black, fontWeight: FontWeight.w600),
+              decoration: const InputDecoration(
+                hintText: '6 Haneli Doğrulama Kodu',
+                prefixIcon: Icon(Icons.security, color: Colors.black),
+              ),
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton(
+              onPressed: _isLoading ? null : _verifyCode,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                minimumSize: const Size(double.infinity, 64),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppColors.neoRadius),
+                ),
+                elevation: 0,
+              ),
+              child: _isLoading 
+                ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3)) 
+                : Text('GİRİŞ YAP', style: GoogleFonts.outfit(fontWeight: FontWeight.w900, fontSize: 20)),
+            ),
+            const SizedBox(height: 16),
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  _verificationId = null;
+                  _codeController.clear();
+                });
+              },
+              child: Text(
+                'Numarayı Değiştir',
+                style: GoogleFonts.outfit(color: Colors.black54, fontWeight: FontWeight.w900),
+              ),
+            ),
+          ],
+          const SizedBox(height: 32),
+        ],
+      ),
+    );
+  }
+}
+
+// Bottom Sheet Form for Passwordless Email Link Login
+class _EmailLinkLoginForm extends StatefulWidget {
+  final AuthService authService;
+  final VoidCallback onSuccess;
+
+  const _EmailLinkLoginForm({required this.authService, required this.onSuccess});
+
+  @override
+  State<_EmailLinkLoginForm> createState() => _EmailLinkLoginFormState();
+}
+
+class _EmailLinkLoginFormState extends State<_EmailLinkLoginForm> {
+  final _emailController = TextEditingController();
+  final _linkController = TextEditingController();
+  bool _isLoading = false;
+  String? _error;
+  bool _linkSent = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadStoredEmail();
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _linkController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadStoredEmail() async {
+    final prefs = await SharedPreferences.getInstance();
+    final storedEmail = prefs.getString('email_link_login_email');
+    if (storedEmail != null && storedEmail.isNotEmpty && mounted) {
+      _emailController.text = storedEmail;
+    }
+  }
+
+  void _sendLink() async {
+    final email = _emailController.text.trim();
+    if (email.isEmpty) {
+      setState(() => _error = "Lütfen e-posta adresinizi girin.");
+      return;
+    }
+
+    setState(() { _isLoading = true; _error = null; });
+    try {
+      // Save email for linking verification later
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('email_link_login_email', email);
+
+      await widget.authService.sendSignInLinkToEmail(email);
+      if (mounted) {
+        setState(() {
+          _linkSent = true;
+          _isLoading = false;
+          _error = null;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _error = FirebaseErrorLocalizer.localize(e);
+        });
+      }
+    }
+  }
+
+  void _verifyLink() async {
+    final link = _linkController.text.trim();
+    final email = _emailController.text.trim();
+    
+    if (link.isEmpty) {
+      setState(() => _error = "Lütfen e-postanıza gelen linki yapıştırın.");
+      return;
+    }
+
+    if (!widget.authService.isSignInWithEmailLink(link)) {
+      setState(() => _error = "Geçersiz giriş bağlantısı. Lütfen tekrar deneyin.");
+      return;
+    }
+
+    setState(() { _isLoading = true; _error = null; });
+    try {
+      await widget.authService.signInWithEmailLink(email, link);
+      if (mounted) {
+        Navigator.pop(context);
+        widget.onSuccess();
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _error = FirebaseErrorLocalizer.localize(e);
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            _linkSent ? 'GİRİŞ LİNKİNİ ONAYLA' : 'ŞİFRESİZ MAİL GİRİŞİ',
+            style: GoogleFonts.outfit(
+              fontSize: 28,
+              fontWeight: FontWeight.w900,
+              color: Colors.black,
+              letterSpacing: -1,
+            ),
+          ),
+          const SizedBox(height: 24),
+          if (_error != null)
+            Container(
+              padding: const EdgeInsets.all(12),
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: AppColors.red.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.red.withValues(alpha: 0.3), width: 1.0),
+              ),
+              child: Text(_error!, style: const TextStyle(color: Colors.black, fontSize: 14, fontWeight: FontWeight.w900)),
+            ),
+          
+          if (!_linkSent) ...[
+            TextField(
+              controller: _emailController,
+              keyboardType: TextInputType.emailAddress,
+              style: GoogleFonts.outfit(color: Colors.black, fontWeight: FontWeight.w600),
+              decoration: const InputDecoration(
+                hintText: 'E-posta Adresi',
+                prefixIcon: Icon(Icons.email_outlined, color: Colors.black),
+              ),
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton(
+              onPressed: _isLoading ? null : _sendLink,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                minimumSize: const Size(double.infinity, 64),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppColors.neoRadius),
+                ),
+                elevation: 0,
+              ),
+              child: _isLoading 
+                ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3)) 
+                : Text('GİRİŞ LİNKİ GÖNDER', style: GoogleFonts.outfit(fontWeight: FontWeight.w900, fontSize: 20)),
+            ),
+          ] else ...[
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFEEEEEE), width: 1.0),
+                boxShadow: [AppColors.neoShadowSmall],
+              ),
+              child: Column(
+                children: [
+                  const Icon(Icons.mark_email_read_outlined, size: 48, color: Colors.black),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Bağlantı Gönderildi!',
+                    style: GoogleFonts.outfit(fontWeight: FontWeight.w900, fontSize: 18, color: Colors.black),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '${_emailController.text} adresine gönderilen linke tıklayabilir veya o linki kopyalayıp aşağıdaki kutuya yapıştırarak giriş yapabilirsiniz.',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.outfit(fontWeight: FontWeight.w700, fontSize: 13, color: Colors.black54, height: 1.4),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            TextField(
+              controller: _linkController,
+              style: GoogleFonts.outfit(color: Colors.black, fontSize: 13, fontWeight: FontWeight.w600),
+              decoration: const InputDecoration(
+                hintText: 'Giriş linkini buraya yapıştırın...',
+                prefixIcon: Icon(Icons.link_outlined, color: Colors.black),
+              ),
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton(
+              onPressed: _isLoading ? null : _verifyLink,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                minimumSize: const Size(double.infinity, 64),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppColors.neoRadius),
+                ),
+                elevation: 0,
+              ),
+              child: _isLoading 
+                ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3)) 
+                : Text('GİRİŞ YAP', style: GoogleFonts.outfit(fontWeight: FontWeight.w900, fontSize: 20)),
+            ),
+            const SizedBox(height: 16),
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  _linkSent = false;
+                  _linkController.clear();
+                });
+              },
+              child: Text(
+                'E-postayı Değiştir / Yeniden Gönder',
+                style: GoogleFonts.outfit(color: Colors.black54, fontWeight: FontWeight.w900),
+              ),
+            ),
+          ],
+          const SizedBox(height: 32),
+        ],
+      ),
+    );
+  }
 }

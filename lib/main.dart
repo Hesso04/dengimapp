@@ -27,6 +27,7 @@ import 'core/providers/story_provider.dart';
 import 'core/providers/system_config_provider.dart';
 import 'core/providers/subscription_provider.dart';
 import 'core/providers/credit_provider.dart';
+import 'core/providers/theme_provider.dart';
 import 'core/utils/log_service.dart';
 
 import 'features/auth/services/profile_service.dart';
@@ -34,6 +35,7 @@ import 'core/services/notification_service.dart';
 import 'core/services/config_service.dart';
 import 'core/services/feature_flag_service.dart';
 import 'features/ads/services/ad_service.dart';
+import 'package:geolocator/geolocator.dart';
 
 import 'features/spaces/providers/space_provider.dart';
 import 'core/widgets/maintenance_screen.dart';
@@ -115,6 +117,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => StoryProvider()),
         ChangeNotifierProvider(create: (_) => SystemConfigProvider()),
         ChangeNotifierProvider(create: (_) => SpaceProvider()),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProxyProvider<UserProvider, SubscriptionProvider>(
           create: (_) => SubscriptionProvider()..init(),
           update: (_, userProvider, subProvider) {
@@ -149,6 +152,7 @@ class _DengimAppState extends State<DengimApp> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _updateStatus(true);
+    _updateLocationBackground();
   }
 
   @override
@@ -162,6 +166,7 @@ class _DengimAppState extends State<DengimApp> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _updateStatus(true);
+      _updateLocationBackground();
     } else {
       _updateStatus(false);
     }
@@ -173,16 +178,38 @@ class _DengimAppState extends State<DengimApp> with WidgetsBindingObserver {
     }
   }
 
+  Future<void> _updateLocationBackground() async {
+    if (FirebaseAuth.instance.currentUser == null) return;
+    try {
+      final permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.always || permission == LocationPermission.whileInUse) {
+        final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+        if (serviceEnabled) {
+          final position = await Geolocator.getCurrentPosition(
+            locationSettings: const LocationSettings(
+              accuracy: LocationAccuracy.low,
+              timeLimit: Duration(seconds: 5),
+            ),
+          );
+          await _profileService.updateLocation(position.latitude, position.longitude);
+        }
+      }
+    } catch (e) {
+      // Fail silently
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Consumer<SystemConfigProvider>(
-      builder: (context, config, child) {
+    return Consumer2<SystemConfigProvider, ThemeProvider>(
+      builder: (context, config, themeProvider, child) {
         return MaterialApp(
           title: 'DENGİM',
           debugShowCheckedModeBanner: false,
           navigatorKey: navigatorKey,
           theme: AppTheme.lightTheme,
-          themeMode: ThemeMode.light, // Karanlık mod desteği tam eklenene kadar light mod zorunlu
+          darkTheme: AppTheme.darkTheme,
+          themeMode: themeProvider.themeMode,
           builder: (context, child) => ResponsiveCenterWrapper(
             child: NetworkWrapper(child: child!),
           ),
@@ -274,6 +301,8 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
             final creditProvider = Provider.of<CreditProvider>(context, listen: false);
             await creditProvider.init();
             await creditProvider.claimDailyReward();
+
+            if (!mounted) return;
 
             Widget nextScreen = userProvider.currentUser != null 
                 ? const MainScaffold() 

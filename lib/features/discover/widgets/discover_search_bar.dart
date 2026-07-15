@@ -185,7 +185,7 @@ class DiscoverSearchBar extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    '${user.age} • ${(user.location ?? user.country).toUpperCase()}',
+                    '${user.age} • ${user.location.toUpperCase()}',
                     style: GoogleFonts.outfit(
                       color: Colors.black.withValues(alpha: 0.7),
                       fontSize: 12,

@@ -5,7 +5,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../core/theme/app_colors.dart';
 import '../auth/models/user_profile.dart';
 import '../auth/services/profile_service.dart';
-import '../auth/services/discovery_service.dart';
 import '../../core/utils/log_service.dart';
 import 'widgets/filter_bottom_sheet.dart';
 
@@ -20,12 +19,10 @@ import '../payment/premium_offer_screen.dart';
 import '../../core/widgets/premium_required_modal.dart';
 import 'user_profile_detail_screen.dart';
 import 'widgets/discover_header.dart';
-import 'widgets/swipe_action_buttons.dart';
 import 'widgets/discover_empty_state.dart';
 import 'widgets/match_overlay.dart';
 import 'widgets/discover_search_bar.dart';
 import 'widgets/discover_user_card.dart';
-import 'widgets/advanced_filters_modal.dart';
 import '../../core/widgets/shimmer_card.dart';
 
 class DiscoverScreen extends StatefulWidget {
@@ -38,6 +35,7 @@ class DiscoverScreen extends StatefulWidget {
 class _DiscoverScreenState extends State<DiscoverScreen> {
   final TextEditingController _searchController = TextEditingController();
   final Set<String> _dismissedUserIds = {};
+  final Set<String> _animatingUserIds = {};
   final List<String> _historyOfSwipedUserIds = [];
   
   FilterSettings _filterSettings = FilterSettings();
@@ -185,7 +183,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     HapticFeedback.mediumImpact();
     
     setState(() {
-      _dismissedUserIds.add(user.uid);
+      _animatingUserIds.add(user.uid);
       _historyOfSwipedUserIds.add(user.uid);
     });
 
@@ -194,15 +192,15 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     final userTier = userProvider.currentUser?.subscriptionTier ?? 'free';
 
     try {
-      final success = await discoveryProvider.swipeUser(
+      final result = await discoveryProvider.swipeUser(
         user.uid,
         action,
         userTier: userTier,
       );
 
-      if (!success && action != 'dislike') {
+      if (!result.success && action != 'dislike') {
         setState(() {
-          _dismissedUserIds.remove(user.uid);
+          _animatingUserIds.remove(user.uid);
           _historyOfSwipedUserIds.remove(user.uid);
         });
         if (mounted) {
@@ -211,16 +209,15 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
         return;
       }
 
-      // Check if it was a match. Let's assume matches logic inside provider works.
-      // If matches, show animation.
-      final isMatch = success; // or fetch real status if needed
+      // Check if it was a match.
+      final isMatch = result.isMatch;
       if (isMatch) {
         _showMatchAnimation(user);
       }
     } catch (e) {
       LogService.e("Swipe action failed for list view", e);
       setState(() {
-        _dismissedUserIds.remove(user.uid);
+        _animatingUserIds.remove(user.uid);
         _historyOfSwipedUserIds.remove(user.uid);
       });
     }
@@ -267,6 +264,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     final targetUid = _historyOfSwipedUserIds.removeLast();
     setState(() {
       _dismissedUserIds.remove(targetUid);
+      _animatingUserIds.remove(targetUid);
     });
 
     try {
@@ -277,6 +275,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
           .doc(targetUid)
           .delete();
       
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Son işlem geri alındı.'),
@@ -501,7 +500,8 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
       backgroundColor: Colors.white,
       body: Consumer<DiscoveryProvider>(
         builder: (context, provider, child) {
-          final visibleUsersCount = provider.users.where((u) => !_dismissedUserIds.contains(u.uid)).length;
+          final visibleUsers = provider.users.where((u) => !_dismissedUserIds.contains(u.uid)).toList();
+          final visibleUsersCount = visibleUsers.where((u) => !_animatingUserIds.contains(u.uid)).length;
 
           return Stack(
             children: [
@@ -567,14 +567,17 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                         sliver: SliverList(
                           delegate: SliverChildBuilderDelegate(
                             (context, index) {
-                              final user = provider.users[index];
-                              final isDismissed = _dismissedUserIds.contains(user.uid);
+                              final user = visibleUsers[index];
+                              final isAnimating = _animatingUserIds.contains(user.uid);
 
                               return AnimatedDismissibleCard(
                                 key: ValueKey('dismiss_${user.uid}'),
-                                isDismissed: isDismissed,
+                                isDismissed: isAnimating,
                                 onDismissFinished: () {
-                                  // Re-evaluation occurs reactively
+                                  setState(() {
+                                    _animatingUserIds.remove(user.uid);
+                                    _dismissedUserIds.add(user.uid);
+                                  });
                                 },
                                 child: DiscoverUserCard(
                                   user: user,
@@ -585,7 +588,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                                 ),
                               );
                             },
-                            childCount: provider.users.length,
+                            childCount: visibleUsers.length,
                           ),
                         ),
                       ),

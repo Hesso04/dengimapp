@@ -13,7 +13,7 @@ class VerificationScreen extends StatelessWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -32,12 +32,12 @@ class VerificationScreen extends StatelessWidget {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        const Color(0xFF4F46E5).withValues(alpha: 0.05),
+                        AppColors.primary.withValues(alpha: 0.05),
                         Colors.transparent,
                       ],
                     ),
                     borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+                    border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
                   ),
                   child: Center(
                     child: _buildFaceScanIllustration(),
@@ -54,7 +54,7 @@ class VerificationScreen extends StatelessWidget {
                 style: GoogleFonts.poppins(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: Colors.black,
                   letterSpacing: -0.5,
                 ),
                 textAlign: TextAlign.center,
@@ -68,7 +68,7 @@ class VerificationScreen extends StatelessWidget {
                 'DENGIM topluluğunun güvenliğini sağlamak ve daha fazla prestijli eşleşme yakalamak için kimliğini doğrula. Sadece birkaç saniye sürer.',
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 16,
-                  color: Colors.white54,
+                  color: AppColors.textSecondary,
                   height: 1.5,
                 ),
                 textAlign: TextAlign.center,
@@ -104,13 +104,14 @@ class VerificationScreen extends StatelessWidget {
                     // Start camera/verification process
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.vibrantGold,
-                    foregroundColor: Colors.black,
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(32),
+                      side: const BorderSide(color: Color(0xFFEEEEEE), width: 1.0),
                     ),
-                    elevation: 8,
-                    shadowColor: AppColors.vibrantGold.withValues(alpha: 0.2),
+                    elevation: 0,
+                    shadowColor: AppColors.primary.withValues(alpha: 0.2),
                   ),
                   child: Text(
                     'Şimdi Doğrula',
@@ -140,7 +141,7 @@ class VerificationScreen extends StatelessWidget {
           height: 260,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(100),
-            border: Border.all(color: const Color(0xFF4F46E5).withValues(alpha: 0.3), width: 1),
+            border: Border.all(color: AppColors.primary.withValues(alpha: 0.3), width: 1),
           ),
         ),
         Container(
@@ -148,14 +149,14 @@ class VerificationScreen extends StatelessWidget {
           height: 230,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(100),
-            border: Border.all(color: const Color(0xFF4F46E5).withValues(alpha: 0.2), width: 0.5),
+            border: Border.all(color: AppColors.primary.withValues(alpha: 0.2), width: 0.5),
           ),
         ),
         // Face Icon
         Icon(
           Icons.face_retouching_natural,
           size: 96,
-          color: const Color(0xFF4F46E5).withValues(alpha: 0.4),
+          color: AppColors.primary.withValues(alpha: 0.4),
         ),
         // Scan Line
         Positioned(
@@ -164,10 +165,10 @@ class VerificationScreen extends StatelessWidget {
             width: 200,
             height: 2,
             decoration: BoxDecoration(
-              color: const Color(0xFF4F46E5).withValues(alpha: 0.6),
+              color: AppColors.primary.withValues(alpha: 0.6),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF4F46E5).withValues(alpha: 0.5),
+                  color: AppColors.primary.withValues(alpha: 0.5),
                   blurRadius: 15,
                   spreadRadius: 2,
                 ),
@@ -182,14 +183,14 @@ class VerificationScreen extends StatelessWidget {
   Widget _buildBenefitRow(IconData icon, String label) {
     return Row(
       children: [
-        Icon(icon, color: AppColors.vibrantGold, size: 22),
+        Icon(icon, color: AppColors.primary, size: 22),
         const SizedBox(width: 16),
         Text(
           label,
           style: GoogleFonts.plusJakartaSans(
             fontSize: 15,
-            fontWeight: FontWeight.w500,
-            color: Colors.white.withValues(alpha: 0.8),
+            fontWeight: FontWeight.w800,
+            color: Colors.black87,
           ),
         ),
       ],

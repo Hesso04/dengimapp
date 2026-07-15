@@ -115,10 +115,14 @@ class ReportService extends BaseService {
 
       await _firestore.collection('reports').add(report.toMap());
 
-      // Raporlanan kullanıcının rapor sayısını artır
-      await _firestore.collection('users').doc(reportedUserId).update({
-        'reportCount': FieldValue.increment(1),
-      });
+      // Raporlanan kullanıcının rapor sayısını artır (Hata alsa bile rapor kaydedilsin)
+      try {
+        await _firestore.collection('users').doc(reportedUserId).update({
+          'reportCount': FieldValue.increment(1),
+        });
+      } catch (e) {
+        LogService.w('Could not increment report count for user $reportedUserId: $e');
+      }
 
       LogService.i('User $reportedUserId reported for ${reason.name}');
       return true;

@@ -70,23 +70,12 @@ class DiscoveryService {
         activeQuery = activeQuery.where('interests', arrayContainsAny: interests.take(10).toList());
       }
       
-      // Try fetching with orderBy first
       QuerySnapshot snapshot;
       try {
-        snapshot = await activeQuery
-            .orderBy('lastActive', descending: true)
-            .limit(limit * 3)
-            .get();
-        
-        // Strategy A: No results? Maybe missing lastActive field or restrictive gender.
-        if (snapshot.docs.isEmpty) {
-          LogService.w("No results with gender/lastActive. Trying without lastActive ordering.");
-          snapshot = await activeQuery.limit(limit * 3).get();
-        }
-      } catch (e) {
-        LogService.w("Query failed (possible index error), trying fallback queries: $e");
-        // Fallback: Try without order, BUT KEEP FILTERS (activeQuery)
         snapshot = await activeQuery.limit(limit * 3).get();
+      } catch (e) {
+        LogService.w("Query failed, trying fallback: $e");
+        snapshot = await _firestore.collection('users').limit(limit * 3).get();
       }
 
 
@@ -106,7 +95,10 @@ class DiscoveryService {
             // Incognito filter (Client-side to handle missing fields)
             if (profile.isIncognitoMode) return false;
 
-            if (!profile.isComplete) return false;
+            // Relax completion check to allow showing all registered users
+            // if (!profile.isComplete) return false;
+            
+            if (profile.name.isEmpty) return false;
             
             if (profile.name.toLowerCase().contains('test') || 
                 profile.email.toLowerCase().contains('test')) {
@@ -142,7 +134,7 @@ class DiscoveryService {
 
             // Photo filter
             if (hasPhotoOnly) {
-              if (profile.imageUrl.isEmpty && (profile.photoUrls == null || profile.photoUrls!.isEmpty)) {
+              if (profile.imageUrl.isEmpty) {
                 return false;
               }
             }
@@ -442,12 +434,21 @@ class DiscoveryService {
     });
 
     // 3. Update User Match Counts
-    await _firestore.collection('users').doc(uid1).update({
-      'matchCount': FieldValue.increment(1),
-    });
-    await _firestore.collection('users').doc(uid2).update({
-      'matchCount': FieldValue.increment(1),
-    });
+    try {
+      await _firestore.collection('users').doc(uid1).update({
+        'matchCount': FieldValue.increment(1),
+      });
+    } catch (e) {
+      LogService.e("Failed to update own matchCount", e);
+    }
+    
+    try {
+      await _firestore.collection('users').doc(uid2).update({
+        'matchCount': FieldValue.increment(1),
+      });
+    } catch (e) {
+      LogService.w("Failed to update target user matchCount (expected if no write permission): $e");
+    }
 
     LogService.i("Match and Conversation created: $matchId");
   }
@@ -461,11 +462,22 @@ class DiscoveryService {
       final snapshot = await _firestore
           .collection('matches')
           .where('userIds', arrayContains: user.uid)
-          .orderBy('timestamp', descending: true)
           .get();
 
-      final otherUserIds = snapshot.docs.map((doc) {
-        List userIds = doc['userIds'];
+      final matchesDataList = snapshot.docs.map((doc) => doc.data()).toList();
+      
+      // Sort by timestamp descending in memory
+      matchesDataList.sort((a, b) {
+        final tA = a['timestamp'] as Timestamp?;
+        final tB = b['timestamp'] as Timestamp?;
+        if (tA == null && tB == null) return 0;
+        if (tA == null) return 1;
+        if (tB == null) return -1;
+        return tB.compareTo(tA);
+      });
+
+      final otherUserIds = matchesDataList.map((data) {
+        List userIds = data['userIds'];
         var otherId = userIds.firstWhere((id) => id != user.uid, orElse: () => null);
         return otherId;
       }).where((id) => id != null).cast<String>().toList();

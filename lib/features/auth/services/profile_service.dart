@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import '../models/user_profile.dart';
 import '../../../core/utils/log_service.dart';
@@ -13,7 +14,6 @@ class ProfileService {
   ProfileService._internal();
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseStorage _storage = FirebaseStorage.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   User? get _currentUser => _auth.currentUser;
@@ -64,6 +64,7 @@ class ProfileService {
       'lastActive': FieldValue.serverTimestamp(),
       'isOnline': true,
       'blockedUsers': [], // Initialize empty
+      'searchName': name.trim().toLowerCase(),
     };
 
     try {
@@ -82,7 +83,14 @@ class ProfileService {
     try {
       final doc = await _firestore.collection('users').doc(targetUid).get();
       if (doc.exists) {
-        return UserProfile.fromMap(doc.data()!);
+        final data = doc.data()!;
+        // Backfill searchName if missing
+        if (data['searchName'] == null && data['name'] != null) {
+          final sName = data['name'].toString().trim().toLowerCase();
+          await _firestore.collection('users').doc(targetUid).update({'searchName': sName});
+          data['searchName'] = sName;
+        }
+        return UserProfile.fromMap(data);
       }
       return null;
     } catch (e) {
@@ -148,13 +156,36 @@ class ProfileService {
     final uid = _currentUser?.uid;
     if (uid == null) return;
 
+    String? city;
+    String? district;
+
     try {
-      await _firestore.collection('users').doc(uid).update({
+      final url = Uri.parse('https://nominatim.openstreetmap.org/reverse?format=json&lat=$latitude&lon=$longitude&zoom=12&addressdetails=1');
+      final response = await http.get(url, headers: {'User-Agent': 'DengimApp/1.0'});
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final address = data['address'];
+        if (address != null) {
+          city = address['province'] ?? address['city'] ?? address['state'];
+          district = address['district'] ?? address['county'] ?? address['town'] ?? address['suburb'];
+          if (city != null) city = city.replaceAll(' İli', '');
+        }
+      }
+    } catch (e) {
+      LogService.e("Reverse geocoding failed", e);
+    }
+
+    try {
+      final updates = <String, dynamic>{
         'latitude': latitude,
         'longitude': longitude,
         'lastActive': FieldValue.serverTimestamp(),
         'isOnline': true,
-      });
+      };
+      if (city != null) updates['city'] = city;
+      if (district != null) updates['district'] = district;
+
+      await _firestore.collection('users').doc(uid).update(updates);
     } catch (e) {
       LogService.e("Location update failed", e);
     }
@@ -229,7 +260,10 @@ class ProfileService {
       'lastActive': FieldValue.serverTimestamp(),
     };
 
-    if (name != null) updates['name'] = name;
+    if (name != null) {
+      updates['name'] = name;
+      updates['searchName'] = name.trim().toLowerCase();
+    }
     if (bio != null) updates['bio'] = bio;
     if (job != null) updates['job'] = job;
     if (education != null) updates['education'] = education;
@@ -304,21 +338,16 @@ class ProfileService {
     }
   }
 
-  /// Kullanıcı arama (isme göre)
   Future<List<UserProfile>> searchUsers(String query) async {
     final currentUid = _currentUser?.uid;
     if (query.isEmpty || currentUid == null) return [];
 
     try {
-      // İsme göre arama (case-insensitive için küçük harfe dönüştürülmüş alan gerekebilir)
-      // Firestore'da full-text search yok, bu yüzden prefix search yapıyoruz
-      final queryLower = query.toLowerCase();
-      final queryUpper = '${query.toLowerCase()}\uf8ff';
-      
+      final searchKey = query.trim().toLowerCase();
       final snapshot = await _firestore
           .collection('users')
-          .where('name', isGreaterThanOrEqualTo: query)
-          .where('name', isLessThanOrEqualTo: '$query\uf8ff')
+          .where('searchName', isGreaterThanOrEqualTo: searchKey)
+          .where('searchName', isLessThanOrEqualTo: '$searchKey\uf8ff')
           .limit(20)
           .get();
 

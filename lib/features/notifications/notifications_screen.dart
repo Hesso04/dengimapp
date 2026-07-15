@@ -325,23 +325,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
-  Color _getNotifBgColor(String? type) {
-    switch (type) {
-      case 'announcement': return Colors.blue.withValues(alpha: 0.05);
-      case 'match': return AppColors.primary.withValues(alpha: 0.08);
-      case 'like': return Colors.pink.withValues(alpha: 0.05);
-      default: return AppColors.primary.withValues(alpha: 0.05);
-    }
-  }
-
-  Color _getNotifBorderColor(String? type) {
-    switch (type) {
-      case 'announcement': return Colors.blue.withValues(alpha: 0.15);
-      case 'match': return AppColors.primary.withValues(alpha: 0.15);
-      case 'like': return Colors.pink.withValues(alpha: 0.1);
-      default: return AppColors.primary.withValues(alpha: 0.1);
-    }
-  }
 
   Color _getIconBgColor(String? type) {
     switch (type) {

@@ -15,7 +15,7 @@ class TypingIndicatorService {
 
     try {
       await _firestore
-          .collection('chats')
+          .collection('conversations')
           .doc(chatId)
           .collection('typing')
           .doc(userId)
@@ -35,7 +35,7 @@ class TypingIndicatorService {
 
     try {
       await _firestore
-          .collection('chats')
+          .collection('conversations')
           .doc(chatId)
           .collection('typing')
           .doc(userId)
@@ -48,7 +48,7 @@ class TypingIndicatorService {
   /// Typing stream - Karşı tarafın yazıp yazmadığını dinle
   Stream<bool> getTypingStream(String chatId, String otherUserId) {
     return _firestore
-        .collection('chats')
+        .collection('conversations')
         .doc(chatId)
         .collection('typing')
         .doc(otherUserId)

@@ -37,6 +37,8 @@ class UserProfile {
   final double distance;
   final double? latitude;
   final double? longitude;
+  final String? city;
+  final String? district;
   final List<String> blockedUsers;
   final String? fcmToken;
   final DateTime? boostUntil;
@@ -45,6 +47,7 @@ class UserProfile {
   final bool hasReceivedWelcomeBonus;
   final List<String> followers; // YENİ: Takipçiler
   final List<String> following; // YENİ: Takip ettikleri
+  final String searchName;
 
   // Zamanlar
   final DateTime createdAt;
@@ -77,6 +80,8 @@ class UserProfile {
     this.distance = 0,
     this.latitude,
     this.longitude,
+    this.city,
+    this.district,
     required this.createdAt,
     required this.lastActive,
     required this.blockedUsers,
@@ -87,6 +92,7 @@ class UserProfile {
     this.hasReceivedWelcomeBonus = false,
     this.followers = const [],
     this.following = const [],
+    this.searchName = '',
   });
 
   // Calculated age from birthDate
@@ -166,6 +172,8 @@ class UserProfile {
       'achievements': achievements,
       'latitude': latitude,
       'longitude': longitude,
+      'city': city,
+      'district': district,
       'createdAt': Timestamp.fromDate(createdAt),
       'lastActive': Timestamp.fromDate(lastActive),
       'blockedUsers': blockedUsers,
@@ -176,6 +184,7 @@ class UserProfile {
       'hasReceivedWelcomeBonus': hasReceivedWelcomeBonus,
       'followers': followers,
       'following': following,
+      'searchName': searchName,
     };
   }
 
@@ -223,6 +232,8 @@ class UserProfile {
       achievements: List<String>.from(map['achievements'] ?? []),
       latitude: map['latitude']?.toDouble(),
       longitude: map['longitude']?.toDouble(),
+      city: map['city'],
+      district: map['district'],
       distance: 0.0,
       createdAt: (map['createdAt'] is Timestamp 
           ? (map['createdAt'] as Timestamp).toDate() 
@@ -240,6 +251,7 @@ class UserProfile {
       hasReceivedWelcomeBonus: map['hasReceivedWelcomeBonus'] ?? false,
       followers: List<String>.from(map['followers'] ?? []),
       following: List<String>.from(map['following'] ?? []),
+      searchName: map['searchName'] ?? (nameVal).trim().toLowerCase(),
     );
   }
 }

@@ -10,6 +10,9 @@ import 'screens/chat_detail_screen.dart';
 
 import 'package:provider/provider.dart';
 import '../../core/providers/chat_provider.dart';
+import '../auth/models/user_profile.dart';
+import '../auth/services/discovery_service.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class ChatsScreen extends StatefulWidget {
   const ChatsScreen({super.key});
@@ -100,6 +103,8 @@ class _ChatsScreenState extends State<ChatsScreen> {
         child: Column(
           children: [
             _buildHeader(),
+            const SizedBox(height: 10),
+            _buildNewMatchesBar(),
             const SizedBox(height: 10),
             // Chat List
             Expanded(
@@ -329,5 +334,140 @@ class _ChatsScreenState extends State<ChatsScreen> {
         child: Icon(icon, color: Colors.black, size: 22),
       ),
     );
+  }
+
+  Widget _buildNewMatchesBar() {
+    final chatProvider = context.watch<ChatProvider>();
+    final activeChatUserIds = chatProvider.conversations.map((c) => c.otherUserId).toSet();
+
+    return FutureBuilder<List<UserProfile>>(
+      future: DiscoveryService().getMatchedUsers(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const SizedBox.shrink();
+        }
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        final newMatches = snapshot.data!.where((user) => !activeChatUserIds.contains(user.uid)).toList();
+
+        if (newMatches.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+              child: Text(
+                "YENİ EŞLEŞMELER",
+                style: GoogleFonts.outfit(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.black.withValues(alpha: 0.5),
+                  letterSpacing: 1.0,
+                ),
+              ),
+            ),
+            SizedBox(
+              height: 105,
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                itemCount: newMatches.length,
+                itemBuilder: (context, index) {
+                  final match = newMatches[index];
+                  return GestureDetector(
+                    onTap: () => _startChatFromMatch(match),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: Column(
+                        children: [
+                          Container(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: AppColors.primary,
+                                width: 2.0,
+                              ),
+                              boxShadow: [AppColors.neoShadowSmall],
+                            ),
+                            child: CircleAvatar(
+                              radius: 28,
+                              backgroundImage: CachedNetworkImageProvider(match.imageUrl),
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          SizedBox(
+                            width: 64,
+                            child: Text(
+                              match.name,
+                              style: GoogleFonts.outfit(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w900,
+                                color: Colors.black,
+                              ),
+                              textAlign: TextAlign.center,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+              child: Divider(color: Color(0xFFEEEEEE), height: 1),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _startChatFromMatch(UserProfile match) async {
+    HapticFeedback.lightImpact();
+    
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator(color: Colors.black)),
+    );
+
+    try {
+      final chatProvider = context.read<ChatProvider>();
+      final chatId = await ChatService().startChat(match.uid);
+      if (mounted) {
+        Navigator.pop(context); // Close loading
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ChatDetailScreen(
+              chatId: chatId,
+              otherUserId: match.uid,
+              otherUserName: match.name,
+              otherUserAvatar: match.imageUrl,
+            ),
+          ),
+        ).then((_) {
+          // Refresh conversations when returning
+          chatProvider.initConversations();
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context); // Close loading
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Sohbet başlatılamadı.')),
+        );
+      }
+    }
   }
 }

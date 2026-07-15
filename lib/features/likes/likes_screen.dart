@@ -750,6 +750,8 @@ class _UnlockedLikeCard extends StatelessWidget {
 
   void _acceptLike(BuildContext context) async {
     final provider = context.read<LikesProvider>();
+    final navigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
     
     // Loading göster
     showDialog(
@@ -759,11 +761,11 @@ class _UnlockedLikeCard extends StatelessWidget {
     );
     
     final matched = await provider.likeBack(user.uid);
-    Navigator.pop(context); // Loading kapat
+    navigator.pop(); // Loading kapat
     
     if (matched) {
       // Eşleşme animasyonu/bildirimi
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         SnackBar(
           content: Row(
             children: [
@@ -786,8 +788,10 @@ class _UnlockedLikeCard extends StatelessWidget {
   }
 
   void _rejectLike(BuildContext context) async {
-    await context.read<LikesProvider>().rejectLike(user.uid);
-    ScaffoldMessenger.of(context).showSnackBar(
+    final provider = context.read<LikesProvider>();
+    final messenger = ScaffoldMessenger.of(context);
+    await provider.rejectLike(user.uid);
+    messenger.showSnackBar(
       SnackBar(
         content: Text('${user.name} REDDEDİLDİ', style: GoogleFonts.outfit(fontWeight: FontWeight.w900, color: Colors.white)),
         backgroundColor: Colors.black,
@@ -982,35 +986,5 @@ class _UnlockedLikeCard extends StatelessWidget {
   }
 }
 
-/// Aksiyon butonu (kabul/ret)
-class _ActionButton extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final VoidCallback onTap;
-  final bool isMain;
 
-  const _ActionButton({
-    required this.icon,
-    required this.color,
-    required this.onTap,
-  }) : isMain = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: isMain ? 44 : 36,
-        height: isMain ? 44 : 36,
-        decoration: BoxDecoration(
-          color: color,
-          shape: BoxShape.circle,
-          border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-          boxShadow: isMain ? [AppColors.neoShadowSmall] : null,
-        ),
-        child: Icon(icon, color: Colors.black, size: isMain ? 22 : 18),
-      ),
-    );
-  }
-}
 

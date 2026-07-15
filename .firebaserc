@@ -1,5 +1,7 @@
 {
   "projects": {
     "default": "dengim-kim"
-  }
+  },
+  "targets": {},
+  "etags": {}
 }

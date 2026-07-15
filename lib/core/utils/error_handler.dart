@@ -126,26 +126,15 @@ class ErrorBoundary extends StatefulWidget {
 
 class _ErrorBoundaryState extends State<ErrorBoundary> {
   bool _hasError = false;
-  Object? _error;
 
   @override
   void initState() {
     super.initState();
   }
 
-  void _handleError(Object error, StackTrace? stack) {
-    LogService.e('ErrorBoundary caught error', error, stack);
-    widget.onError?.call(error, stack);
-    setState(() {
-      _hasError = true;
-      _error = error;
-    });
-  }
-
   void _retry() {
     setState(() {
       _hasError = false;
-      _error = null;
     });
   }
 

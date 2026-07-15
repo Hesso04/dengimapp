@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb; // YENİ
 import 'package:flutter/services.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
+import '../../../core/utils/log_service.dart';
 
 class PurchaseService {
   static const String _googleApiKey = "goog_SİZİN_REVENUECAT_ANAHTARINIZ";
@@ -21,13 +22,13 @@ class PurchaseService {
     PurchasesConfiguration configuration;
     if (Platform.isAndroid) {
       if (_googleApiKey.contains("SİZİN")) {
-        print("UYARI: RevenueCat Android API Key ayarlanmamış!");
+        LogService.w("UYARI: RevenueCat Android API Key ayarlanmamış!");
         return;
       }
       configuration = PurchasesConfiguration(_googleApiKey);
     } else if (Platform.isIOS) {
       if (_appleApiKey.contains("SİZİN")) {
-        print("UYARI: RevenueCat iOS API Key ayarlanmamış!");
+        LogService.w("UYARI: RevenueCat iOS API Key ayarlanmamış!");
         return;
       }
       configuration = PurchasesConfiguration(_appleApiKey);
@@ -43,7 +44,7 @@ class PurchaseService {
     try {
       await Purchases.logIn(userId);
     } catch (e) {
-      print("PurchaseService Info: $e");
+      LogService.w("PurchaseService Info: $e");
     }
   }
 
@@ -59,10 +60,10 @@ class PurchaseService {
       if (offerings.current != null) {
         return offerings;
       } else {
-        print("PurchaseService: Current offering is null");
+        LogService.w("PurchaseService: Current offering is null");
       }
     } on PlatformException catch (e) {
-      print("PurchaseService Error (getOfferings): $e");
+      LogService.e("PurchaseService Error (getOfferings): $e");
     }
     return null;
   }
@@ -75,7 +76,7 @@ class PurchaseService {
     } on PlatformException catch (e) {
       var errorCode = PurchasesErrorHelper.getErrorCode(e);
       if (errorCode != PurchasesErrorCode.purchaseCancelledError) {
-        print("PurchaseService Error (purchase): $e");
+        LogService.e("PurchaseService Error (purchase): $e");
       }
       return false;
     }
@@ -87,7 +88,7 @@ class PurchaseService {
       CustomerInfo customerInfo = await Purchases.getCustomerInfo();
       return customerInfo.entitlements.all[entitlementId]?.isActive ?? false;
     } on PlatformException catch (e) {
-      print("PurchaseService Error (checkStatus): $e");
+      LogService.e("PurchaseService Error (checkStatus): $e");
       return false;
     }
   }
@@ -98,7 +99,7 @@ class PurchaseService {
       CustomerInfo customerInfo = await Purchases.restorePurchases();
       return customerInfo.entitlements.all[entitlementId]?.isActive ?? false;
     } on PlatformException catch (e) {
-      print("PurchaseService Error (restore): $e");
+      LogService.e("PurchaseService Error (restore): $e");
       return false;
     }
   }

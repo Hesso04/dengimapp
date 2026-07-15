@@ -30,6 +30,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<MapProvider>().initializeMap().then((_) {
         // Move camera to current location once initialized
+        if (!mounted) return;
         final loc = context.read<MapProvider>().currentLocation;
         _mapController.move(loc, _initialZoom);
       });

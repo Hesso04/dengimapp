@@ -313,7 +313,7 @@ class _WatchAndEarnScreenState extends State<WatchAndEarnScreen>
       width: double.infinity,
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
-        color: AppColors.secondary,
+        color: Colors.black,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
         boxShadow: [AppColors.neoShadowSmall],
@@ -325,7 +325,7 @@ class _WatchAndEarnScreenState extends State<WatchAndEarnScreen>
             style: GoogleFonts.outfit(
               fontSize: 16,
               fontWeight: FontWeight.w900,
-              color: Colors.black,
+              color: Colors.white,
               letterSpacing: 2.0,
             ),
           ),
@@ -335,14 +335,14 @@ class _WatchAndEarnScreenState extends State<WatchAndEarnScreen>
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               const Icon(Icons.monetization_on_rounded,
-                  color: Colors.black, size: 48),
+                  color: Colors.white, size: 48),
               const SizedBox(width: 12),
               Text(
                 '${creditProvider.balance}',
                 style: GoogleFonts.outfit(
                   fontSize: 64,
                   fontWeight: FontWeight.w900,
-                  color: Colors.black,
+                  color: Colors.white,
                   height: 1.0,
                 ),
               ),
@@ -762,7 +762,7 @@ class _WatchAndEarnScreenState extends State<WatchAndEarnScreen>
                         style: GoogleFonts.outfit(
                           fontSize: 14,
                           fontWeight: FontWeight.w900,
-                          color: Colors.black,
+                          color: Colors.white,
                         ),
                       ),
                     ),

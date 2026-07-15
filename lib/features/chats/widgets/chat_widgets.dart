@@ -170,9 +170,7 @@ class _ChatBubbleState extends State<ChatBubble> {
   }
 
   void _initAudio() {
-    // Ses URL'sini ve süresini parse et
     final parts = widget.message.content.split('|');
-    final audioUrl = parts[0];
     if (parts.length > 1) {
       _duration = Duration(seconds: int.tryParse(parts[1]) ?? 0);
     }
@@ -433,7 +431,6 @@ class _ChatBubbleState extends State<ChatBubble> {
         return _buildAudioPlayer(isMe);
       
       case MessageType.text:
-      default:
         return Text(
           widget.message.content,
           style: GoogleFonts.outfit(
@@ -529,7 +526,6 @@ class _ChatBubbleState extends State<ChatBubble> {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final isPlatinum = userProvider.currentUser?.subscriptionTier == 'platinum';
 
-    final bool isSent = true; 
     final bool isRead = widget.message.isRead;
     
     IconData icon;
@@ -542,12 +538,9 @@ class _ChatBubbleState extends State<ChatBubble> {
       // Platinum değilse ama okunduysa bile gri çift tık (iletildi gibi) göster
       icon = Icons.done_all; 
       color = isMe ? Colors.white70 : Colors.black38;
-    } else if (isSent) {
+    } else {
       icon = Icons.done; // ✓
       color = isMe ? Colors.white70 : Colors.black38; 
-    } else {
-      icon = Icons.schedule; 
-      color = isMe ? Colors.white38 : Colors.black26; 
     }
     
     return Icon(icon, size: 14, color: color);

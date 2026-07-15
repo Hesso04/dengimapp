@@ -183,7 +183,7 @@ class _UserProfileDetailScreenState extends State<UserProfileDetailScreen> {
                                 ],
                               ),
                             ),
-                            _buildOnlineStatus(profile.isOnline),
+                             _buildOnlineStatus(profile),
                           ],
                         ),
                         const SizedBox(height: 16),
@@ -316,13 +316,34 @@ class _UserProfileDetailScreenState extends State<UserProfileDetailScreen> {
     );
   }
 
-  Widget _buildOnlineStatus(bool isOnline) {
+  Widget _buildOnlineStatus(UserProfile profile) {
+    final isOnline = profile.isOnline;
+    final lastActive = profile.lastActive;
+    
+    String label = "KAPALI";
+    if (isOnline) {
+      label = "AÇIK";
+    } else {
+      final difference = DateTime.now().difference(lastActive);
+      if (difference.inMinutes < 5) {
+        label = "AZ ÖNCE AKTİFTİ";
+      } else if (difference.inMinutes < 60) {
+        label = "${difference.inMinutes} DK ÖNCE AKTİFTİ";
+      } else if (difference.inHours < 24) {
+        label = "${difference.inHours} SAAT ÖNCE AKTİFTİ";
+      } else if (difference.inDays < 7) {
+        label = "${difference.inDays} GÜN ÖNCE AKTİFTİ";
+      } else {
+        label = "ÇEVRİMDIŞI";
+      }
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: isOnline ? AppColors.green.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: isOnline ? AppColors.green : Colors.black, width: AppColors.neoBorderWidthSmall),
+        border: Border.all(color: isOnline ? AppColors.green : Colors.black26, width: AppColors.neoBorderWidthSmall),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -336,7 +357,7 @@ class _UserProfileDetailScreenState extends State<UserProfileDetailScreen> {
           ),
           const SizedBox(width: 8),
           Text(
-            isOnline ? "AÇIK" : "KAPALI",
+            label,
             style: GoogleFonts.outfit(
               fontSize: 10,
               fontWeight: FontWeight.w900,
@@ -357,8 +378,17 @@ class _UserProfileDetailScreenState extends State<UserProfileDetailScreen> {
         if (profile.zodiacSign.isNotEmpty) _buildInfoChip(Icons.stars, profile.zodiacSign),
         if (profile.relationshipGoal != null) _buildInfoChip(Icons.search_rounded, _getGoalLabel(profile.relationshipGoal)),
         _buildInfoChip(Icons.location_on_outlined, "YAKINLARDA"),
+        _buildInfoChip(Icons.calendar_today_outlined, _getJoinedDateLabel(profile.createdAt)),
       ],
     );
+  }
+
+  String _getJoinedDateLabel(DateTime date) {
+    final months = [
+      'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 
+      'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'
+    ];
+    return "KATILIM: ${months[date.month - 1].toUpperCase()} ${date.year}";
   }
 
   Widget _buildInfoChip(IconData icon, String text) {
@@ -556,6 +586,7 @@ class _UserProfileDetailScreenState extends State<UserProfileDetailScreen> {
     required Color color, 
     required VoidCallback onTap
   }) {
+    final textColor = (color == AppColors.error || color == AppColors.secondary) ? Colors.white : Colors.black;
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -569,14 +600,14 @@ class _UserProfileDetailScreenState extends State<UserProfileDetailScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: Colors.black, size: 22),
+            Icon(icon, color: textColor, size: 22),
             const SizedBox(width: 12),
             Text(
               label,
               style: GoogleFonts.outfit(
                 fontSize: 14,
                 fontWeight: FontWeight.w900,
-                color: Colors.black,
+                color: textColor,
               ),
             ),
           ],

@@ -33,12 +33,36 @@ class DiscoverUserCard extends StatefulWidget {
 
 class _DiscoverUserCardState extends State<DiscoverUserCard> {
   int _currentPhotoIndex = 0;
+  double? _distance;
+
+  @override
+  void initState() {
+    super.initState();
+    _calculateDistanceValue();
+  }
 
   @override
   void didUpdateWidget(DiscoverUserCard oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.user.uid != widget.user.uid) {
       _currentPhotoIndex = 0;
+      _calculateDistanceValue();
+    }
+  }
+
+  void _calculateDistanceValue() {
+    final currentUser = context.read<UserProvider>().currentUser;
+    final user = widget.user;
+    if (currentUser?.latitude != null && currentUser?.longitude != null &&
+        user.latitude != null && user.longitude != null) {
+      _distance = _calculateDistance(
+        currentUser!.latitude!,
+        currentUser.longitude!,
+        user.latitude!,
+        user.longitude!,
+      );
+    } else {
+      _distance = null;
     }
   }
 
@@ -47,21 +71,25 @@ class _DiscoverUserCardState extends State<DiscoverUserCard> {
     final showLike = widget.percentX > 0.2;
     final showNope = widget.percentX < -0.2;
 
-    return GestureDetector(
-      onTap: widget.onTap,
-      child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-            boxShadow: [AppColors.neoShadowLarge],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: Stack(
-              fit: StackFit.expand,
-              children: _buildStackChildren(showLike, showNope),
+    return RepaintBoundary(
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: Container(
+            height: 560,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
+              boxShadow: [AppColors.neoShadowLarge],
             ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: Stack(
+                fit: StackFit.expand,
+                children: _buildStackChildren(showLike, showNope),
+              ),
+          ),
         ),
       ),
     );
@@ -83,6 +111,7 @@ class _DiscoverUserCardState extends State<DiscoverUserCard> {
           return CachedNetworkImage(
             imageUrl: photoUrls[index],
             fit: BoxFit.cover,
+            memCacheWidth: 400,
             placeholder: (context, url) => Container(color: Colors.black12),
             errorWidget: (context, url, error) => Container(
               color: Colors.white,
@@ -244,62 +273,50 @@ class _DiscoverUserCardState extends State<DiscoverUserCard> {
                   ),
                 ],
               ),
-              if (user.latitude != null && user.longitude != null) ...[
+              if (_distance != null) ...[
                 const SizedBox(height: 8),
-                Builder(
-                  builder: (context) {
-                    final currentUser = context.read<UserProvider>().currentUser;
-                    if (currentUser?.latitude == null || currentUser?.longitude == null) return const SizedBox.shrink();
-                    
-                    final dist = _calculateDistance(
-                      currentUser!.latitude!, currentUser.longitude!, 
-                      user.latitude!, user.longitude!
-                    );
-                    
-                    return Row(
-                      children: [
-                        const Icon(Icons.location_on, color: Colors.black, size: 14),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${dist.toStringAsFixed(1)} KM UZAKTA'.toUpperCase(),
-                          style: GoogleFonts.outfit(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.black,
-                          ),
-                        ),
-                      ],
-                    );
-                  }
-                ),
-                const SizedBox(height: 16),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    _buildMiniCircleButton(
-                      onTap: widget.onDislike,
-                      icon: Icons.close_rounded,
-                      color: Colors.redAccent,
-                      iconSize: 22,
-                      size: 48,
-                    ),
-                    _buildMiniCircleButton(
-                      onTap: widget.onSuperLike,
-                      icon: Icons.star_rounded,
-                      color: Colors.amber,
-                      iconSize: 24,
-                      size: 52,
-                    ),
-                    _buildMiniCircleButton(
-                      onTap: widget.onLike,
-                      icon: Icons.favorite_rounded,
-                      color: AppColors.primary,
-                      iconSize: 24,
-                      size: 52,
+                    const Icon(Icons.location_on, color: Colors.black, size: 14),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${_distance!.toStringAsFixed(1)} KM UZAKTA'.toUpperCase(),
+                      style: GoogleFonts.outfit(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.black,
+                      ),
                     ),
                   ],
                 ),
               ],
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildMiniCircleButton(
+                    onTap: widget.onDislike,
+                    icon: Icons.close_rounded,
+                    color: Colors.redAccent,
+                    iconSize: 22,
+                    size: 48,
+                  ),
+                  _buildMiniCircleButton(
+                    onTap: widget.onSuperLike,
+                    icon: Icons.star_rounded,
+                    color: Colors.amber,
+                    iconSize: 24,
+                    size: 52,
+                  ),
+                  _buildMiniCircleButton(
+                    onTap: widget.onLike,
+                    icon: Icons.favorite_rounded,
+                    color: AppColors.primary,
+                    iconSize: 24,
+                    size: 52,
+                  ),
+                ],
+              ),
             ],
           ),
         ),

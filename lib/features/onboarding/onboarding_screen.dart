@@ -13,7 +13,7 @@ class OnboardingScreen extends StatefulWidget {
 }
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
-  final PageController _pageController = PageController();
+
   int _currentPage = 0;
 
   final List<OnboardingData> _pages = [
@@ -184,6 +184,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       },
                       style: AppTheme.lightTheme.elevatedButtonTheme.style?.copyWith(
                         backgroundColor: const WidgetStatePropertyAll(Colors.white),
+                        foregroundColor: const WidgetStatePropertyAll(Colors.black),
                         shape: WidgetStatePropertyAll(
                           RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(20),
@@ -199,10 +200,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             style: GoogleFonts.outfit(
                               fontWeight: FontWeight.w900,
                               fontSize: 20,
+                              color: Colors.black,
                             ),
                           ),
                           const SizedBox(width: 12),
-                          const Icon(Icons.arrow_forward_rounded, weight: 900),
+                          const Icon(
+                            Icons.arrow_forward_rounded, 
+                            color: Colors.black,
+                            weight: 900,
+                          ),
                         ],
                       ),
                     ),
