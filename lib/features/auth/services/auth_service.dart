@@ -173,7 +173,7 @@ class AuthService {
   Future<void> sendSignInLinkToEmail(String email) async {
     try {
       final acs = ActionCodeSettings(
-        url: 'https://dengim-kim.firebaseapp.com/__/auth/action?email=$email',
+        url: 'https://dengim-kim.firebaseapp.com?email=$email',
         handleCodeInApp: true,
         androidPackageName: 'dengim.kim',
         androidMinimumVersion: '12',
