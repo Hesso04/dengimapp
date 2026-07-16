@@ -32,8 +32,14 @@ export default function LandingPage() {
             <header className="fixed top-0 left-0 right-0 z-50 bg-[#0A0A0A]/85 backdrop-blur-xl border-b border-white/5 px-6 py-4">
                 <div className="max-w-7xl mx-auto flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gradient-to-tr from-[#FF4B55] to-[#ECB613] rounded-xl flex items-center justify-center shadow-lg shadow-[#FF4B55]/20">
-                            <span className="material-symbols-outlined text-black text-2xl font-bold" style={{ fontVariationSettings: "'FILL' 1" }}>local_fire_department</span>
+                        <div className="w-10 h-10 relative rounded-xl overflow-hidden shadow-lg shadow-[#FF4B55]/20 border border-white/10 flex items-center justify-center bg-zinc-900">
+                            <Image 
+                                src="/logo.png" 
+                                alt="Dengim Logo" 
+                                width={40} 
+                                height={40} 
+                                className="object-cover"
+                            />
                         </div>
                         <span className="text-2xl font-black tracking-tight bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">DENGİM</span>
                     </div>
@@ -380,8 +386,14 @@ export default function LandingPage() {
                     <div className="grid md:grid-cols-4 gap-12 mb-12">
                         <div className="md:col-span-2">
                             <div className="flex items-center gap-3 mb-4">
-                                <div className="w-8 h-8 bg-gradient-to-tr from-[#FF4B55] to-[#ECB613] rounded-lg flex items-center justify-center">
-                                    <span className="material-symbols-outlined text-black text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>local_fire_department</span>
+                                <div className="w-8 h-8 relative rounded-lg overflow-hidden flex items-center justify-center bg-zinc-900">
+                                    <Image 
+                                        src="/logo.png" 
+                                        alt="Dengim Logo" 
+                                        width={32} 
+                                        height={32} 
+                                        className="object-cover"
+                                    />
                                 </div>
                                 <span className="text-xl font-black text-white">DENGİM</span>
                             </div>
