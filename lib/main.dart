@@ -240,15 +240,15 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: 800),
     );
 
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeIn),
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
     );
 
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: const Interval(0.0, 0.8, curve: Curves.bounceOut)),
+    _scaleAnimation = Tween<double>(begin: 0.9, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
     );
 
     _controller.forward();
@@ -262,7 +262,8 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   }
 
   Future<void> _checkFirstTime() async {
-    await Future.delayed(const Duration(milliseconds: 500));
+    // Suni gecikmeyi en aza indiriyoruz
+    await Future.delayed(const Duration(milliseconds: 50));
 
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -300,7 +301,8 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
             final creditProvider = Provider.of<CreditProvider>(context, listen: false);
             await creditProvider.init();
-            await creditProvider.claimDailyReward();
+            // Await etmeden arka planda çalıştırıyoruz, açılış hızlansın!
+            creditProvider.claimDailyReward();
 
             if (!mounted) return;
 
@@ -334,10 +336,10 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.blue, // Neo Blue background
+      backgroundColor: const Color(0xFF0A0A0A), // Premium dark theme matching vitrine
       body: Stack(
         children: [
-          // Dotted Background Effect
+          // Dotted Background Effect (very subtle in dark mode)
           CustomPaint(
             painter: DottedPainter(),
             size: Size.infinite,
@@ -351,77 +353,59 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Neo Logo Container
+                    // Premium Sleek Logo with Gradient
                     Container(
-                      width: 160,
-                      height: 160,
+                      width: 130,
+                      height: 130,
                       decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(32),
-                        border: Border.all(color: Colors.black, width: 4),
-                        boxShadow: const [
+                        gradient: const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Color(0xFFFF4B55),
+                            Color(0xFFECB613),
+                          ],
+                        ),
+                        shape: BoxShape.circle,
+                        boxShadow: [
                           BoxShadow(
-                            color: Colors.black,
-                            offset: Offset(8, 8),
-                            blurRadius: 0,
+                            color: const Color(0xFFFF4B55).withValues(alpha: 0.3),
+                            blurRadius: 30,
+                            spreadRadius: 2,
+                            offset: const Offset(0, 10),
                           ),
                         ],
                       ),
                       child: const Center(
                         child: Icon(
                           Icons.local_fire_department_rounded,
-                          size: 90,
-                          color: AppColors.primary, // Yellow flame
+                          size: 70,
+                          color: Colors.black, // Dark contrast fire icon
                         ),
                       ),
                     ),
-                    const SizedBox(height: 48),
+                    const SizedBox(height: 32),
                     
-                    // Brand Name
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      decoration: BoxDecoration(
+                    // Brand Name - Elegant White Typography
+                    Text(
+                      'DENGİM',
+                      style: GoogleFonts.outfit(
+                        fontSize: 40,
+                        fontWeight: FontWeight.w900,
                         color: Colors.white,
-                        border: Border.all(color: Colors.black, width: 4),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Colors.black,
-                            offset: Offset(4, 4),
-                            blurRadius: 0,
-                          ),
-                        ],
-                      ),
-                      child: Text(
-                        'DENGİM',
-                        style: GoogleFonts.outfit(
-                          fontSize: 48,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.black,
-                          letterSpacing: -2,
-                        ),
+                        letterSpacing: 2.0,
                       ),
                     ),
-                    const SizedBox(height: 24),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        border: Border.all(color: Colors.black, width: 3),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Colors.black,
-                            offset: Offset(3, 3),
-                            blurRadius: 0,
-                          ),
-                        ],
-                      ),
-                      child: Text(
-                        'RUH EŞİNİ BUL',
-                        style: GoogleFonts.outfit(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.black,
-                        ),
+                    const SizedBox(height: 12),
+                    
+                    // Subtle elegant subtitle
+                    Text(
+                      'SESİNLE BAĞLAN',
+                      style: GoogleFonts.outfit(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white54,
+                        letterSpacing: 4.0,
                       ),
                     ),
                   ],
