@@ -90,8 +90,12 @@ class _MainScaffoldState extends State<MainScaffold> {
       _currentIndex = 0;
     }
 
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final borderColor = isDark ? const Color(0xFF262629) : const Color(0xFFEEEEEE);
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: Column(
         children: [
           if (!connectivityProvider.isConnected)
@@ -109,10 +113,14 @@ class _MainScaffoldState extends State<MainScaffold> {
   }
 
   Widget _buildBottomNav(List<_NavItem> navItems) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final borderColor = isDark ? const Color(0xFF262629) : const Color(0xFFEEEEEE);
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Color(0xFFEEEEEE), width: 1.0)),
+        color: theme.bottomNavigationBarTheme.backgroundColor ?? theme.colorScheme.surface,
+        border: Border(top: BorderSide(color: borderColor, width: 1.0)),
       ),
       padding: EdgeInsets.only(
         left: 12, 
@@ -134,6 +142,10 @@ class _MainScaffoldState extends State<MainScaffold> {
     final isSelected = _currentIndex == index;
     final item = navItems[index];
     final badgeProvider = context.watch<BadgeProvider>();
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final borderColor = isDark ? const Color(0xFF262629) : const Color(0xFFEEEEEE);
+    final unselectedColor = theme.bottomNavigationBarTheme.unselectedItemColor ?? AppColors.textSecondary;
     
     int badgeCount = 0;
     if (item.label == 'Mesajlar') { 
@@ -151,7 +163,9 @@ class _MainScaffoldState extends State<MainScaffold> {
         decoration: BoxDecoration(
           color: isSelected ? AppColors.primary : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
-          border: isSelected ? Border.all(color: Color(0xFFEEEEEE), width: 1.0) : Border.all(color: Colors.transparent, width: AppColors.neoBorderWidth),
+          border: isSelected 
+              ? Border.all(color: borderColor, width: 1.0) 
+              : Border.all(color: Colors.transparent, width: AppColors.neoBorderWidth),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -162,7 +176,7 @@ class _MainScaffoldState extends State<MainScaffold> {
                 Icon(
                   isSelected ? item.activeIcon : item.icon,
                   size: 26,
-                  color: isSelected ? Colors.white : AppColors.textSecondary,
+                  color: isSelected ? Colors.white : unselectedColor,
                 ),
                 if (badgeCount > 0)
                   Positioned(
@@ -173,7 +187,7 @@ class _MainScaffoldState extends State<MainScaffold> {
                       decoration: BoxDecoration(
                         color: AppColors.red,
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 1.0),
+                        border: Border.all(color: isDark ? const Color(0xFF1B1B1D) : Colors.white, width: 1.0),
                       ),
                       constraints: const BoxConstraints(
                         minWidth: 18,

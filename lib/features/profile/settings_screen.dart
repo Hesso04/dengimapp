@@ -33,15 +33,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
     String themeLabel = 'Cihaz Teması';
     if (themeProvider.themeMode == ThemeMode.light) themeLabel = 'Açık';
     if (themeProvider.themeMode == ThemeMode.dark) themeLabel = 'Koyu';
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final elementColor = isDark ? Colors.white : Colors.black;
+    final borderColor = isDark ? const Color(0xFF262629) : const Color(0xFFEEEEEE);
+
     return Scaffold(
-      backgroundColor: AppColors.scaffold,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: theme.appBarTheme.backgroundColor ?? theme.colorScheme.surface,
         elevation: 0,
         centerTitle: true,
-        shape: Border(bottom: BorderSide(color: Color(0xFFEEEEEE), width: 1.0)),
+        shape: Border(bottom: BorderSide(color: borderColor, width: 1.0)),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black, size: 20),
+          icon: Icon(Icons.arrow_back_ios_new, color: elementColor, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -50,7 +55,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             fontSize: 20,
             fontWeight: FontWeight.w900,
             letterSpacing: -0.5,
-            color: Colors.black,
+            color: theme.textTheme.titleLarge?.color ?? elementColor,
           ),
         ),
       ),
@@ -225,16 +230,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 20),
                     width: double.infinity,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: isDark ? const Color(0xFF1B1B1D) : Colors.white,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-                      boxShadow: [AppColors.neoShadowSmall],
+                      border: Border.all(color: borderColor, width: 1.0),
+                      boxShadow: isDark ? null : [AppColors.neoShadowSmall],
                     ),
                     child: Center(
                       child: Text(
                         "ÇIKIŞ YAP",
                         style: GoogleFonts.outfit(
-                          color: Colors.black,
+                          color: elementColor,
                           fontWeight: FontWeight.w900,
                           fontSize: 16,
                         ),
@@ -296,6 +301,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildSectionHeader(String title) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final elementColor = isDark ? Colors.white : Colors.black;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 16, left: 4),
       child: Text(
@@ -303,7 +312,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         style: GoogleFonts.outfit(
           fontSize: 14,
           fontWeight: FontWeight.w900,
-          color: Colors.black,
+          color: elementColor,
           letterSpacing: 0.5,
         ),
       ),
@@ -316,25 +325,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
     IconData icon, 
     {String? trailing, VoidCallback? onTap}
   ) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final cardBg = isDark ? const Color(0xFF1B1B1D) : Colors.white;
+    final borderColor = isDark ? const Color(0xFF262629) : const Color(0xFFEEEEEE);
+    final elementColor = isDark ? Colors.white : Colors.black;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: cardBg,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-          boxShadow: [AppColors.neoShadowSmall],
+          border: Border.all(color: borderColor, width: 1.0),
+          boxShadow: isDark ? null : [AppColors.neoShadowSmall],
         ),
         child: Row(
           children: [
-            Icon(icon, color: Colors.black, size: 24),
+            Icon(icon, color: elementColor, size: 24),
             const SizedBox(width: 16),
             Expanded(
               child: Text(
                 title,
-                style: GoogleFonts.outfit(color: Colors.black, fontSize: 15, fontWeight: FontWeight.w800),
+                style: GoogleFonts.outfit(color: elementColor, fontSize: 15, fontWeight: FontWeight.w800),
               ),
             ),
             if (trailing != null)
@@ -346,7 +361,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               )
             else
-              const Icon(Icons.arrow_forward_ios, color: Colors.black, size: 16),
+              Icon(Icons.arrow_forward_ios, color: elementColor, size: 16),
           ],
         ),
       ),
@@ -360,30 +375,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
     bool value,
     ValueChanged<bool> onChanged,
   ) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final cardBg = isDark ? const Color(0xFF1B1B1D) : Colors.white;
+    final borderColor = isDark ? const Color(0xFF262629) : const Color(0xFFEEEEEE);
+    final elementColor = isDark ? Colors.white : Colors.black;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardBg,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-        boxShadow: [AppColors.neoShadowSmall],
+        border: Border.all(color: borderColor, width: 1.0),
+        boxShadow: isDark ? null : [AppColors.neoShadowSmall],
       ),
       child: Row(
         children: [
-          Icon(icon, color: Colors.black, size: 24),
+          Icon(icon, color: elementColor, size: 24),
           const SizedBox(width: 16),
           Expanded(
             child: Text(
               title,
-              style: GoogleFonts.outfit(color: Colors.black, fontSize: 15, fontWeight: FontWeight.w800),
+              style: GoogleFonts.outfit(color: elementColor, fontSize: 15, fontWeight: FontWeight.w800),
             ),
           ),
           Theme(
-            data: Theme.of(context).copyWith(
+            data: theme.copyWith(
               switchTheme: SwitchThemeData(
-                thumbColor: WidgetStateProperty.all(value ? Colors.black : Colors.grey[300]),
-                trackColor: WidgetStateProperty.all(value ? AppColors.primary : Colors.grey[200]),
+                thumbColor: WidgetStateProperty.all(value ? Colors.white : Colors.grey[300]),
+                trackColor: WidgetStateProperty.all(value ? AppColors.primary : (isDark ? Colors.grey[800] : Colors.grey[200])),
               ),
             ),
             child: Switch(
@@ -397,19 +418,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showInfoDialog(String title, String message) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final elementColor = isDark ? Colors.white : Colors.black;
+    final borderColor = isDark ? const Color(0xFF262629) : const Color(0xFFEEEEEE);
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
+        backgroundColor: theme.colorScheme.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(24),
-          side: BorderSide(color: Color(0xFFEEEEEE), width: 1.0),
+          side: BorderSide(color: borderColor, width: 1.0),
         ),
-        title: Text(title.toUpperCase(), style: GoogleFonts.outfit(color: Colors.black, fontWeight: FontWeight.w900)),
-        content: Text(message, style: GoogleFonts.outfit(color: Colors.black, fontWeight: FontWeight.w600)),
+        title: Text(title.toUpperCase(), style: GoogleFonts.outfit(color: elementColor, fontWeight: FontWeight.w900)),
+        content: Text(message, style: GoogleFonts.outfit(color: elementColor, fontWeight: FontWeight.w600)),
         actions: [
           TextButton(
-            child: Text("TAMAM", style: GoogleFonts.outfit(color: Colors.black, fontWeight: FontWeight.w900)),
+            child: Text("TAMAM", style: GoogleFonts.outfit(color: elementColor, fontWeight: FontWeight.w900)),
             onPressed: () => Navigator.pop(context),
           ),
         ],
@@ -418,13 +444,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showChangePasswordDialog() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final elementColor = isDark ? Colors.white : Colors.black;
+    final borderColor = isDark ? const Color(0xFF262629) : const Color(0xFFEEEEEE);
+
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        backgroundColor: Colors.white,
+        backgroundColor: theme.colorScheme.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(24),
-          side: BorderSide(color: Color(0xFFEEEEEE), width: 1.0),
+          side: BorderSide(color: borderColor, width: 1.0),
         ),
         title: Text("ŞİFRE SIFIRLA", style: GoogleFonts.outfit(color: Colors.black, fontWeight: FontWeight.w900)),
         content: Text(

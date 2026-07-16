@@ -70,6 +70,9 @@ class _DiscoverUserCardState extends State<DiscoverUserCard> {
   Widget build(BuildContext context) {
     final showLike = widget.percentX > 0.2;
     final showNope = widget.percentX < -0.2;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final borderColor = isDark ? const Color(0xFF262629) : const Color(0xFFEEEEEE);
 
     return RepaintBoundary(
       child: GestureDetector(
@@ -78,10 +81,10 @@ class _DiscoverUserCardState extends State<DiscoverUserCard> {
             height: 560,
             width: double.infinity,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: theme.cardTheme.color ?? theme.colorScheme.surface,
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-              boxShadow: [AppColors.neoShadowLarge],
+              border: Border.all(color: borderColor, width: 1.0),
+              boxShadow: isDark ? null : [AppColors.neoShadowLarge],
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(20),
@@ -99,6 +102,10 @@ class _DiscoverUserCardState extends State<DiscoverUserCard> {
     final user = widget.user;
     final percentX = widget.percentX;
     final photoUrls = user.photoUrls ?? [user.imageUrl];
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final borderColor = isDark ? const Color(0xFF262629) : const Color(0xFFEEEEEE);
+    final elementColor = isDark ? Colors.white : Colors.black;
     
     final children = <Widget>[
       // Multi-photo PageView
@@ -114,7 +121,7 @@ class _DiscoverUserCardState extends State<DiscoverUserCard> {
             memCacheWidth: 400,
             placeholder: (context, url) => Container(color: Colors.black12),
             errorWidget: (context, url, error) => Container(
-              color: Colors.white,
+              color: isDark ? const Color(0xFF1B1B1D) : Colors.white,
               child: const Icon(Icons.person, size: 80, color: Colors.black12),
             ),
           );
@@ -140,10 +147,10 @@ class _DiscoverUserCardState extends State<DiscoverUserCard> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: isDark ? const Color(0xFF1F1F23) : Colors.white,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-                boxShadow: [AppColors.neoShadowSmall],
+                border: Border.all(color: borderColor, width: 1.0),
+                boxShadow: isDark ? null : [AppColors.neoShadowSmall],
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -153,7 +160,7 @@ class _DiscoverUserCardState extends State<DiscoverUserCard> {
                     decoration: BoxDecoration(
                       color: user.isOnline ? AppColors.green : AppColors.red, 
                       shape: BoxShape.circle,
-                      border: Border.all(color: Colors.black, width: 1.5),
+                      border: Border.all(color: elementColor, width: 1.5),
                     )
                   ),
                   const SizedBox(width: 8),
@@ -162,7 +169,7 @@ class _DiscoverUserCardState extends State<DiscoverUserCard> {
                     style: GoogleFonts.outfit(
                       fontSize: 10, 
                       fontWeight: FontWeight.w900, 
-                      color: Colors.black, 
+                      color: elementColor, 
                     )
                   ),
                 ],
@@ -190,7 +197,7 @@ class _DiscoverUserCardState extends State<DiscoverUserCard> {
                   color: _currentPhotoIndex == index
                     ? AppColors.primary
                     : Colors.white.withValues(alpha: 0.6),
-                  border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
+                  border: Border.all(color: borderColor, width: 1.0),
                   boxShadow: const [
                     BoxShadow(color: Colors.black26, offset: Offset(1, 1)),
                   ],
@@ -207,10 +214,10 @@ class _DiscoverUserCardState extends State<DiscoverUserCard> {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: isDark ? const Color(0xFF1F1F23) : Colors.white,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-            boxShadow: [AppColors.neoShadow],
+            border: Border.all(color: borderColor, width: 1.0),
+            boxShadow: isDark ? null : [AppColors.neoShadow],
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -224,7 +231,7 @@ class _DiscoverUserCardState extends State<DiscoverUserCard> {
                       style: GoogleFonts.outfit(
                         fontSize: 22,
                         fontWeight: FontWeight.w900,
-                        color: Colors.black,
+                        color: elementColor,
                         letterSpacing: -0.5,
                       ),
                       maxLines: 1,
@@ -246,7 +253,7 @@ class _DiscoverUserCardState extends State<DiscoverUserCard> {
                       decoration: BoxDecoration(
                         color: AppColors.primary, // Black
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
+                        border: Border.all(color: borderColor, width: 1.0),
                       ),
                       child: Text(
                         _getGoalLabel(user.relationshipGoal).toUpperCase(),
@@ -265,7 +272,7 @@ class _DiscoverUserCardState extends State<DiscoverUserCard> {
                       style: GoogleFonts.outfit(
                         fontSize: 11,
                         fontWeight: FontWeight.w800,
-                        color: Colors.black.withValues(alpha: 0.6),
+                        color: elementColor.withValues(alpha: 0.6),
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -277,14 +284,14 @@ class _DiscoverUserCardState extends State<DiscoverUserCard> {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    const Icon(Icons.location_on, color: Colors.black, size: 14),
+                    Icon(Icons.location_on, color: elementColor, size: 14),
                     const SizedBox(width: 4),
                     Text(
                       '${_distance!.toStringAsFixed(1)} KM UZAKTA'.toUpperCase(),
                       style: GoogleFonts.outfit(
                         fontSize: 10,
                         fontWeight: FontWeight.w900,
-                        color: Colors.black,
+                        color: elementColor,
                       ),
                     ),
                   ],

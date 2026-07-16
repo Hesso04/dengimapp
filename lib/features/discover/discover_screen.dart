@@ -496,8 +496,13 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final borderColor = isDark ? const Color(0xFF262629) : const Color(0xFFEEEEEE);
+    final elementColor = isDark ? Colors.white : Colors.black;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: Consumer<DiscoveryProvider>(
         builder: (context, provider, child) {
           final visibleUsers = provider.users.where((u) => !_dismissedUserIds.contains(u.uid)).toList();
@@ -507,8 +512,8 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
             children: [
               RefreshIndicator(
                 onRefresh: _refreshData,
-                color: Colors.black,
-                backgroundColor: Colors.white,
+                color: elementColor,
+                backgroundColor: theme.colorScheme.surface,
                 displacement: 40,
                 strokeWidth: 3,
                 child: CustomScrollView(
@@ -606,24 +611,24 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: theme.colorScheme.surface,
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: const Color(0xFFEEEEEE), width: 1.0),
-                        boxShadow: [AppColors.neoShadowSmall],
+                        border: Border.all(color: borderColor, width: 1.0),
+                        boxShadow: isDark ? null : [AppColors.neoShadowSmall],
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const SizedBox(
+                          SizedBox(
                             width: 16,
                             height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.black),
+                            child: CircularProgressIndicator(strokeWidth: 2.5, color: elementColor),
                           ),
                           const SizedBox(width: 8),
                           Text(
                             'YENİLENİYOR...',
                             style: GoogleFonts.outfit(
-                              color: Colors.black,
+                              color: elementColor,
                               fontSize: 10,
                               fontWeight: FontWeight.w900,
                             ),

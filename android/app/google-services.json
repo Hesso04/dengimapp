@@ -15,11 +15,43 @@
       },
       "oauth_client": [
         {
+          "client_id": "12239103870-6vad19ccvmpijbgep3mqg7f3n3g191p7.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "dengim.kim",
+            "certificate_hash": "4b60dcef3c94b79ab4855910a475a83ccbdaa852"
+          }
+        },
+        {
+          "client_id": "12239103870-7dpmlmojl4jinhpjhf384map4ouu5soa.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "dengim.kim",
+            "certificate_hash": "d22e8d8cde8881c6bbdb89cddbca9cf947715b99"
+          }
+        },
+        {
+          "client_id": "12239103870-ejlelns7me4vigjr7lk1l4p6rs0hetc1.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "dengim.kim",
+            "certificate_hash": "87c3272c3372146b32d9523acd2bdd8afb859eb4"
+          }
+        },
+        {
           "client_id": "12239103870-pbntj0evbr233f22mm443a4r4veds6bh.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "dengim.kim",
             "certificate_hash": "1ce1a7b8cfc757daad6340393eadb5cb2f2a5759"
+          }
+        },
+        {
+          "client_id": "12239103870-rqh6233be7qun152h0h1vb17ptbp3p78.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "dengim.kim",
+            "certificate_hash": "900b33710a3036d975d4ab8eb38b8be194de6afd"
           }
         },
         {

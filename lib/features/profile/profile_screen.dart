@@ -82,8 +82,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         }
 
 
+        final theme = Theme.of(context);
+        final isDark = theme.brightness == Brightness.dark;
+        final elementColor = isDark ? Colors.white : Colors.black;
+
         return Scaffold(
-          backgroundColor: AppColors.scaffold,
+          backgroundColor: theme.scaffoldBackgroundColor,
           body: SingleChildScrollView(
             child: Column(
               children: [
@@ -95,7 +99,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       height: 560,
                       width: double.infinity,
                       fit: BoxFit.cover,
-                      placeholder: (context, url) => Container(color: AppColors.surface),
+                      placeholder: (context, url) => Container(color: theme.colorScheme.surface),
                       errorWidget: (context, url, error) => const Icon(Icons.error),
                     ),
                     // Header Border
@@ -105,7 +109,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       right: 0,
                       child: Container(
                         height: 4,
-                        color: Colors.black,
+                        color: elementColor,
                       ),
                     ),
                     // Buttons at Top
@@ -152,7 +156,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             style: GoogleFonts.outfit(
                               fontSize: 32,
                               fontWeight: FontWeight.w900,
-                              color: Colors.black,
+                              color: elementColor,
                               letterSpacing: -1.0,
                             ),
                           ),
@@ -174,13 +178,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          const Icon(Icons.location_on, color: Colors.black, size: 16),
+                          Icon(Icons.location_on, color: elementColor, size: 16),
                           const SizedBox(width: 6),
                           Text(
                             location.toUpperCase(),
                             style: GoogleFonts.outfit(
                               fontSize: 14,
-                              color: Colors.black.withValues(alpha: 0.6),
+                              color: elementColor.withValues(alpha: 0.6),
                               fontWeight: FontWeight.w800,
                             ),
                           ),
@@ -276,24 +280,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
 
-  Widget _buildCircleIcon(IconData icon, {VoidCallback? onTap}) {
+    Widget _buildCircleIcon(IconData icon, {VoidCallback? onTap}) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final cardBg = isDark ? const Color(0xFF1F1F23) : Colors.white;
+    final borderColor = isDark ? const Color(0xFF262629) : const Color(0xFFEEEEEE);
+    final elementColor = isDark ? Colors.white : Colors.black;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: 44,
         height: 44,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: cardBg,
           shape: BoxShape.circle,
-          border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-          boxShadow: [AppColors.neoShadowSmall],
+          border: Border.all(color: borderColor, width: 1.0),
+          boxShadow: isDark ? null : [AppColors.neoShadowSmall],
         ),
-        child: Icon(icon, color: Colors.black, size: 20),
+        child: Icon(icon, color: elementColor, size: 20),
       ),
     );
   }
 
   Widget _buildSectionHeader(String title) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final elementColor = isDark ? Colors.white : Colors.black;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Text(
@@ -301,7 +315,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         style: GoogleFonts.outfit(
           fontSize: 12,
           fontWeight: FontWeight.w900,
-          color: Colors.black,
+          color: elementColor,
           letterSpacing: 1.0,
         ),
       ),
@@ -309,20 +323,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildBioCard(String bio) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final cardBg = isDark ? const Color(0xFF1F1F23) : Colors.white;
+    final borderColor = isDark ? const Color(0xFF262629) : const Color(0xFFEEEEEE);
+    final elementColor = isDark ? Colors.white : Colors.black;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardBg,
         borderRadius: BorderRadius.circular(AppColors.neoRadius),
-        border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-        boxShadow: [AppColors.neoShadowSmall],
+        border: Border.all(color: borderColor, width: 1.0),
+        boxShadow: isDark ? null : [AppColors.neoShadowSmall],
       ),
       child: Text(
         bio,
         style: GoogleFonts.outfit(
           fontSize: 16,
-          color: Colors.black,
+          color: elementColor,
           fontWeight: FontWeight.w500,
           height: 1.6,
         ),
@@ -331,13 +351,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildDetailsCard(String job, String education, String interests, String zodiac, String relGoal, String joinedDate) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final cardBg = isDark ? const Color(0xFF1F1F23) : Colors.white;
+    final borderColor = isDark ? const Color(0xFF262629) : const Color(0xFFEEEEEE);
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardBg,
         borderRadius: BorderRadius.circular(AppColors.neoRadius),
-        border: Border.all(color: const Color(0xFFEEEEEE), width: 1.0),
-        boxShadow: [AppColors.neoShadowSmall],
+        border: Border.all(color: borderColor, width: 1.0),
+        boxShadow: isDark ? null : [AppColors.neoShadowSmall],
       ),
       child: Column(
         children: [
@@ -353,21 +378,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildDetailRow(String label, String value, {bool isLast = false}) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final elementColor = isDark ? Colors.white : Colors.black;
+
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16),
       decoration: BoxDecoration(
-        border: isLast ? null : Border(bottom: BorderSide(color: Colors.black.withValues(alpha: 0.1), width: 1)),
+        border: isLast ? null : Border(bottom: BorderSide(color: elementColor.withValues(alpha: 0.1), width: 1)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: GoogleFonts.outfit(fontSize: 14, color: Colors.black.withValues(alpha: 0.5), fontWeight: FontWeight.w800)),
+          Text(label, style: GoogleFonts.outfit(fontSize: 14, color: elementColor.withValues(alpha: 0.5), fontWeight: FontWeight.w800)),
           const SizedBox(width: 16),
           Expanded(
             child: Text(
               value,
               textAlign: TextAlign.end,
-              style: GoogleFonts.outfit(fontSize: 14, color: Colors.black, fontWeight: FontWeight.w900),
+              style: GoogleFonts.outfit(fontSize: 14, color: elementColor, fontWeight: FontWeight.w900),
             ),
           ),
         ],
@@ -382,27 +411,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
     Color? color,
     Color? textColor,
   }) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final cardBg = isDark ? const Color(0xFF1F1F23) : Colors.white;
+    final borderColor = isDark ? const Color(0xFF262629) : const Color(0xFFEEEEEE);
+    final elementColor = isDark ? Colors.white : Colors.black;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
         height: 56,
         decoration: BoxDecoration(
-          color: color ?? Colors.white,
+          color: color ?? cardBg,
           borderRadius: BorderRadius.circular(AppColors.neoRadiusSmall),
-          border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-          boxShadow: [AppColors.neoShadowSmall],
+          border: Border.all(color: borderColor, width: 1.0),
+          boxShadow: isDark ? null : [AppColors.neoShadowSmall],
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 18, color: textColor ?? Colors.black),
+            Icon(icon, size: 18, color: textColor ?? elementColor),
             const SizedBox(width: 8),
             Text(
               label,
               style: GoogleFonts.outfit(
                 fontSize: 14,
                 fontWeight: FontWeight.w900,
-                color: textColor ?? Colors.black,
+                color: textColor ?? elementColor,
               ),
             ),
           ],
