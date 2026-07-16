@@ -446,6 +446,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _showChangePasswordDialog() {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final elementColor = isDark ? Colors.white : Colors.black;
     final borderColor = isDark ? const Color(0xFF262629) : const Color(0xFFEEEEEE);
 
     showDialog(
@@ -456,10 +457,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           borderRadius: BorderRadius.circular(24),
           side: BorderSide(color: borderColor, width: 1.0),
         ),
-        title: Text("ŞİFRE SIFIRLA", style: GoogleFonts.outfit(color: Colors.black, fontWeight: FontWeight.w900)),
+        title: Text("ŞİFRE SIFIRLA", style: GoogleFonts.outfit(color: elementColor, fontWeight: FontWeight.w900)),
         content: Text(
           "E-POSTA ADRESİNİZE ŞİFRE SIFIRLAMA BAĞLANTISI GÖNDERİLSİN Mİ?\n\n$_userEmail",
-          style: GoogleFonts.outfit(color: Colors.black, fontWeight: FontWeight.w700),
+          style: GoogleFonts.outfit(color: elementColor, fontWeight: FontWeight.w700),
         ),
         actions: [
           TextButton(
@@ -473,7 +474,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               minimumSize: const Size(120, 50),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
-                side: BorderSide(color: Color(0xFFEEEEEE), width: 1.0),
+                side: BorderSide(color: borderColor, width: 1.0),
               ),
               elevation: 0,
             ),
@@ -485,12 +486,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 messenger.showSnackBar(
                   SnackBar(
                     backgroundColor: Colors.black,
-                    content: Text('ŞİFRE SIFIRLAMA E-POSTASI GÖNDERİLDİ!', style: GoogleFonts.outfit(fontWeight: FontWeight.w900)),
+                    content: Text('ŞİFRE SIFIRLAMA E-POSTASI GÖNDERİLDİ!', style: GoogleFonts.outfit(fontWeight: FontWeight.w900, color: Colors.white)),
                   ),
                 );
               } catch (e) {
-                if (mounted) {
-                  ErrorHandler.showError(context, "Hata: $e");
+                if (dialogContext.mounted) {
+                  ErrorHandler.showError(dialogContext, "Hata: $e");
                 }
               }
             },
@@ -536,19 +537,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showDeleteConfirmation(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final bgColor = theme.colorScheme.surface;
+    final elementColor = isDark ? Colors.white : Colors.black;
+    final borderColor = isDark ? const Color(0xFF262629) : const Color(0xFFEEEEEE);
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
+        backgroundColor: bgColor,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(24),
-          side: BorderSide(color: Color(0xFFEEEEEE), width: 1.0),
+          side: BorderSide(color: borderColor, width: 1.0),
         ),
         title: Row(
           children: [
             const Icon(Icons.warning_rounded, color: AppColors.red, size: 28),
             const SizedBox(width: 12),
-            Text("HESABINI SİL?", style: GoogleFonts.outfit(color: Colors.black, fontWeight: FontWeight.w900)),
+            Text("HESABINI SİL?", style: GoogleFonts.outfit(color: elementColor, fontWeight: FontWeight.w900)),
           ],
         ),
         content: Column(
@@ -561,13 +568,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             Text(
               "• PROFİLİN KALICI OLARAK SİLİNECEK\n• TÜM EŞLEŞMELERİN KAYBOLACAK\n• MESAJ GEÇMİŞİN SİLİNECEK",
-              style: GoogleFonts.outfit(color: Colors.black, fontWeight: FontWeight.w700, height: 1.6),
+              style: GoogleFonts.outfit(color: elementColor, fontWeight: FontWeight.w700, height: 1.6),
             ),
           ],
         ),
         actions: [
           TextButton(
-            child: Text("İPTAL", style: GoogleFonts.outfit(color: Colors.black, fontWeight: FontWeight.w900)),
+            child: Text("İPTAL", style: GoogleFonts.outfit(color: isDark ? Colors.white70 : Colors.black, fontWeight: FontWeight.w900)),
             onPressed: () => Navigator.pop(context),
           ),
           ElevatedButton(
@@ -577,7 +584,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               minimumSize: const Size(120, 50),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
-                side: BorderSide(color: Color(0xFFEEEEEE), width: 1.0),
+                side: BorderSide(color: borderColor, width: 1.0),
               ),
               elevation: 0,
             ),
@@ -626,25 +633,38 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showPassportDialog() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final bgColor = isDark ? AppColors.scaffoldDark : Colors.white;
+    final elementColor = isDark ? Colors.white : Colors.black;
+    final borderColor = isDark ? const Color(0xFF262629) : const Color(0xFFEEEEEE);
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (context) => Container(
         height: MediaQuery.of(context).size.height * 0.6,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-          border: Border(top: BorderSide(color: Color(0xFFEEEEEE), width: 1.0)),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+          border: Border(top: BorderSide(color: borderColor, width: 1.0)),
         ),
         child: Column(
           children: [
             const SizedBox(height: 12),
-            Container(width: 60, height: 6, decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(3))),
+            Container(
+              width: 60, 
+              height: 6, 
+              decoration: BoxDecoration(
+                color: isDark ? Colors.white24 : Colors.black12, 
+                borderRadius: BorderRadius.circular(3),
+              ),
+            ),
             const SizedBox(height: 24),
             Text(
               "DENGİM PASAPORT",
-              style: GoogleFonts.outfit(fontSize: 24, fontWeight: FontWeight.w900, color: Colors.black),
+              style: GoogleFonts.outfit(fontSize: 24, fontWeight: FontWeight.w900, color: elementColor),
             ),
             const SizedBox(height: 8),
             Text(
@@ -676,24 +696,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildCityItem(String name, IconData icon, {bool isSelected = false}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final itemBgColor = isSelected 
+        ? AppColors.primary 
+        : (isDark ? AppColors.cardDark : Colors.white);
+    final borderColor = isDark ? const Color(0xFF262629) : const Color(0xFFEEEEEE);
+    final textColor = isSelected ? Colors.white : (isDark ? Colors.white : Colors.black);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: isSelected ? AppColors.primary : Colors.white,
+        color: itemBgColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-        boxShadow: isSelected ? null : [AppColors.neoShadowSmall],
+        border: Border.all(color: isSelected ? Colors.transparent : borderColor, width: 1.0),
+        boxShadow: isSelected || isDark ? null : [AppColors.neoShadowSmall],
       ),
       child: ListTile(
-        leading: Icon(icon, color: isSelected ? Colors.white : Colors.black, size: 28),
-        title: Text(name.toUpperCase(), style: GoogleFonts.outfit(color: isSelected ? Colors.white : Colors.black, fontWeight: FontWeight.w900, fontSize: 16)),
+        leading: Icon(icon, color: isSelected ? Colors.white : (isDark ? Colors.white70 : Colors.black), size: 28),
+        title: Text(name.toUpperCase(), style: GoogleFonts.outfit(color: textColor, fontWeight: FontWeight.w900, fontSize: 16)),
         trailing: isSelected ? const Icon(Icons.check_circle, color: Colors.white) : null,
         onTap: () {
           Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               backgroundColor: Colors.black,
-              content: Text('$name BÖLGESİNE IŞINLANILIYOR...', style: GoogleFonts.outfit(fontWeight: FontWeight.w900)),
+              content: Text('$name BÖLGESİNE IŞINLANILIYOR...', style: GoogleFonts.outfit(fontWeight: FontWeight.w900, color: Colors.white)),
             )
           );
         },
@@ -702,13 +729,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showThemeSelectionDialog(BuildContext context, ThemeProvider themeProvider) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final borderColor = isDark ? const Color(0xFF262629) : const Color(0xFFEEEEEE);
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: Theme.of(context).colorScheme.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(24),
-          side: const BorderSide(color: Color(0xFFEEEEEE), width: 1.0),
+          side: BorderSide(color: borderColor, width: 1.0),
         ),
         title: Text(
           "TEMA SEÇİNİZ",
@@ -764,6 +794,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final borderColor = isDark ? Colors.white10 : const Color(0xFFEEEEEE);
     
     return GestureDetector(
       onTap: onTap,
@@ -772,8 +803,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         decoration: BoxDecoration(
           color: isSelected ? AppColors.primary : (isDark ? const Color(0xFF1B1B1D) : Colors.white),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFEEEEEE), width: 1.0),
-          boxShadow: isSelected ? null : [AppColors.neoShadowSmall],
+          border: Border.all(color: isSelected ? Colors.transparent : borderColor, width: 1.0),
+          boxShadow: isSelected || isDark ? null : [AppColors.neoShadowSmall],
         ),
         child: Row(
           children: [

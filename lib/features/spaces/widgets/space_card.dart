@@ -16,16 +16,17 @@ class SpaceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.only(bottom: 20),
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isDark ? AppColors.cardDark : Colors.white,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-          boxShadow: [AppColors.neoShadowSmall],
+          border: Border.all(color: isDark ? Colors.white10 : const Color(0xFFEEEEEE), width: 1.0),
+          boxShadow: isDark ? [] : [AppColors.neoShadowSmall],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -33,14 +34,14 @@ class SpaceCard extends StatelessWidget {
             Row(
               children: [
                 if (space.status == SpaceStatus.live)
-                  _buildLiveIndicator(),
+                  _buildLiveIndicator(isDark),
                 const Spacer(),
                 Text(
                   _getCategoryName(space.category).toUpperCase(),
                   style: GoogleFonts.outfit(
                     fontSize: 10,
                     fontWeight: FontWeight.w900,
-                    color: Colors.black.withValues(alpha: 0.4),
+                    color: isDark ? Colors.white.withValues(alpha: 0.4) : Colors.black.withValues(alpha: 0.4),
                     letterSpacing: 1.0,
                   ),
                 ),
@@ -52,7 +53,7 @@ class SpaceCard extends StatelessWidget {
               style: GoogleFonts.outfit(
                 fontSize: 18,
                 fontWeight: FontWeight.w900,
-                color: Colors.black,
+                color: isDark ? Colors.white : Colors.black,
                 height: 1.2,
               ),
               maxLines: 2,
@@ -64,7 +65,7 @@ class SpaceCard extends StatelessWidget {
                 space.description!.toUpperCase(),
                 style: GoogleFonts.outfit(
                   fontSize: 12,
-                  color: Colors.black.withValues(alpha: 0.6),
+                  color: isDark ? Colors.white.withValues(alpha: 0.7) : Colors.black.withValues(alpha: 0.6),
                   fontWeight: FontWeight.w700,
                   height: 1.4,
                 ),
@@ -75,7 +76,7 @@ class SpaceCard extends StatelessWidget {
             const SizedBox(height: 24),
             Row(
               children: [
-                _buildSpeakerAvatars(),
+                _buildSpeakerAvatars(isDark),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
@@ -83,11 +84,11 @@ class SpaceCard extends StatelessWidget {
                     style: GoogleFonts.outfit(
                       fontSize: 11,
                       fontWeight: FontWeight.w900,
-                      color: Colors.black,
+                      color: isDark ? Colors.white : Colors.black,
                     ),
                   ),
                 ),
-                _buildListenerCount(),
+                _buildListenerCount(isDark),
               ],
             ),
           ],
@@ -96,14 +97,14 @@ class SpaceCard extends StatelessWidget {
     );
   }
 
-  Widget _buildLiveIndicator() {
+  Widget _buildLiveIndicator(bool isDark) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: AppColors.primary,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-        boxShadow: [AppColors.neoShadowSmall],
+        border: Border.all(color: isDark ? Colors.white10 : const Color(0xFFEEEEEE), width: 1.0),
+        boxShadow: isDark ? [] : [AppColors.neoShadowSmall],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -124,7 +125,7 @@ class SpaceCard extends StatelessWidget {
     );
   }
 
-  Widget _buildSpeakerAvatars() {
+  Widget _buildSpeakerAvatars(bool isDark) {
     final speakers = space.speakers.take(3).toList();
     return SizedBox(
       height: 36,
@@ -137,17 +138,17 @@ class SpaceCard extends StatelessWidget {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: isDark ? AppColors.cardDark : Colors.white,
                 shape: BoxShape.circle,
-                border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-                boxShadow: [AppColors.neoShadowSmall],
+                border: Border.all(color: isDark ? Colors.white10 : const Color(0xFFEEEEEE), width: 1.0),
+                boxShadow: isDark ? [] : [AppColors.neoShadowSmall],
               ),
               child: ClipOval(
                 child: CachedNetworkImage(
                   imageUrl: speakers[index].avatarUrl ?? 'https://ui-avatars.com/api/?name=${speakers[index].name}&background=random&color=fff&size=128&font-size=0.4',
                   fit: BoxFit.cover,
                   placeholder: (context, url) => Container(color: Colors.black12),
-                  errorWidget: (context, url, error) => const Icon(Icons.person, size: 18, color: Colors.black),
+                  errorWidget: (context, url, error) => Icon(Icons.person, size: 18, color: isDark ? Colors.white24 : Colors.black),
                 ),
               ),
             ),
@@ -157,25 +158,25 @@ class SpaceCard extends StatelessWidget {
     );
   }
 
-  Widget _buildListenerCount() {
+  Widget _buildListenerCount(bool isDark) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? AppColors.cardDark : Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-        boxShadow: [AppColors.neoShadowSmall],
+        border: Border.all(color: isDark ? Colors.white10 : const Color(0xFFEEEEEE), width: 1.0),
+        boxShadow: isDark ? [] : [AppColors.neoShadowSmall],
       ),
       child: Row(
         children: [
-          const Icon(Icons.headset_rounded, size: 14, color: Colors.black),
+          Icon(Icons.headset_rounded, size: 14, color: isDark ? Colors.white : Colors.black),
           const SizedBox(width: 6),
           Text(
             '${space.listenerCount}',
             style: GoogleFonts.outfit(
               fontSize: 12,
               fontWeight: FontWeight.w900,
-              color: Colors.black,
+              color: isDark ? Colors.white : Colors.black,
             ),
           ),
         ],

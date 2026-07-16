@@ -23,27 +23,28 @@ class _SpacesScreenState extends State<SpacesScreen> {
     final spaceProvider = context.watch<SpaceProvider>();
     final userProvider = context.read<UserProvider>();
     final currentUser = userProvider.currentUser;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: isDark ? AppColors.scaffoldDark : Colors.white,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildHeader(),
+            _buildHeader(isDark),
             Expanded(
               child: spaceProvider.spaces.isEmpty
-                  ? _buildEmptyState()
+                  ? _buildEmptyState(isDark)
                   : _buildSpacesList(spaceProvider.spaces),
             ),
           ],
         ),
       ),
-      floatingActionButton: _buildCreateButton(currentUser),
+      floatingActionButton: _buildCreateButton(currentUser, isDark),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(bool isDark) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
       child: Column(
@@ -57,32 +58,32 @@ class _SpacesScreenState extends State<SpacesScreen> {
                 child: Container(
                   width: 44, height: 44,
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: isDark ? AppColors.cardDark : Colors.white,
                     shape: BoxShape.circle,
-                    border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-                    boxShadow: [AppColors.neoShadowSmall],
+                    border: Border.all(color: isDark ? Colors.white10 : const Color(0xFFEEEEEE), width: 1.0),
+                    boxShadow: isDark ? [] : [AppColors.neoShadowSmall],
                   ),
-                  child: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.black, size: 18),
+                  child: Icon(Icons.arrow_back_ios_new_rounded, color: isDark ? Colors.white : Colors.black, size: 18),
                 ),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: isDark ? AppColors.cardDark : Colors.white,
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-                  boxShadow: [AppColors.neoShadowSmall],
+                  border: Border.all(color: isDark ? Colors.white10 : const Color(0xFFEEEEEE), width: 1.0),
+                  boxShadow: isDark ? [] : [AppColors.neoShadowSmall],
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.graphic_eq_rounded, color: Colors.black, size: 16),
+                    Icon(Icons.graphic_eq_rounded, color: isDark ? Colors.white : Colors.black, size: 16),
                     const SizedBox(width: 8),
                     Text(
                       'SESLİ ODALAR',
                       style: GoogleFonts.outfit(
                         fontSize: 12,
                         fontWeight: FontWeight.w900,
-                        color: Colors.black,
+                        color: isDark ? Colors.white : Colors.black,
                         letterSpacing: 1.0,
                       ),
                     ),
@@ -97,7 +98,7 @@ class _SpacesScreenState extends State<SpacesScreen> {
             style: GoogleFonts.outfit(
               fontSize: 32,
               fontWeight: FontWeight.w900,
-              color: Colors.black,
+              color: isDark ? Colors.white : Colors.black,
               letterSpacing: -1.0,
             ),
           ),
@@ -106,7 +107,7 @@ class _SpacesScreenState extends State<SpacesScreen> {
             'CANLI SOHBETLERE KATILIN VEYA KENDİ ODANIZI OLUŞTURUN.',
             style: GoogleFonts.outfit(
               fontSize: 14,
-              color: Colors.black.withValues(alpha: 0.5),
+              color: isDark ? Colors.white70 : Colors.black.withValues(alpha: 0.5),
               fontWeight: FontWeight.w800,
               height: 1.4,
             ),
@@ -137,7 +138,7 @@ class _SpacesScreenState extends State<SpacesScreen> {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(bool isDark) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -145,15 +146,15 @@ class _SpacesScreenState extends State<SpacesScreen> {
           Container(
             padding: const EdgeInsets.all(32),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: isDark ? AppColors.cardDark : Colors.white,
               shape: BoxShape.circle,
-              border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-              boxShadow: [AppColors.neoShadowSmall],
+              border: Border.all(color: isDark ? Colors.white10 : const Color(0xFFEEEEEE), width: 1.0),
+              boxShadow: isDark ? [] : [AppColors.neoShadowSmall],
             ),
-            child: const Icon(
+            child: Icon(
               Icons.mic_none_rounded,
               size: 64,
-              color: Colors.black,
+              color: isDark ? Colors.white : Colors.black,
             ),
           ),
           const SizedBox(height: 32),
@@ -162,7 +163,7 @@ class _SpacesScreenState extends State<SpacesScreen> {
             style: GoogleFonts.outfit(
               fontSize: 20,
               fontWeight: FontWeight.w900,
-              color: Colors.black,
+              color: isDark ? Colors.white : Colors.black,
             ),
           ),
           const SizedBox(height: 8),
@@ -170,7 +171,7 @@ class _SpacesScreenState extends State<SpacesScreen> {
             'İLK ODAYI SEN BAŞLATABİLİRSİN!',
             style: GoogleFonts.outfit(
               fontSize: 14,
-              color: Colors.black.withValues(alpha: 0.5),
+              color: isDark ? Colors.white54 : Colors.black.withValues(alpha: 0.5),
               fontWeight: FontWeight.w800,
             ),
           ),
@@ -179,7 +180,7 @@ class _SpacesScreenState extends State<SpacesScreen> {
     );
   }
 
-  Widget? _buildCreateButton(UserProfile? user) {
+  Widget? _buildCreateButton(UserProfile? user, bool isDark) {
     if (user == null) return null;
 
     // Sadece VIP Premium, Admin veya Moderatörler buton görebilir
@@ -197,8 +198,8 @@ class _SpacesScreenState extends State<SpacesScreen> {
         decoration: BoxDecoration(
           color: AppColors.primary,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-          boxShadow: [AppColors.neoShadowSmall],
+          border: Border.all(color: isDark ? Colors.white10 : const Color(0xFFEEEEEE), width: 1.0),
+          boxShadow: isDark ? [] : [AppColors.neoShadowSmall],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,

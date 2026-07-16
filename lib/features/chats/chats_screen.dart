@@ -47,12 +47,22 @@ class _ChatsScreenState extends State<ChatsScreen> {
 
   /// Sohbeti sil (swipe ile)
   Future<void> _deleteChat(ChatConversation chat) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? AppColors.scaffoldDark : Colors.white;
+    final textColor = isDark ? Colors.white : Colors.black;
+
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Sohbeti Sil?', style: GoogleFonts.outfit(fontWeight: FontWeight.w700)),
+        backgroundColor: bgColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+          side: BorderSide(color: isDark ? Colors.white10 : const Color(0xFFEEEEEE), width: 1.0),
+        ),
+        title: Text('Sohbeti Sil?', style: GoogleFonts.outfit(color: textColor, fontWeight: FontWeight.w700)),
         content: Text(
           '${chat.otherUserName} ile olan sohbetiniz silinecek. Bu işlem geri alınamaz.',
+          style: GoogleFonts.outfit(color: isDark ? Colors.white70 : Colors.black87),
         ),
         actions: [
           TextButton(
@@ -358,7 +368,7 @@ class _ChatsScreenState extends State<ChatsScreen> {
     final isDark = theme.brightness == Brightness.dark;
     final bg = isDark ? AppColors.surfaceDark : AppColors.surfaceLight;
     final iconColor = theme.colorScheme.onSurface;
-
+ 
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -367,7 +377,8 @@ class _ChatsScreenState extends State<ChatsScreen> {
         decoration: BoxDecoration(
           color: bg,
           borderRadius: BorderRadius.circular(AppColors.neoRadius),
-          boxShadow: [AppColors.neoShadowSmall],
+          border: Border.all(color: isDark ? Colors.white10 : const Color(0xFFEEEEEE), width: 1.0),
+          boxShadow: isDark ? [] : [AppColors.neoShadowSmall],
         ),
         child: Icon(icon, color: iconColor, size: 20),
       ),
