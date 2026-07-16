@@ -7,12 +7,16 @@ import '../../../../core/services/agora_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../../core/utils/log_service.dart';
 
 class CallScreen extends StatefulWidget {
   final String userName;
   final String userAvatar;
   final String channelId;
-  final bool isVideo; // Kept for backward compatibility but forced to false internally
+  final bool isVideo;
+  final String? otherUserId;
+  final bool isIncoming;
 
   const CallScreen({
     super.key,
@@ -20,6 +24,8 @@ class CallScreen extends StatefulWidget {
     required this.userAvatar,
     required this.channelId,
     this.isVideo = false,
+    this.otherUserId,
+    this.isIncoming = false,
   });
 
   @override
@@ -36,28 +42,104 @@ class _CallScreenState extends State<CallScreen> with SingleTickerProviderStateM
   bool _isSpeaker = false;
 
   late AnimationController _pulseController;
+  StreamSubscription? _callSubscription;
+  bool _isCallConnected = false;
+  bool _isOutgoingRinging = false;
+  Timer? _timeoutTimer;
 
   @override
   void initState() {
     super.initState();
-    _initAgora();
-    _startTimer();
-
-    // Pulse animation for calling state
+    
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 2),
     )..repeat();
+
+    _initCallFlow();
   }
 
-  Future<void> _initAgora() async {
+  Future<void> _initCallFlow() async {
+    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+    if (currentUserId == null) {
+      Navigator.pop(context);
+      return;
+    }
+
+    if (widget.isIncoming) {
+      setState(() {
+        _isCallConnected = true;
+        _isOutgoingRinging = false;
+      });
+      await _connectToAgora();
+      _startTimer();
+      _listenToCallDocument();
+    } else {
+      setState(() {
+        _isOutgoingRinging = true;
+        _isCallConnected = false;
+      });
+      
+      try {
+        await FirebaseFirestore.instance.collection('calls').doc(widget.channelId).set({
+          'id': widget.channelId,
+          'callerId': currentUserId,
+          'callerName': FirebaseAuth.instance.currentUser?.displayName ?? 'Dengim Kullanıcısı',
+          'callerAvatar': FirebaseAuth.instance.currentUser?.photoURL ?? '',
+          'receiverId': widget.otherUserId ?? '',
+          'status': 'ringing',
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+
+        _listenToCallDocument();
+
+        _timeoutTimer = Timer(const Duration(seconds: 30), () {
+          _endCall();
+        });
+      } catch (e) {
+        LogService.e("Failed to create call doc: $e");
+        if (mounted) Navigator.pop(context);
+      }
+    }
+  }
+
+  void _listenToCallDocument() {
+    _callSubscription = FirebaseFirestore.instance
+        .collection('calls')
+        .doc(widget.channelId)
+        .snapshots()
+        .listen((snapshot) {
+      if (!snapshot.exists) {
+        if (mounted) Navigator.pop(context);
+        return;
+      }
+
+      final data = snapshot.data();
+      if (data == null) return;
+
+      final status = data['status'] ?? '';
+      if (status == 'accepted') {
+        _timeoutTimer?.cancel();
+        if (!_isCallConnected) {
+          setState(() {
+            _isCallConnected = true;
+            _isOutgoingRinging = false;
+          });
+          _connectToAgora();
+          _startTimer();
+        }
+      } else if (status == 'rejected' || status == 'ended') {
+        _timeoutTimer?.cancel();
+        if (mounted) Navigator.pop(context);
+      }
+    });
+  }
+
+  Future<void> _connectToAgora() async {
     await _agoraService.init();
     
     _agoraService.engine.registerEventHandler(
       RtcEngineEventHandler(
-        onJoinChannelSuccess: (RtcConnection connection, int elapsed) {
-          // Local user joined channel successfully
-        },
         onUserJoined: (RtcConnection connection, int remoteUid, int elapsed) {
           if (mounted) {
             setState(() {
@@ -70,7 +152,7 @@ class _CallScreenState extends State<CallScreen> with SingleTickerProviderStateM
             setState(() {
               _remoteUid = null;
             });
-            Navigator.pop(context);
+            _endCall();
           }
         },
       ),
@@ -79,7 +161,7 @@ class _CallScreenState extends State<CallScreen> with SingleTickerProviderStateM
     await _agoraService.joinChannel(
       channelId: widget.channelId,
       uid: FirebaseAuth.instance.currentUser?.uid.hashCode.abs() ?? 0,
-      isVideo: false, // Force false since we only do voice calls now
+      isVideo: false,
       isHost: false,
     );
   }
@@ -94,8 +176,23 @@ class _CallScreenState extends State<CallScreen> with SingleTickerProviderStateM
     });
   }
 
+  Future<void> _endCall() async {
+    _timeoutTimer?.cancel();
+    _callSubscription?.cancel();
+    
+    try {
+      await FirebaseFirestore.instance.collection('calls').doc(widget.channelId).update({
+        'status': 'ended',
+      });
+    } catch (e) {}
+
+    if (mounted) Navigator.pop(context);
+  }
+
   @override
   void dispose() {
+    _timeoutTimer?.cancel();
+    _callSubscription?.cancel();
     _pulseController.dispose();
     _timer?.cancel();
     _agoraService.leaveChannel();
@@ -114,7 +211,6 @@ class _CallScreenState extends State<CallScreen> with SingleTickerProviderStateM
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // Blurred background image
           Positioned.fill(
             child: widget.userAvatar.isNotEmpty
                 ? CachedNetworkImage(
@@ -133,13 +229,10 @@ class _CallScreenState extends State<CallScreen> with SingleTickerProviderStateM
               ),
             ),
           ),
-
-          // Voice call layout content
           SafeArea(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Top Bar
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                   child: Row(
@@ -171,15 +264,12 @@ class _CallScreenState extends State<CallScreen> with SingleTickerProviderStateM
                     ],
                   ),
                 ),
-
-                // Middle: Pulsing Avatar & Caller Info
                 Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Stack(
                       alignment: Alignment.center,
                       children: [
-                        // Animated pulsing circles
                         if (_remoteUid == null)
                           ...List.generate(3, (index) {
                             return AnimatedBuilder(
@@ -197,8 +287,6 @@ class _CallScreenState extends State<CallScreen> with SingleTickerProviderStateM
                               },
                             );
                           }),
-                        
-                        // Solid inner ring
                         Container(
                           width: 130,
                           height: 130,
@@ -215,8 +303,6 @@ class _CallScreenState extends State<CallScreen> with SingleTickerProviderStateM
                       ],
                     ),
                     const SizedBox(height: 32),
-                    
-                    // Name
                     Text(
                       widget.userName,
                       style: GoogleFonts.outfit(
@@ -227,8 +313,6 @@ class _CallScreenState extends State<CallScreen> with SingleTickerProviderStateM
                       ),
                     ),
                     const SizedBox(height: 12),
-                    
-                    // Duration / Call state
                     if (_remoteUid != null)
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
@@ -247,7 +331,7 @@ class _CallScreenState extends State<CallScreen> with SingleTickerProviderStateM
                       )
                     else
                       Text(
-                        'Aranıyor...',
+                        _isOutgoingRinging ? 'Aranıyor...' : 'Bağlanıyor...',
                         style: GoogleFonts.outfit(
                           color: Colors.white54,
                           fontSize: 15,
@@ -256,14 +340,11 @@ class _CallScreenState extends State<CallScreen> with SingleTickerProviderStateM
                       ),
                   ],
                 ),
-
-                // Bottom: Action buttons
                 Padding(
                   padding: const EdgeInsets.only(bottom: 48, left: 24, right: 24),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      // Mute Microphone
                       _buildActionCircle(
                         icon: _isMuted ? Icons.mic_off_rounded : Icons.mic_rounded,
                         label: 'Sessiz',
@@ -273,10 +354,8 @@ class _CallScreenState extends State<CallScreen> with SingleTickerProviderStateM
                           _agoraService.engine.muteLocalAudioStream(_isMuted);
                         },
                       ),
-
-                      // End Call (Hang up)
                       GestureDetector(
-                        onTap: () => Navigator.pop(context),
+                        onTap: _endCall,
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -308,8 +387,6 @@ class _CallScreenState extends State<CallScreen> with SingleTickerProviderStateM
                           ],
                         ),
                       ),
-
-                      // Speakerphone
                       _buildActionCircle(
                         icon: _isSpeaker ? Icons.volume_up_rounded : Icons.volume_down_rounded,
                         label: 'Hoparlör',

@@ -273,6 +273,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                     userName: widget.otherUserName,
                     userAvatar: widget.otherUserAvatar,
                     isVideo: false,
+                    otherUserId: widget.otherUserId,
                   ),
                 ),
               );
@@ -461,15 +462,16 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   }
 
   void _showReportDialog() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
+        backgroundColor: isDark ? AppColors.cardDark : Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(24),
-          side: BorderSide(color: Color(0xFFEEEEEE), width: 1.0),
+          side: BorderSide(color: isDark ? Colors.white10 : const Color(0xFFEEEEEE), width: 1.0),
         ),
-        title: Text('RAPOR NEDENİ', style: GoogleFonts.outfit(color: Colors.black, fontWeight: FontWeight.w900)),
+        title: Text('RAPOR NEDENİ', style: GoogleFonts.outfit(color: isDark ? Colors.white : Colors.black, fontWeight: FontWeight.w900)),
         content: SizedBox(
           width: double.maxFinite,
           child: ListView.builder(
@@ -480,7 +482,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
               if (reason == ReportReason.other) return const SizedBox.shrink(); 
               
               return ListTile(
-                title: Text(reason.displayName, style: GoogleFonts.outfit(color: Colors.black, fontWeight: FontWeight.w800)),
+                title: Text(reason.displayName, style: GoogleFonts.outfit(color: isDark ? Colors.white.withValues(alpha: 0.9) : Colors.black, fontWeight: FontWeight.w800)),
                 onTap: () {
                   Navigator.pop(context);
                   _submitReport(reason);

@@ -502,7 +502,7 @@ class _UserProfileDetailScreenState extends State<UserProfileDetailScreen> {
             style: GoogleFonts.outfit(
               fontSize: 12,
               fontWeight: FontWeight.w800,
-              color: Colors.black54,
+              color: Theme.of(context).brightness == Brightness.dark ? Colors.white70 : Colors.black54,
               height: 1.4,
             ),
           ),
@@ -512,12 +512,13 @@ class _UserProfileDetailScreenState extends State<UserProfileDetailScreen> {
   }
 
   void _showMoreOptions(BuildContext context, String targetUserId, String name) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.only(topLeft: Radius.circular(32), topRight: Radius.circular(32)),
-        side: BorderSide(color: Color(0xFFEEEEEE), width: 1.0),
+      backgroundColor: isDark ? AppColors.scaffoldDark : Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: const BorderRadius.only(topLeft: Radius.circular(32), topRight: Radius.circular(32)),
+        side: BorderSide(color: isDark ? Colors.white10 : const Color(0xFFEEEEEE), width: 1.0),
       ),
       builder: (context) => Container(
         padding: const EdgeInsets.fromLTRB(24, 16, 24, 48),
@@ -526,12 +527,19 @@ class _UserProfileDetailScreenState extends State<UserProfileDetailScreen> {
           children: [
             Container(
               width: 40, height: 4, 
-              decoration: BoxDecoration(color: Colors.black26, borderRadius: BorderRadius.circular(2)),
+              decoration: BoxDecoration(
+                color: isDark ? Colors.white24 : Colors.black26, 
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
             const SizedBox(height: 32),
             Text(
               "SEÇENEKLER",
-              style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.w900, color: Colors.black),
+              style: GoogleFonts.outfit(
+                fontSize: 20, 
+                fontWeight: FontWeight.w900, 
+                color: isDark ? Colors.white : Colors.black,
+              ),
             ),
             const SizedBox(height: 32),
             _buildOptionButton(

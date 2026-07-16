@@ -89,17 +89,25 @@ class ReportService extends BaseService {
     if (user.uid == reportedUserId) return false;
 
     return await safeAsync(() async {
-      // Aynı kullanıcıyı daha önce raporlamış mı kontrol et
-      final existingReport = await _firestore
-          .collection('reports')
-          .where('reporterId', isEqualTo: user.uid)
-          .where('reportedUserId', isEqualTo: reportedUserId)
-          .where('status', isEqualTo: 'pending')
-          .limit(1)
-          .get();
+      // Aynı kullanıcıyı daha önce raporlamış mı kontrol et (Hata toleransı ile)
+      bool alreadyReported = false;
+      try {
+        final existingReport = await _firestore
+            .collection('reports')
+            .where('reporterId', isEqualTo: user.uid)
+            .where('reportedUserId', isEqualTo: reportedUserId)
+            .where('status', isEqualTo: 'pending')
+            .limit(1)
+            .get();
 
-      if (existingReport.docs.isNotEmpty) {
-        LogService.w('User already reported this user');
+        if (existingReport.docs.isNotEmpty) {
+          alreadyReported = true;
+        }
+      } catch (e) {
+        LogService.w('Could not verify existing reports due to index/rules: $e');
+      }
+
+      if (alreadyReported) {
         throw Exception("already-reported");
       }
 

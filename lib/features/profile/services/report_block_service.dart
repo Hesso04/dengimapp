@@ -182,10 +182,17 @@ class _ReportUserModalState extends State<ReportUserModal> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = Theme.of(context).scaffoldBackgroundColor;
+    final titleColor = isDark ? Colors.white : Colors.black87;
+    final subtitleColor = isDark ? Colors.white54 : Colors.black54;
+    final handleColor = isDark ? Colors.white24 : Colors.black26;
+    final dividerColor = isDark ? Colors.white10 : Colors.black12;
+
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.scaffold,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -196,7 +203,7 @@ class _ReportUserModalState extends State<ReportUserModal> {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.white24,
+              color: handleColor,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -213,7 +220,7 @@ class _ReportUserModalState extends State<ReportUserModal> {
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: titleColor,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -222,7 +229,7 @@ class _ReportUserModalState extends State<ReportUserModal> {
                   textAlign: TextAlign.center,
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 13,
-                    color: Colors.white54,
+                    color: subtitleColor,
                   ),
                 ),
               ],
@@ -230,7 +237,7 @@ class _ReportUserModalState extends State<ReportUserModal> {
           ),
 
           const SizedBox(height: 24),
-          const Divider(color: Colors.white10, height: 1),
+          Divider(color: dividerColor, height: 1),
           const SizedBox(height: 24),
 
           // Content
@@ -265,11 +272,11 @@ class _ReportUserModalState extends State<ReportUserModal> {
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
                           color: isSelected
-                              ? Colors.red.withValues(alpha: 0.1)
-                              : Colors.white.withValues(alpha: 0.05),
+                              ? Colors.red.withOpacity(0.12)
+                              : (isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05)),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: isSelected ? Colors.red : Colors.white10,
+                            color: isSelected ? Colors.red : (isDark ? Colors.white10 : Colors.black12),
                             width: 2,
                           ),
                         ),
@@ -282,7 +289,7 @@ class _ReportUserModalState extends State<ReportUserModal> {
                               child: Text(
                                 category['label']!,
                                 style: GoogleFonts.plusJakartaSans(
-                                  color: Colors.white,
+                                  color: isDark ? Colors.white : Colors.black87,
                                   fontWeight: isSelected
                                       ? FontWeight.bold
                                       : FontWeight.normal,
@@ -315,24 +322,24 @@ class _ReportUserModalState extends State<ReportUserModal> {
                     controller: _descriptionController,
                     maxLines: 4,
                     maxLength: 500,
-                    style: GoogleFonts.plusJakartaSans(color: Colors.white),
+                    style: GoogleFonts.plusJakartaSans(color: isDark ? Colors.white : Colors.black87),
                     decoration: InputDecoration(
                       hintText: 'Detayları açıklayın...',
                       hintStyle: GoogleFonts.plusJakartaSans(
-                          color: Colors.white30),
+                          color: isDark ? Colors.white30 : Colors.black38),
                       filled: true,
-                      fillColor: Colors.white.withValues(alpha: 0.05),
+                      fillColor: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.white10),
+                        borderSide: BorderSide(color: isDark ? Colors.white10 : Colors.black12),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.white10),
+                        borderSide: BorderSide(color: isDark ? Colors.white10 : Colors.black12),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: AppColors.primary),
+                        borderSide: const BorderSide(color: AppColors.primary),
                       ),
                     ),
                   ),
@@ -344,13 +351,13 @@ class _ReportUserModalState extends State<ReportUserModal> {
           ),
 
           // Submit Button
-        Container(
+          Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: AppColors.scaffold,
+              color: bgColor,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.2),
+                  color: Colors.black.withOpacity(0.1),
                   blurRadius: 20,
                   offset: const Offset(0, -4),
                 ),
@@ -365,7 +372,7 @@ class _ReportUserModalState extends State<ReportUserModal> {
                       : _submitReport,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.red,
-                    disabledBackgroundColor: Colors.red.withValues(alpha: 0.3),
+                    disabledBackgroundColor: Colors.red.withOpacity(0.3),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
