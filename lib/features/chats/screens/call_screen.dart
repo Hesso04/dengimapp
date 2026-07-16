@@ -9,6 +9,9 @@ import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../core/utils/log_service.dart';
+import 'package:just_audio/just_audio.dart';
+import '../services/chat_service.dart';
+import '../models/chat_models.dart';
 
 class CallScreen extends StatefulWidget {
   final String userName;
@@ -34,6 +37,7 @@ class CallScreen extends StatefulWidget {
 
 class _CallScreenState extends State<CallScreen> with SingleTickerProviderStateMixin {
   final _agoraService = AgoraService();
+  final _audioPlayer = AudioPlayer();
   int? _remoteUid;
   
   Timer? _timer;
@@ -71,6 +75,7 @@ class _CallScreenState extends State<CallScreen> with SingleTickerProviderStateM
         _isCallConnected = true;
         _isOutgoingRinging = false;
       });
+      _startRingtone();
       await _connectToAgora();
       _startTimer();
       _listenToCallDocument();
@@ -91,10 +96,11 @@ class _CallScreenState extends State<CallScreen> with SingleTickerProviderStateM
           'createdAt': FieldValue.serverTimestamp(),
         });
 
+        _startRingbackTone();
         _listenToCallDocument();
 
         _timeoutTimer = Timer(const Duration(seconds: 30), () {
-          _endCall();
+          _endCall(isTimeout: true);
         });
       } catch (e) {
         LogService.e("Failed to create call doc: $e");
@@ -110,6 +116,7 @@ class _CallScreenState extends State<CallScreen> with SingleTickerProviderStateM
         .snapshots()
         .listen((snapshot) {
       if (!snapshot.exists) {
+        _stopAudio();
         if (mounted) Navigator.pop(context);
         return;
       }
@@ -120,6 +127,7 @@ class _CallScreenState extends State<CallScreen> with SingleTickerProviderStateM
       final status = data['status'] ?? '';
       if (status == 'accepted') {
         _timeoutTimer?.cancel();
+        _stopAudio();
         if (!_isCallConnected) {
           setState(() {
             _isCallConnected = true;
@@ -130,9 +138,38 @@ class _CallScreenState extends State<CallScreen> with SingleTickerProviderStateM
         }
       } else if (status == 'rejected' || status == 'ended') {
         _timeoutTimer?.cancel();
+        _stopAudio();
         if (mounted) Navigator.pop(context);
       }
     });
+  }
+
+  Future<void> _startRingbackTone() async {
+    try {
+      await _audioPlayer.setUrl('https://www.soundjay.com/phone/sounds/phone-calling-1.mp3');
+      await _audioPlayer.setLoopMode(LoopMode.one);
+      await _audioPlayer.play();
+    } catch (e) {
+      LogService.e("Failed to play ringback tone: $e");
+    }
+  }
+
+  Future<void> _startRingtone() async {
+    try {
+      await _audioPlayer.setUrl('https://www.soundjay.com/phone/sounds/telephone-ring-03a.mp3');
+      await _audioPlayer.setLoopMode(LoopMode.one);
+      await _audioPlayer.play();
+    } catch (e) {
+      LogService.e("Failed to play ringtone: $e");
+    }
+  }
+
+  void _stopAudio() {
+    try {
+      _audioPlayer.stop();
+    } catch (e) {
+      LogService.e("Failed to stop audio: $e");
+    }
   }
 
   Future<void> _connectToAgora() async {
@@ -176,9 +213,30 @@ class _CallScreenState extends State<CallScreen> with SingleTickerProviderStateM
     });
   }
 
-  Future<void> _endCall() async {
+  Future<void> _endCall({bool isTimeout = false}) async {
     _timeoutTimer?.cancel();
     _callSubscription?.cancel();
+    _stopAudio();
+
+    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+    
+    // Arama accepted olmadan sonlandırıldıysa (cevapsız arama veya iptal edilen arama)
+    if (!_isCallConnected && currentUserId != null && !widget.isIncoming) {
+      try {
+        final receiverId = widget.otherUserId ?? '';
+        if (receiverId.isNotEmpty) {
+          // Sohbet odasına "Cevapsız Arama" mesajı ekle
+          await ChatService().sendMessage(
+            widget.channelId,
+            isTimeout ? "Cevapsız Arama" : "İptal Edilen Arama",
+            receiverId,
+            type: MessageType.call,
+          );
+        }
+      } catch (e) {
+        LogService.e("Failed to send missed call message: $e");
+      }
+    }
     
     try {
       await FirebaseFirestore.instance.collection('calls').doc(widget.channelId).update({
@@ -195,6 +253,8 @@ class _CallScreenState extends State<CallScreen> with SingleTickerProviderStateM
   void dispose() {
     _timeoutTimer?.cancel();
     _callSubscription?.cancel();
+    _stopAudio();
+    _audioPlayer.dispose();
     _pulseController.dispose();
     _timer?.cancel();
     _agoraService.leaveChannel();

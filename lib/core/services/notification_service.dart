@@ -65,6 +65,22 @@ class NotificationService {
       // 4. Foreground FCM Listener
       FirebaseMessaging.onMessage.listen((RemoteMessage message) {
         LogService.i('FCM Received: ${message.notification?.title}');
+        
+        final data = message.data;
+        final chatId = data['chatId'];
+        final messageId = data['messageId'];
+        
+        if (chatId != null && messageId != null) {
+          _firestore
+              .collection('conversations')
+              .doc(chatId)
+              .collection('messages')
+              .doc(messageId)
+              .update({'isDelivered': true}).catchError((e) {
+            LogService.e("Failed to update message delivered status from FCM: $e");
+          });
+        }
+
         if (!kIsWeb) {
           _showLocalNotification(
             id: message.hashCode,
@@ -109,6 +125,19 @@ class NotificationService {
               title: data['title'] ?? 'Yeni Bildirim',
               body: data['body'] ?? '',
             );
+            
+            // Mark the corresponding message as delivered
+            if (data['type'] == 'message' && data['chatId'] != null && data['messageId'] != null) {
+              _firestore
+                  .collection('conversations')
+                  .doc(data['chatId'])
+                  .collection('messages')
+                  .doc(data['messageId'])
+                  .update({'isDelivered': true}).catchError((e) {
+                LogService.e("Failed to update message delivered status: $e");
+              });
+            }
+
             // Mark as notified (NOT as read) to avoid duplicate popups
             change.doc.reference.update({'isNotified': true});
           }

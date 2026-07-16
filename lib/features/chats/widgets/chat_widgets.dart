@@ -490,6 +490,29 @@ class _ChatBubbleState extends State<ChatBubble> {
       case MessageType.audio:
         return _buildAudioPlayer(isMe, isDark, textColor);
       
+      case MessageType.call:
+        final isMissed = widget.message.content.contains("Cevapsız");
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isMissed ? Icons.phone_missed_rounded : Icons.phone_callback_rounded,
+              color: isMissed ? Colors.redAccent : (isMe ? Colors.white70 : Colors.grey),
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              widget.message.content,
+              style: GoogleFonts.outfit(
+                fontSize: 15,
+                color: isMe ? Colors.white : textColor,
+                fontWeight: FontWeight.bold,
+                height: 1.4,
+              ),
+            ),
+          ],
+        );
+
       case MessageType.text:
         return Text(
           widget.message.content,
@@ -592,15 +615,7 @@ class _ChatBubbleState extends State<ChatBubble> {
     
     if (isRead) {
       icon = Icons.done_all_rounded; // ✓✓
-      // Görüldü tick has AppColors.primary (Rose-Red) with a circular white background for contrast
-      return Container(
-        padding: const EdgeInsets.all(1.5),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          shape: BoxShape.circle,
-        ),
-        child: Icon(icon, size: 11, color: AppColors.primary),
-      );
+      return Icon(icon, size: 14, color: Colors.blueAccent);
     } else if (isDelivered) {
       icon = Icons.done_all_rounded; // ✓✓
       color = isMe ? Colors.white70 : Colors.black38;

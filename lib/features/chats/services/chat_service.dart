@@ -158,11 +158,12 @@ class ChatService {
       messageData['storyReply'] = storyReply;
     }
 
-    await _firestore
+    final messageRef = await _firestore
         .collection('conversations')
         .doc(chatId)
         .collection('messages')
         .add(messageData);
+    final messageId = messageRef.id;
 
     // 2. Ana sohbet belgesini güncelle (son mesaj, okunmamış sayısı vb.)
     final Map<String, dynamic> updateData = {
@@ -183,7 +184,7 @@ class ChatService {
     });
 
     // 4. Send Push Notification
-    await _sendChatNotification(receiverId, lastMessagePreview, chatId);
+    await _sendChatNotification(receiverId, lastMessagePreview, chatId, messageId);
   }
 
   /// Fotoğraf Gönder
@@ -408,11 +409,12 @@ class ChatService {
             : replyToContent,
       };
 
-      await _firestore
+      final messageRef = await _firestore
           .collection('conversations')
           .doc(chatId)
           .collection('messages')
           .add(messageData);
+      final messageId = messageRef.id;
 
       // Sohbet meta verisini güncelle
       await _firestore.collection('conversations').doc(chatId).update({
@@ -424,7 +426,7 @@ class ChatService {
       LogService.i("Reply message sent successfully");
       
       // Bildirim gönder
-      await _sendChatNotification(receiverId, content, chatId);
+      await _sendChatNotification(receiverId, content, chatId, messageId);
     } catch (e) {
       LogService.e("Send reply message error", e);
     }
@@ -445,16 +447,27 @@ class ChatService {
   }
 
   /// Mesaj bildirimlerini yollayan yardımcı fonksiyon
-  Future<void> _sendChatNotification(String targetUid, String bodyPreview, String chatId) async {
+  Future<void> _sendChatNotification(String targetUid, String bodyPreview, String chatId, String messageId) async {
     final user = currentUser;
     if (user == null || targetUid.isEmpty) return;
 
     try {
+      // 1. Alıcının activeChatId'sini kontrol et. Eğer alıcı o sohbet ekranındaysa push/bildirim ATMİYORUZ.
+      final receiverDoc = await _firestore.collection('users').doc(targetUid).get();
+      final activeChatId = receiverDoc.data()?['activeChatId'] as String?;
+      
+      if (activeChatId == chatId) {
+        // Alıcı sohbette olduğu için mesaj anında iletildi ve okundu oldu, push göndermeye gerek yok.
+        return;
+      }
+
       await _firestore.collection('users').doc(targetUid).collection('notifications').add({
         'type': 'message',
         'title': 'Yeni Mesaj 💬',
         'body': bodyPreview,
         'senderId': user.uid,
+        'chatId': chatId,
+        'messageId': messageId,
         'createdAt': FieldValue.serverTimestamp(),
         'isRead': false,
       });
@@ -471,6 +484,7 @@ class ChatService {
         data: {
           'type': 'chat',
           'chatId': chatId,
+          'messageId': messageId,
           'senderId': user.uid,
           'clickAction': 'FLUTTER_NOTIFICATION_CLICK'
         }

@@ -55,10 +55,12 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     super.initState();
     _chatService.markAsRead(widget.chatId);
     
-    // Mark all messages as read (for read receipt indicators)
+    // Set activeChatId on current user's document
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid != null) {
-      // ReadReceiptService().markAllAsRead(chatId: widget.chatId, userId: uid);
+      FirebaseFirestore.instance.collection('users').doc(uid).update({
+        'activeChatId': widget.chatId,
+      });
     }    
     // Listen for new messages while in this screen to clear unread count
     _conversationSubscription = FirebaseFirestore.instance
@@ -79,6 +81,13 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
   @override
   void dispose() {
+    // Remove activeChatId on current user's document
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) {
+      FirebaseFirestore.instance.collection('users').doc(uid).update({
+        'activeChatId': FieldValue.delete(),
+      });
+    }
     _conversationSubscription?.cancel();
     _scrollController.dispose();
     super.dispose();

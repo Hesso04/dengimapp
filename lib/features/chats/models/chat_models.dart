@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-enum MessageType { text, image, audio }
+enum MessageType { text, image, audio, call }
 
 /// Sohbet Listesi Modeli
 class ChatConversation {
