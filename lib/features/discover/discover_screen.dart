@@ -345,26 +345,36 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   }
 
   void _showBoostActivationDialog() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final bgColor = theme.colorScheme.surface;
+    final elementColor = isDark ? Colors.white : Colors.black;
+    final subtitleColor = isDark ? Colors.white70 : Colors.black87;
+    final borderColor = isDark ? const Color(0xFF262629) : const Color(0xFFEEEEEE);
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: AppColors.surface,
+        backgroundColor: bgColor,
         surfaceTintColor: Colors.purpleAccent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+          side: BorderSide(color: borderColor, width: 1.0),
+        ),
         title: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.1),
+                color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.bolt_rounded, color: Colors.black, size: 24),
+              child: Icon(Icons.bolt_rounded, color: isDark ? Colors.purpleAccent : Colors.black, size: 24),
             ),
             const SizedBox(width: 12),
             Text('Profilini Öne Çıkar', 
               style: GoogleFonts.plusJakartaSans(
-                color: Colors.black,
+                color: elementColor,
                 fontWeight: FontWeight.bold,
                 fontSize: 18,
               )
@@ -374,7 +384,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
         content: Text(
           '30 dakika boyunca profilin daha fazla kişi tarafından görülecek ve eşleşme şansın artacak!',
           style: GoogleFonts.plusJakartaSans(
-            color: Colors.black87,
+            color: subtitleColor,
             fontSize: 14,
             height: 1.5,
           ),
@@ -394,7 +404,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text('🚀 Boost Aktifleştirildi! Profilin öne çıkıyor.', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                  backgroundColor: AppColors.primary, // Black
+                  backgroundColor: AppColors.primary, 
                   behavior: SnackBarBehavior.floating,
                 )
               );
