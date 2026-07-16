@@ -276,6 +276,12 @@ class _ChatBubbleState extends State<ChatBubble> {
     final isMe = widget.message.senderId == FirebaseAuth.instance.currentUser?.uid;
     final hasReactions = widget.message.reactions.isNotEmpty;
     final hasReply = widget.message.replyToContent != null;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    final cardBg = isDark ? AppColors.cardDark : Colors.white;
+    final otherBubbleBg = isDark ? AppColors.surfaceDark : const Color(0xFFF2F2F2);
+    final borderColor = isDark ? Colors.white10 : const Color(0xFFEEEEEE);
+    final textColor = isDark ? Colors.white : Colors.black;
 
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
@@ -288,11 +294,11 @@ class _ChatBubbleState extends State<ChatBubble> {
               margin: EdgeInsets.fromLTRB(isMe ? 64 : 0, 4, isMe ? 0 : 64, 2),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.05),
+                color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(12),
                 border: Border(
                   left: BorderSide(
-                    color: isMe ? AppColors.primary : Colors.black,
+                    color: isMe ? AppColors.primary : (isDark ? Colors.white54 : Colors.black),
                     width: AppColors.neoBorderWidthSmall,
                   ),
                 ),
@@ -300,14 +306,14 @@ class _ChatBubbleState extends State<ChatBubble> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.reply, size: 12, color: Colors.black38),
+                  Icon(Icons.reply, size: 12, color: isDark ? Colors.white38 : Colors.black38),
                   const SizedBox(width: 6),
                   Flexible(
                     child: Text(
                       widget.message.replyToContent!,
                       style: GoogleFonts.outfit(
                         fontSize: 11,
-                        color: Colors.black54,
+                        color: isDark ? Colors.white70 : Colors.black54,
                         fontStyle: FontStyle.italic,
                         fontWeight: FontWeight.w600,
                       ),
@@ -332,7 +338,7 @@ class _ChatBubbleState extends State<ChatBubble> {
                 ),
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                 decoration: BoxDecoration(
-                  color: isMe ? AppColors.primary : Colors.white,
+                  color: isMe ? AppColors.primary : otherBubbleBg,
                   borderRadius: BorderRadius.only(
                     topLeft: isMe ? const Radius.circular(20) : const Radius.circular(4),
                     topRight: isMe ? const Radius.circular(4) : const Radius.circular(20),
@@ -340,10 +346,16 @@ class _ChatBubbleState extends State<ChatBubble> {
                     bottomRight: const Radius.circular(20),
                   ),
                   border: Border.all(
-                    color: Colors.black,
-                    width: AppColors.neoBorderWidthSmall,
+                    color: borderColor,
+                    width: 1.0,
                   ),
-                  boxShadow: [AppColors.neoShadowSmall],
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    )
+                  ],
                 ),
                 child: Column(
                   crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
@@ -353,9 +365,9 @@ class _ChatBubbleState extends State<ChatBubble> {
                         margin: const EdgeInsets.only(bottom: 8),
                         padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.05),
+                          color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
+                          border: Border.all(color: borderColor, width: 1.0),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -368,7 +380,7 @@ class _ChatBubbleState extends State<ChatBubble> {
                                   width: 40,
                                   height: 60,
                                   fit: BoxFit.cover,
-                                  placeholder: (context, url) => Container(color: Colors.white),
+                                  placeholder: (context, url) => Container(color: Colors.white24),
                                 ),
                               ),
                             const SizedBox(width: 8),
@@ -376,9 +388,16 @@ class _ChatBubbleState extends State<ChatBubble> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text("HİKAYEYE YANIT", style: GoogleFonts.outfit(fontSize: 10, color: Colors.black, fontWeight: FontWeight.w900)),
+                                  Text(
+                                    "HİKAYEYE YANIT", 
+                                    style: GoogleFonts.outfit(
+                                      fontSize: 10, 
+                                      color: isMe ? Colors.white : textColor, 
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
                                   const SizedBox(height: 2),
-                                  const Icon(Icons.reply, color: Colors.black, size: 14),
+                                  Icon(Icons.reply, color: isMe ? Colors.white70 : textColor, size: 14),
                                 ],
                               ),
                             ),
@@ -386,7 +405,7 @@ class _ChatBubbleState extends State<ChatBubble> {
                           ],
                         ),
                       ),
-                    _buildMessageContent(isMe),
+                    _buildMessageContent(isMe, isDark, textColor),
                     
                     // Zaman damgası
                     const SizedBox(height: 6),
@@ -397,7 +416,7 @@ class _ChatBubbleState extends State<ChatBubble> {
                           _formatTime(widget.message.timestamp),
                           style: GoogleFonts.outfit(
                             fontSize: 11,
-                            color: isMe ? Colors.white70 : Colors.black.withValues(alpha: 0.7),
+                            color: isMe ? Colors.white70 : (isDark ? Colors.white60 : Colors.black54),
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -420,9 +439,9 @@ class _ChatBubbleState extends State<ChatBubble> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: cardBg,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
+                      border: Border.all(color: borderColor, width: 1.0),
                       boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 6, offset: const Offset(0, 2))],
                     ),
                     child: Row(
@@ -447,7 +466,7 @@ class _ChatBubbleState extends State<ChatBubble> {
     return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
   }
 
-  Widget _buildMessageContent(bool isMe) {
+  Widget _buildMessageContent(bool isMe, bool isDark, Color textColor) {
     switch (widget.message.type) {
       case MessageType.image:
         return ClipRRect(
@@ -456,12 +475,12 @@ class _ChatBubbleState extends State<ChatBubble> {
             imageUrl: widget.message.content,
             placeholder: (context, url) => Container(
               height: 200, width: 250,
-              color: Colors.black12,
+              color: isDark ? Colors.black26 : Colors.black12,
               child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
             ),
             errorWidget: (context, url, error) => const SizedBox(
               height: 100, width: 100,
-              child: Icon(Icons.broken_image, color: Colors.white),
+              child: Icon(Icons.broken_image, color: Colors.white54),
             ),
             fit: BoxFit.cover,
             width: 250,
@@ -469,14 +488,14 @@ class _ChatBubbleState extends State<ChatBubble> {
         );
       
       case MessageType.audio:
-        return _buildAudioPlayer(isMe);
+        return _buildAudioPlayer(isMe, isDark, textColor);
       
       case MessageType.text:
         return Text(
           widget.message.content,
           style: GoogleFonts.outfit(
             fontSize: 15,
-            color: isMe ? Colors.white : Colors.black,
+            color: isMe ? Colors.white : textColor,
             fontWeight: FontWeight.w500,
             height: 1.4,
           ),
@@ -484,10 +503,13 @@ class _ChatBubbleState extends State<ChatBubble> {
     }
   }
 
-  Widget _buildAudioPlayer(bool isMe) {
+  Widget _buildAudioPlayer(bool isMe, bool isDark, Color textColor) {
     final progress = _duration.inMilliseconds > 0 
         ? _position.inMilliseconds / _duration.inMilliseconds 
         : 0.0;
+        
+    final progressColor = isMe ? Colors.white : (isDark ? Colors.white70 : Colors.black);
+    final borderColor = isDark ? Colors.white10 : const Color(0xFFEEEEEE);
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -501,11 +523,11 @@ class _ChatBubbleState extends State<ChatBubble> {
             decoration: BoxDecoration(
               color: isMe ? Colors.black.withValues(alpha: 0.15) : AppColors.primary,
               shape: BoxShape.circle,
-              border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
+              border: Border.all(color: borderColor, width: 1.0),
             ),
             child: Icon(
               _isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
-              color: isMe ? Colors.black : Colors.white,
+              color: isMe ? Colors.white : Colors.white,
               size: 24,
             ),
           ),
@@ -521,7 +543,7 @@ class _ChatBubbleState extends State<ChatBubble> {
               Container(
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.1),
+                  color: isMe ? Colors.white30 : (isDark ? Colors.white24 : Colors.black.withValues(alpha: 0.1)),
                   borderRadius: BorderRadius.circular(2),
                 ),
                 child: FractionallySizedBox(
@@ -529,7 +551,7 @@ class _ChatBubbleState extends State<ChatBubble> {
                   widthFactor: progress.clamp(0.0, 1.0),
                   child: Container(
                     decoration: BoxDecoration(
-                      color: Colors.black,
+                      color: progressColor,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -541,7 +563,7 @@ class _ChatBubbleState extends State<ChatBubble> {
                 _isPlaying ? _formatDuration(_position) : _formatDuration(_duration),
                 style: GoogleFonts.outfit(
                   fontSize: 11,
-                  color: Colors.black54,
+                  color: isMe ? Colors.white70 : (isDark ? Colors.white60 : Colors.black54),
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -551,10 +573,10 @@ class _ChatBubbleState extends State<ChatBubble> {
         const SizedBox(width: 8),
         
         // Microphone icon
-        const Icon(
+        Icon(
           Icons.mic,
           size: 16,
-          color: Colors.black38,
+          color: isMe ? Colors.white54 : (isDark ? Colors.white54 : Colors.black38),
         ),
       ],
     );

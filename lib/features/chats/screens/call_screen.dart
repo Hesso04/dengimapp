@@ -184,7 +184,9 @@ class _CallScreenState extends State<CallScreen> with SingleTickerProviderStateM
       await FirebaseFirestore.instance.collection('calls').doc(widget.channelId).update({
         'status': 'ended',
       });
-    } catch (e) {}
+    } catch (e) {
+      // Document might not exist or already be ended
+    }
 
     if (mounted) Navigator.pop(context);
   }

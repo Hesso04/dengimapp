@@ -595,7 +595,8 @@ class _UserProfileDetailScreenState extends State<UserProfileDetailScreen> {
     required Color color, 
     required VoidCallback onTap
   }) {
-    final textColor = (color == AppColors.error || color == AppColors.secondary) ? Colors.white : Colors.black;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = (color == AppColors.error || color == AppColors.secondary) ? Colors.white : (isDark ? Colors.white : Colors.black);
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -603,7 +604,7 @@ class _UserProfileDetailScreenState extends State<UserProfileDetailScreen> {
         decoration: BoxDecoration(
           color: color,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
+          border: Border.all(color: isDark ? Colors.white10 : const Color(0xFFEEEEEE), width: 1.0),
           boxShadow: [AppColors.neoShadowSmall],
         ),
         child: Row(

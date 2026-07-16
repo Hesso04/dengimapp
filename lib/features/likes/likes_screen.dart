@@ -43,6 +43,7 @@ class _LikesScreenState extends State<LikesScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: Consumer<LikesProvider>(
@@ -107,7 +108,7 @@ class _LikesScreenState extends State<LikesScreen> {
                                             style: GoogleFonts.outfit(
                                               fontSize: 12,
                                               fontWeight: FontWeight.w900,
-                                              color: Colors.black,
+                                              color: theme.colorScheme.onSurface,
                                             ),
                                           ),
                                           const Icon(Icons.lock_outline_rounded, color: AppColors.primary, size: 16),
@@ -202,7 +203,7 @@ class _LikesScreenState extends State<LikesScreen> {
                                   Text(
                                     "PROFİLİNİ GÜÇLENDİR 💪",
                                     style: GoogleFonts.outfit(
-                                      color: Colors.black, 
+                                      color: theme.colorScheme.onSurface, 
                                       fontSize: 20,
                                       fontWeight: FontWeight.w900,
                                     ),
@@ -212,7 +213,7 @@ class _LikesScreenState extends State<LikesScreen> {
                                     "Daha fazla fotoğraf ekle ve\nilgi çekici bir biyografi yaz.",
                                     textAlign: TextAlign.center,
                                     style: GoogleFonts.outfit(
-                                      color: AppColors.textSecondary, 
+                                      color: isDark ? Colors.white70 : AppColors.textSecondary, 
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
                                       height: 1.4,
@@ -343,6 +344,10 @@ class _LikesScreenState extends State<LikesScreen> {
 
   Widget _buildNewMatchesSection(List<UserProfile> matches) {
     if (matches.isEmpty) return const SizedBox.shrink();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBg = isDark ? AppColors.cardDark : Colors.white;
+    final borderColor = isDark ? Colors.white10 : const Color(0xFFEEEEEE);
+    final textColor = isDark ? Colors.white : Colors.black;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -354,7 +359,7 @@ class _LikesScreenState extends State<LikesScreen> {
             style: GoogleFonts.outfit(
               fontSize: 12,
               fontWeight: FontWeight.w900,
-              color: Colors.black,
+              color: isDark ? Colors.white : Colors.black,
               letterSpacing: 1.0,
             ),
           ),
@@ -374,9 +379,9 @@ class _LikesScreenState extends State<LikesScreen> {
                   children: [
                     Container(
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: cardBg,
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
+                        border: Border.all(color: borderColor, width: 1.0),
                         boxShadow: [AppColors.neoShadowSmall],
                       ),
                       child: ClipRRect(
@@ -386,7 +391,7 @@ class _LikesScreenState extends State<LikesScreen> {
                           width: 80,
                           height: 100,
                           fit: BoxFit.cover,
-                          placeholder: (context, url) => Container(color: Colors.black12),
+                          placeholder: (context, url) => Container(color: isDark ? Colors.black26 : Colors.black12),
                         ),
                       ),
                     ),
@@ -396,7 +401,7 @@ class _LikesScreenState extends State<LikesScreen> {
                       style: GoogleFonts.outfit(
                         fontSize: 10,
                         fontWeight: FontWeight.w900,
-                        color: Colors.black,
+                        color: textColor,
                       ),
                     ),
                   ],
@@ -562,11 +567,16 @@ class _LockedLikeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final cardBg = isDark ? AppColors.cardDark : Colors.white;
+    final borderColor = isDark ? Colors.white10 : const Color(0xFFEEEEEE);
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardBg,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
+        border: Border.all(color: borderColor, width: 1.0),
         boxShadow: [AppColors.neoShadowSmall],
       ),
       child: ClipRRect(
@@ -612,10 +622,10 @@ class _LockedLikeCard extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: AppColors.primary,
                       shape: BoxShape.circle,
-                      border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
+                      border: Border.all(color: borderColor, width: 1.0),
                       boxShadow: [AppColors.neoShadowSmall],
                     ),
-                    child: const Icon(Icons.lock_outline_rounded, color: Colors.black, size: 28),
+                    child: Icon(Icons.lock_outline_rounded, color: isDark ? Colors.white : Colors.black, size: 28),
                   ),
                   const SizedBox(height: 12),
                   Padding(
@@ -653,13 +663,20 @@ class _UnlockedLikeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final cardBg = isDark ? AppColors.cardDark : Colors.white;
+    final borderColor = isDark ? Colors.white10 : const Color(0xFFEEEEEE);
+    final textColor = isDark ? Colors.white : Colors.black;
+    final subColor = isDark ? Colors.white.withValues(alpha: 0.7) : Colors.black.withValues(alpha: 0.5);
+
     return GestureDetector(
       onTap: () => _showProfileDetail(context),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: cardBg,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
+          border: Border.all(color: borderColor, width: 1.0),
           boxShadow: [AppColors.neoShadowSmall],
         ),
         child: ClipRRect(
@@ -671,7 +688,7 @@ class _UnlockedLikeCard extends StatelessWidget {
               CachedNetworkImage(
                 imageUrl: user.imageUrl,
                 fit: BoxFit.cover,
-                placeholder: (context, url) => Container(color: Colors.white),
+                placeholder: (context, url) => Container(color: isDark ? Colors.black26 : Colors.white),
               ),
               
               // Info Area
@@ -682,8 +699,8 @@ class _UnlockedLikeCard extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    border: Border(top: BorderSide(color: Color(0xFFEEEEEE), width: 1.0)),
+                    color: cardBg,
+                    border: Border(top: BorderSide(color: borderColor, width: 1.0)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -694,17 +711,16 @@ class _UnlockedLikeCard extends StatelessWidget {
                         style: GoogleFonts.outfit(
                           fontSize: 14,
                           fontWeight: FontWeight.w900,
-                          color: Colors.black,
+                          color: textColor,
                           letterSpacing: -0.5,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      ...[
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          const Icon(Icons.location_on_rounded, color: Colors.black, size: 10),
+                          Icon(Icons.location_on_rounded, color: textColor, size: 10),
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
@@ -712,7 +728,7 @@ class _UnlockedLikeCard extends StatelessWidget {
                               style: GoogleFonts.outfit(
                                 fontSize: 10,
                                 fontWeight: FontWeight.w800,
-                                color: Colors.black.withValues(alpha: 0.5),
+                                color: subColor,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -720,7 +736,6 @@ class _UnlockedLikeCard extends StatelessWidget {
                           ),
                         ],
                       ),
-                    ],
                       if (showActions) ...[
                         const SizedBox(height: 12),
                         Row(
@@ -733,7 +748,7 @@ class _UnlockedLikeCard extends StatelessWidget {
                                   decoration: BoxDecoration(
                                     color: AppColors.red,
                                     borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
+                                    border: Border.all(color: borderColor, width: 1.0),
                                     boxShadow: [AppColors.neoShadowSmall],
                                   ),
                                   child: const Icon(Icons.close_rounded, color: Colors.white, size: 22),
@@ -749,7 +764,7 @@ class _UnlockedLikeCard extends StatelessWidget {
                                   decoration: BoxDecoration(
                                     color: AppColors.primary,
                                     borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
+                                    border: Border.all(color: borderColor, width: 1.0),
                                     boxShadow: [AppColors.neoShadowSmall],
                                   ),
                                   child: const Icon(Icons.favorite_rounded, color: Colors.white, size: 22),
@@ -764,8 +779,6 @@ class _UnlockedLikeCard extends StatelessWidget {
                 ),
               ),
               
-               // Action Buttons (Removed from separate Stack position, integrated into Info Area)
-
               // Like Icon (top-right)
               Positioned(
                 top: 8,
@@ -773,9 +786,9 @@ class _UnlockedLikeCard extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: cardBg,
                     shape: BoxShape.circle,
-                    border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
+                    border: Border.all(color: borderColor, width: 1.0),
                   ),
                   child: const Icon(Icons.favorite, color: Colors.red, size: 12),
                 ),

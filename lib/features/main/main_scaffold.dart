@@ -56,6 +56,7 @@ class _MainScaffoldState extends State<MainScaffold> {
         .where('status', isEqualTo: 'ringing')
         .snapshots()
         .listen((snapshot) {
+      if (!mounted) return;
       if (snapshot.docs.isNotEmpty) {
         final callDoc = snapshot.docs.first;
         final data = callDoc.data();
@@ -437,7 +438,7 @@ class _IncomingCallScreenState extends State<_IncomingCallScreen> with SingleTic
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
               child: Container(
-                color: Colors.black.withOpacity(0.7),
+                color: Colors.black.withValues(alpha: 0.7),
               ),
             ),
           ),
@@ -466,7 +467,7 @@ class _IncomingCallScreenState extends State<_IncomingCallScreen> with SingleTic
                                 height: 120 + (100 * progress),
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: AppColors.primary.withOpacity(0.15 * (1.0 - progress)),
+                                  color: AppColors.primary.withValues(alpha: 0.15 * (1.0 - progress)),
                                 ),
                               );
                             },
@@ -477,7 +478,7 @@ class _IncomingCallScreenState extends State<_IncomingCallScreen> with SingleTic
                           height: 130,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            border: Border.all(color: AppColors.primary.withOpacity(0.3), width: 4),
+                            border: Border.all(color: AppColors.primary.withValues(alpha: 0.3), width: 4),
                           ),
                           child: CircleAvatar(
                             radius: 60,

@@ -46,3 +46,6 @@ app.*.map.json
 build/
 android/app/build/
 /android/app/build/
+# Release APK
+*.apk
+dengim-release.apk
