@@ -118,21 +118,22 @@ class _FollowsListScreenState extends State<FollowsListScreen> {
   }
 
   Future<void> _unfollowUser(UserProfile targetUser) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
+        backgroundColor: isDark ? AppColors.scaffoldDark : Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(24),
-          side: const BorderSide(color: Color(0xFFEEEEEE), width: 1.0),
+          side: BorderSide(color: isDark ? Colors.white10 : const Color(0xFFEEEEEE), width: 1.0),
         ),
         title: Text(
           'TAKİPTEN ÇIK?',
-          style: GoogleFonts.outfit(color: Colors.black, fontWeight: FontWeight.w900),
+          style: GoogleFonts.outfit(color: isDark ? Colors.white : Colors.black, fontWeight: FontWeight.w900),
         ),
         content: Text(
           '${targetUser.name.toUpperCase()} KİŞİSİNİ TAKİPTEN ÇIKMAK İSTEDİĞİNİZE EMİN MİSİNİZ?',
-          style: GoogleFonts.outfit(color: Colors.black, fontWeight: FontWeight.w700),
+          style: GoogleFonts.outfit(color: isDark ? Colors.white70 : Colors.black, fontWeight: FontWeight.w700),
         ),
         actions: [
           TextButton(

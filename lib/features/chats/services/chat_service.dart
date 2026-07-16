@@ -124,7 +124,7 @@ class ChatService {
   Future<void> sendMessage(
     String chatId, 
     String content, 
-    String receiverId, { // receiverId is kept for backward compat but inside update we use it for unread count
+    String receiverId, { 
     MessageType type = MessageType.text,
     Map<String, dynamic>? storyReply,
     bool incrementUnread = true,
@@ -144,13 +144,25 @@ class ChatService {
       lastMessagePreview = "💬 Hikayeye yanıt";
     }
 
+    // Alıcının activeChatId'sini kontrol et
+    bool isReceiverInChat = false;
+    try {
+      final receiverDoc = await _firestore.collection('users').doc(receiverId).get();
+      if (receiverDoc.exists) {
+        final receiverActiveChatId = receiverDoc.data()?['activeChatId'];
+        isReceiverInChat = receiverActiveChatId == chatId;
+      }
+    } catch (e) {
+      LogService.e("Failed to check receiver activeChatId: $e");
+    }
+
     // 1. Mesajı alt koleksiyona ekle
     final messageData = {
       'senderId': user.uid,
       'content': content,
       'timestamp': timestamp,
-      'isRead': false,
-      'isDelivered': false, // YENİ
+      'isRead': isReceiverInChat,
+      'isDelivered': isReceiverInChat, 
       'type': type.name,
     };
     
@@ -172,7 +184,7 @@ class ChatService {
       'lastMessageSenderId': user.uid,
     };
 
-    if (incrementUnread) {
+    if (incrementUnread && !isReceiverInChat) {
       updateData['unreadCounts.$receiverId'] = FieldValue.increment(1);
     }
 
@@ -183,8 +195,10 @@ class ChatService {
       'messageCount': FieldValue.increment(1),
     });
 
-    // 4. Send Push Notification
-    await _sendChatNotification(receiverId, lastMessagePreview, chatId, messageId);
+    // 4. Send Push Notification (sadece alıcı sohbette değilken)
+    if (!isReceiverInChat) {
+      await _sendChatNotification(receiverId, lastMessagePreview, chatId, messageId);
+    }
   }
 
   /// Fotoğraf Gönder

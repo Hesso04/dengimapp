@@ -316,6 +316,14 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                   );
                 }
 
+                // Gelen okunmamış mesajları realtime olarak okundu yap
+                final hasUnread = snapshot.data!.any((m) => m.senderId != currentUser.uid && !m.isRead);
+                if (hasUnread) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    _chatService.markAsRead(widget.chatId);
+                  });
+                }
+
                 final messages = snapshot.data!
                     .where((m) => !m.deletedFor.contains(currentUser.uid))
                     .toList();

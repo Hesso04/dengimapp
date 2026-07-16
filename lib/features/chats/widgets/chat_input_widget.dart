@@ -216,149 +216,164 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
   }
 
   Widget _buildInputBar() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final barBg = isDark ? AppColors.cardDark : Colors.white;
+    final borderColor = isDark ? Colors.white10 : const Color(0xFFEEEEEE);
+    final iconColor = isDark ? Colors.white : Colors.black;
+    final inputTextColor = isDark ? Colors.white : Colors.black;
+    final inputFillColor = isDark ? AppColors.surfaceDark : AppColors.scaffold;
+    final hintTextColor = isDark ? Colors.white30 : Colors.black.withValues(alpha: 0.3);
+
     return SafeArea(
       child: Container(
         padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: barBg,
           border: Border(
-            top: BorderSide(color: Color(0xFFEEEEEE), width: 1.0),
+            top: BorderSide(color: borderColor, width: 1.0),
           ),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-          IconButton(
-            icon: _isUploading 
-                ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
-                : const Icon(Icons.image, color: Colors.black),
-            onPressed: _isUploading ? null : _pickAndSendImage,
-          ),
-          IconButton(
-            icon: const Icon(Icons.mic, color: Colors.black),
-            onPressed: _startRecording,
-          ),
-          Expanded(
-            child: TextField(
-              controller: _messageController,
-              style: GoogleFonts.outfit(color: Colors.black, fontWeight: FontWeight.w700),
-              onChanged: (text) {
-                if (text.isNotEmpty) {
-                  _typingService.startTyping(widget.chatId);
-                } else {
-                  _typingService.stopTyping(widget.chatId);
-                }
-              },
-              decoration: InputDecoration(
-                hintText: 'MESAJ YAZ...',
-                hintStyle: GoogleFonts.outfit(color: Colors.black.withValues(alpha: 0.3), fontWeight: FontWeight.w900, fontSize: 12),
-                filled: true,
-                fillColor: AppColors.scaffold,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(color: Color(0xFFEEEEEE), width: 1.0),
+            IconButton(
+              icon: _isUploading 
+                  ? SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: iconColor))
+                  : Icon(Icons.image, color: iconColor),
+              onPressed: _isUploading ? null : _pickAndSendImage,
+            ),
+            IconButton(
+              icon: Icon(Icons.mic, color: iconColor),
+              onPressed: _startRecording,
+            ),
+            Expanded(
+              child: TextField(
+                controller: _messageController,
+                style: GoogleFonts.outfit(color: inputTextColor, fontWeight: FontWeight.w700),
+                onChanged: (text) {
+                  if (text.isNotEmpty) {
+                    _typingService.startTyping(widget.chatId);
+                  } else {
+                    _typingService.stopTyping(widget.chatId);
+                  }
+                },
+                decoration: InputDecoration(
+                  hintText: 'MESAJ YAZ...',
+                  hintStyle: GoogleFonts.outfit(color: hintTextColor, fontWeight: FontWeight.w900, fontSize: 12),
+                  filled: true,
+                  fillColor: inputFillColor,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: borderColor, width: 1.0),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: borderColor, width: 1.0),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 12,
+                  ),
                 ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(color: Color(0xFFEEEEEE), width: 1.0),
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 12,
-                ),
+                maxLines: null,
+                textInputAction: TextInputAction.send,
+                onSubmitted: (_) => _sendMessage(),
               ),
-              maxLines: null,
-              textInputAction: TextInputAction.send,
-              onSubmitted: (_) => _sendMessage(),
             ),
-          ),
-          const SizedBox(width: 12),
-          Container(
-            decoration: BoxDecoration(
-              color: AppColors.primary,
-              shape: BoxShape.circle,
-              border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-              boxShadow: [AppColors.neoShadowSmall],
+            const SizedBox(width: 12),
+            Container(
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                shape: BoxShape.circle,
+                border: Border.all(color: borderColor, width: 1.0),
+                boxShadow: isDark ? [] : [AppColors.neoShadowSmall],
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.send_rounded, color: Colors.white),
+                onPressed: _sendMessage,
+              ),
             ),
-            child: IconButton(
-              icon: const Icon(Icons.send_rounded, color: Colors.white),
-              onPressed: _sendMessage,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ));
+    );
   }
 
   Widget _buildRecordingUI() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final barBg = isDark ? AppColors.cardDark : Colors.white;
+    final borderColor = isDark ? Colors.white10 : const Color(0xFFEEEEEE);
+    final textColor = isDark ? Colors.white : Colors.black;
+
     return SafeArea(
       child: Container(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: barBg,
           border: Border(
-            top: BorderSide(color: Color(0xFFEEEEEE), width: 1.0),
+            top: BorderSide(color: borderColor, width: 1.0),
           ),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-          IconButton(
-            icon: const Icon(Icons.close_rounded, color: AppColors.red),
-            onPressed: _cancelRecording,
-          ),
-          const SizedBox(width: 8),
-          Container(
-            width: 12,
-            height: 12,
-            decoration: BoxDecoration(
-              color: AppColors.red,
-              shape: BoxShape.circle,
-              border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
+            IconButton(
+              icon: const Icon(Icons.close_rounded, color: AppColors.red),
+              onPressed: _cancelRecording,
             ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'SES KAYDEDİLİYOR...',
-                  style: GoogleFonts.outfit(
-                    color: Colors.black,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  AudioRecorderService.formatDuration(_recordingDuration),
-                  style: GoogleFonts.outfit(
-                    color: AppColors.textSecondary,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
+            const SizedBox(width: 8),
+            Container(
+              width: 12,
+              height: 12,
+              decoration: BoxDecoration(
+                color: AppColors.red,
+                shape: BoxShape.circle,
+                border: Border.all(color: borderColor, width: 1.0),
+              ),
             ),
-          ),
-          Container(
-             decoration: BoxDecoration(
-               color: AppColors.primary,
-               shape: BoxShape.circle,
-               border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-               boxShadow: [AppColors.neoShadowSmall],
-             ),
-             child: IconButton(
-               icon: _isUploading 
-                   ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) 
-                   : const Icon(Icons.send_rounded, color: Colors.white),
-               onPressed: _isUploading ? null : _stopAndSendRecording,
-             ),
-          ),
-        ],
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'SES KAYDEDİLİYOR...',
+                    style: GoogleFonts.outfit(
+                      color: textColor,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    AudioRecorderService.formatDuration(_recordingDuration),
+                    style: GoogleFonts.outfit(
+                      color: AppColors.textSecondary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                shape: BoxShape.circle,
+                border: Border.all(color: borderColor, width: 1.0),
+                boxShadow: isDark ? [] : [AppColors.neoShadowSmall],
+              ),
+              child: IconButton(
+                icon: _isUploading 
+                    ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) 
+                    : const Icon(Icons.send_rounded, color: Colors.white),
+                onPressed: _isUploading ? null : _stopAndSendRecording,
+              ),
+            ),
+          ],
+        ),
       ),
-    ));
+    );
   }
 }

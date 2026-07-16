@@ -86,11 +86,15 @@ class _CallScreenState extends State<CallScreen> with SingleTickerProviderStateM
       });
       
       try {
+        final callerDoc = await FirebaseFirestore.instance.collection('users').doc(currentUserId).get();
+        final callerName = callerDoc.data()?['name'] ?? 'Dengim Kullanıcısı';
+        final callerAvatar = callerDoc.data()?['imageUrl'] ?? '';
+
         await FirebaseFirestore.instance.collection('calls').doc(widget.channelId).set({
           'id': widget.channelId,
           'callerId': currentUserId,
-          'callerName': FirebaseAuth.instance.currentUser?.displayName ?? 'Dengim Kullanıcısı',
-          'callerAvatar': FirebaseAuth.instance.currentUser?.photoURL ?? '',
+          'callerName': callerName,
+          'callerAvatar': callerAvatar,
           'receiverId': widget.otherUserId ?? '',
           'status': 'ringing',
           'createdAt': FieldValue.serverTimestamp(),

@@ -65,20 +65,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
         final interests = profile?.interests.join(', ') ?? 'Belirtilmedi';
         final zodiac = profile?.zodiacSign ?? '';
         final relGoalId = profile?.relationshipGoal ?? '';
-        String relGoal = 'Belirtilmedi';
-        if (relGoalId == 'serious') relGoal = 'Ciddi İlişki 💍';
-        if (relGoalId == 'casual') relGoal = 'Eğlence 🥂';
-        if (relGoalId == 'chat') relGoal = 'Sohbet ☕';
-        if (relGoalId == 'unsure') relGoal = 'Belirsiz 🤷‍♂️';
+        final String relGoal;
+        if (relGoalId == 'serious') {
+          relGoal = 'Ciddi İlişki 💍';
+        } else if (relGoalId == 'casual') {
+          relGoal = 'Eğlence 🥂';
+        } else if (relGoalId == 'chat') {
+          relGoal = 'Sohbet ☕';
+        } else if (relGoalId == 'unsure') {
+          relGoal = 'Belirsiz 🤷‍♂️';
+        } else {
+          relGoal = 'Belirtilmedi';
+        }
 
         // Format joined date
-        String joinedDate = 'Belirtilmedi';
+        final String joinedDate;
         if (profile?.createdAt != null) {
           final months = [
             'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 
             'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'
           ];
           joinedDate = "${months[profile!.createdAt.month - 1]} ${profile.createdAt.year}";
+        } else {
+          joinedDate = 'Belirtilmedi';
         }
 
 
@@ -263,8 +272,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       _buildActionBtn(
                         icon: Icons.logout,
                         label: 'ÇIKIŞ YAP',
-                        color: Colors.white,
-                        textColor: AppColors.textSecondary,
+                        color: isDark ? const Color(0xFF1F1F23) : Colors.white,
+                        textColor: isDark ? Colors.white70 : AppColors.textSecondary,
                         onTap: () async {
                           await AuthService().signOut();
                           if (context.mounted) {
@@ -456,6 +465,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildVideoPreview(String videoUrl) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final borderColor = isDark ? Colors.white10 : const Color(0xFFEEEEEE);
+
     return GestureDetector(
       onTap: () {
         _showVideoPlayer(videoUrl);
@@ -465,8 +477,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         width: double.infinity,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(AppColors.neoRadius),
-          border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-          boxShadow: [AppColors.neoShadowSmall],
+          border: Border.all(color: borderColor, width: 1.0),
+          boxShadow: isDark ? [] : [AppColors.neoShadowSmall],
           gradient: const LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -485,8 +497,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               decoration: BoxDecoration(
                 color: AppColors.primary,
                 shape: BoxShape.circle,
-                border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-                boxShadow: [AppColors.neoShadowSmall],
+                border: Border.all(color: borderColor, width: 1.0),
+                boxShadow: isDark ? [] : [AppColors.neoShadowSmall],
               ),
               child: const Icon(Icons.play_arrow_rounded, color: Colors.black, size: 36),
             ),
@@ -555,8 +567,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         decoration: BoxDecoration(
           color: AppColors.primary,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-          boxShadow: [AppColors.neoShadowSmall],
+          border: Border.all(color: isDark ? Colors.white10 : const Color(0xFFEEEEEE), width: 1.0),
+          boxShadow: isDark ? [] : [AppColors.neoShadowSmall],
         ),
         child: Row(
           children: [
@@ -755,9 +767,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: AppColors.primary, // Black
+                            color: AppColors.primary, 
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
+                            border: Border.all(color: isDark ? Colors.white10 : const Color(0xFFEEEEEE), width: 1.0),
                           ),
                           child: const Icon(Icons.toll_rounded, color: Colors.white, size: 22),
                         ),

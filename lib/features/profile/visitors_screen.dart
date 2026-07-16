@@ -41,15 +41,21 @@ class _VisitorsScreenState extends State<VisitorsScreen> {
   Widget build(BuildContext context) {
     final userProvider = context.watch<UserProvider>();
     final isPremium = userProvider.currentUser?.isPremium ?? false;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final elementColor = isDark ? Colors.white : Colors.black;
+    final bgColor = theme.scaffoldBackgroundColor;
+    final appBarBg = isDark ? AppColors.cardDark : Colors.white;
+    final borderColor = isDark ? Colors.white10 : const Color(0xFFEEEEEE);
 
     return Scaffold(
-      backgroundColor: AppColors.scaffold,
+      backgroundColor: bgColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: appBarBg,
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black, size: 24),
+          icon: Icon(Icons.arrow_back_ios_new, color: elementColor, size: 24),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -57,22 +63,22 @@ class _VisitorsScreenState extends State<VisitorsScreen> {
           style: GoogleFonts.outfit(
             fontSize: 24,
             fontWeight: FontWeight.w900,
-            color: Colors.black,
+            color: elementColor,
             letterSpacing: -1,
           ),
         ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(4.0),
           child: Container(
-            color: Colors.black,
+            color: isDark ? Colors.white10 : Colors.black,
             height: AppColors.neoBorderWidth,
           ),
         ),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Colors.black, strokeWidth: 4))
+          ? Center(child: CircularProgressIndicator(color: elementColor, strokeWidth: 4))
           : _visitors.isEmpty
-              ? _buildEmptyState()
+              ? _buildEmptyState(isDark, elementColor, borderColor)
               : GridView.builder(
                   padding: const EdgeInsets.all(16),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -92,7 +98,7 @@ class _VisitorsScreenState extends State<VisitorsScreen> {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(bool isDark, Color elementColor, Color borderColor) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -102,8 +108,8 @@ class _VisitorsScreenState extends State<VisitorsScreen> {
             decoration: BoxDecoration(
               color: AppColors.primary,
               shape: BoxShape.circle,
-              border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-              boxShadow: [AppColors.neoShadowSmall],
+              border: Border.all(color: borderColor, width: 1.0),
+              boxShadow: isDark ? [] : [AppColors.neoShadowSmall],
             ),
             child: const Icon(Icons.visibility_off_rounded, size: 48, color: Colors.white),
           ),
@@ -111,7 +117,7 @@ class _VisitorsScreenState extends State<VisitorsScreen> {
           Text(
             "HENÜZ ZİYARETÇİ YOK",
             style: GoogleFonts.outfit(
-              color: Colors.black, 
+              color: elementColor, 
               fontSize: 22, 
               fontWeight: FontWeight.w900,
               letterSpacing: -1,
@@ -123,7 +129,11 @@ class _VisitorsScreenState extends State<VisitorsScreen> {
             child: Text(
               "Profilini öne çıkararak daha fazla görünürlük elde edebilirsin!",
               textAlign: TextAlign.center,
-              style: GoogleFonts.outfit(color: Colors.black87, fontSize: 16, fontWeight: FontWeight.w700),
+              style: GoogleFonts.outfit(
+                color: isDark ? Colors.white70 : Colors.black87, 
+                fontSize: 16, 
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
         ],
@@ -140,6 +150,10 @@ class _VisitorCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBg = isDark ? AppColors.cardDark : Colors.white;
+    final borderColor = isDark ? Colors.white10 : const Color(0xFFEEEEEE);
+
     return GestureDetector(
       onTap: () {
         if (!isPremium) {
@@ -150,10 +164,10 @@ class _VisitorCard extends StatelessWidget {
       },
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: cardBg,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-          boxShadow: [AppColors.neoShadowSmall],
+          border: Border.all(color: borderColor, width: 1.0),
+          boxShadow: isDark ? [] : [AppColors.neoShadowSmall],
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(13), // 16 - 3 border
@@ -177,7 +191,7 @@ class _VisitorCard extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: AppColors.primary,
                           shape: BoxShape.circle,
-                          border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
+                          border: Border.all(color: borderColor, width: 1.0),
                         ),
                         child: const Icon(Icons.lock_rounded, color: Colors.white, size: 28),
                       ),

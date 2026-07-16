@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-    title: "DENGIM Admin Panel",
-    description: "DENGIM Dating App - Admin & VIP Management Platform",
+    title: "Dengim - Ses Odaklı Tanışma ve Eşleşme Uygulaması",
+    description: "Klasik tanışma uygulamalarını unutun. Dengim ile ses tonlarıyla kendinizi ifade edin, Agora ses odalarında canlı sohbet edin ve yapay zeka desteğiyle ruh eşinizi bulun.",
 };
 
 import { AuthProvider } from "@/components/layout/AuthProvider";
