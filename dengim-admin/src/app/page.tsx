@@ -109,70 +109,81 @@ export default function LandingPage() {
                                 <div className="h-16 flex items-center justify-between px-6 pt-8 z-10">
                                     <span className="text-[#FF4B55] font-black tracking-widest text-xs">DENGİM</span>
                                     <span className="material-symbols-outlined text-zinc-500 text-xl">notifications</span>
-                                </div>
+                                           {/* App UI Center Card */}
+                                <div className="flex-1 mx-4 my-2 bg-gradient-to-b from-zinc-900 to-zinc-950 rounded-[2rem] border border-white/5 relative overflow-hidden flex flex-col justify-end p-5 shadow-2xl">
+                                    {/* Mock User Image with Premium Overlay */}
+                                    <div className="absolute inset-0">
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent z-10" />
+                                        <img 
+                                            src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=500&auto=format&fit=crop&q=80" 
+                                            alt="Mock Profile"
+                                            className="w-full h-full object-cover"
+                                        />
+                                    </div>
 
-                                {/* App UI Center Card */}
-                                <div className="flex-1 mx-4 my-2 bg-gradient-to-b from-zinc-900 to-zinc-950 rounded-[2rem] border border-white/5 relative overflow-hidden flex flex-col justify-end p-5">
-                                    {/* Mock User Image with Dark Overlay */}
-                                    <div className="absolute inset-0 bg-zinc-900/20">
-                                        <div className="absolute inset-0 bg-gradient-to-t from-[#0E0E0E] via-transparent to-transparent z-10" />
-                                        <div className="w-full h-4/5 relative bg-zinc-800">
-                                            <div className="absolute inset-0 flex items-center justify-center">
-                                                <span className="material-symbols-outlined text-8xl text-zinc-700">person</span>
-                                            </div>
-                                        </div>
+                                    {/* Match Category Badge */}
+                                    <div className="absolute top-4 left-4 z-20 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 flex items-center gap-1.5">
+                                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                                        <span className="text-[10px] font-extrabold text-white tracking-wider uppercase">Çevrimiçi</span>
                                     </div>
 
                                     {/* Interactive Sound Wave Widget */}
-                                    <div className="relative z-20 bg-black/60 backdrop-blur-md rounded-2xl p-3 border border-white/10 mb-4 flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-full bg-[#FF4B55] flex items-center justify-center text-white">
-                                            <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>play_arrow</span>
+                                    <div className="relative z-20 bg-black/70 backdrop-blur-xl rounded-2xl p-3 border border-white/10 mb-4 flex items-center gap-3 transform hover:scale-[1.02] transition-transform">
+                                        <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#FF4B55] to-[#ECB613] flex items-center justify-center text-black">
+                                            <span className="material-symbols-outlined text-sm font-bold" style={{ fontVariationSettings: "'FILL' 1" }}>play_arrow</span>
                                         </div>
                                         <div className="flex-1">
-                                            <div className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">Ses Kaydı</div>
+                                            <div className="text-[10px] text-zinc-400 font-extrabold uppercase tracking-wider">Ses Odası Tanıtımı</div>
                                             {/* Simulated Audio Wave Animation */}
                                             <div className="flex items-center gap-0.5 h-4 mt-1">
                                                 {[3, 6, 8, 4, 9, 5, 7, 3, 6, 8, 4, 9, 5, 7, 3].map((height, idx) => (
                                                     <span 
                                                         key={idx} 
-                                                        className="w-1 bg-[#FF4B55] rounded-full animate-pulse" 
+                                                        className="w-1 bg-gradient-to-t from-[#FF4B55] to-[#ECB613] rounded-full" 
                                                         style={{ 
-                                                            height: `${height * 10}%`,
-                                                            animationDelay: `${idx * 0.1}s`
+                                                             height: `${height * 10}%`,
+                                                             opacity: 0.7 + (idx % 3) * 0.1
                                                         }} 
                                                     />
                                                 ))}
                                             </div>
                                         </div>
-                                        <span className="text-[9px] text-[#FF4B55] font-extrabold bg-[#FF4B55]/10 px-2 py-0.5 rounded-full">0:12</span>
+                                        <span className="text-[9px] text-white font-extrabold bg-[#FF4B55] px-2 py-0.5 rounded-full">0:12</span>
                                     </div>
 
                                     {/* Profile Metadata */}
-                                    <div className="relative z-20 space-y-1">
+                                    <div className="relative z-20 space-y-2">
                                         <div className="flex items-center gap-2">
-                                            <h3 className="font-extrabold text-lg text-white">Ceren, 23</h3>
-                                            <span className="material-symbols-outlined text-[#FF4B55] text-base" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
+                                            <h3 className="font-extrabold text-xl text-white">Ceren, 23</h3>
+                                            <span className="material-symbols-outlined text-[#FF4B55] text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
                                         </div>
-                                        <div className="flex items-center gap-1 text-zinc-400 text-xs font-semibold">
-                                            <span className="material-symbols-outlined text-[10px] text-[#FF4B55]" style={{ fontVariationSettings: "'FILL' 1" }}>location_on</span>
+                                        <div className="flex items-center gap-1 text-zinc-300 text-xs font-semibold">
+                                            <span className="material-symbols-outlined text-[12px] text-[#FF4B55]" style={{ fontVariationSettings: "'FILL' 1" }}>location_on</span>
                                             Ankara • 4 km uzakta
+                                        </div>
+                                        
+                                        {/* User tags inside mockup */}
+                                        <div className="flex gap-1.5 pt-1">
+                                            <span className="text-[9px] bg-white/10 px-2.5 py-1 rounded-full text-white font-semibold">🎵 Müzik</span>
+                                            <span className="text-[9px] bg-white/10 px-2.5 py-1 rounded-full text-white font-semibold">✈️ Seyahat</span>
                                         </div>
                                     </div>
                                 </div>
 
                                 {/* Bottom Controls */}
-                                <div className="h-20 pb-4 flex justify-center gap-4 items-center">
-                                    <button className="w-11 h-11 rounded-full bg-zinc-950 border border-white/5 flex items-center justify-center text-zinc-500 shadow-md">
+                                <div className="h-20 pb-4 flex justify-center gap-4 items-center bg-black/40 backdrop-blur-md border-t border-white/5 relative z-20">
+                                    <button className="w-11 h-11 rounded-full bg-zinc-950 border border-white/10 flex items-center justify-center text-zinc-400 hover:text-[#FF4B55] transition-colors shadow-md">
                                         <span className="material-symbols-outlined text-lg">close</span>
                                     </button>
-                                    <button className="w-14 h-14 rounded-full bg-gradient-to-tr from-[#FF4B55] to-[#ECB613] flex items-center justify-center text-black shadow-lg shadow-[#FF4B55]/20 hover:scale-105 active:scale-95 transition-transform">
+                                    <button className="w-14 h-14 rounded-full bg-gradient-to-tr from-[#FF4B55] to-[#ECB613] flex items-center justify-center text-black shadow-lg shadow-[#FF4B55]/20 hover:scale-110 active:scale-95 transition-transform">
                                         <span className="material-symbols-outlined text-2xl font-bold" style={{ fontVariationSettings: "'FILL' 1" }}>favorite</span>
                                     </button>
-                                    <button className="w-11 h-11 rounded-full bg-zinc-950 border border-white/5 flex items-center justify-center text-zinc-500 shadow-md">
+                                    <button className="w-11 h-11 rounded-full bg-zinc-950 border border-white/10 flex items-center justify-center text-zinc-400 hover:text-[#ECB613] transition-colors shadow-md">
                                         <span className="material-symbols-outlined text-lg">mic</span>
                                     </button>
                                 </div>
                             </div>
+                        </div>>
                         </div>
                     </div>
                 </div>

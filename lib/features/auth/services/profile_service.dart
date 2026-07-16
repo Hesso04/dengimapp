@@ -371,21 +371,22 @@ class ProfileService {
     if (currentUid == null || currentUid == targetUid) return;
 
     try {
-      final batch = _firestore.batch();
-      
-      // 1. Kendi following listeme ekle
-      final currentUserRef = _firestore.collection('users').doc(currentUid);
-      batch.update(currentUserRef, {
+      // 1. Kendi following listeme ekle (kendi dökümanım, her zaman izin var)
+      await _firestore.collection('users').doc(currentUid).update({
         'following': FieldValue.arrayUnion([targetUid])
       });
       
       // 2. Karşı tarafın followers listesine ekle
-      final targetUserRef = _firestore.collection('users').doc(targetUid);
-      batch.update(targetUserRef, {
-        'followers': FieldValue.arrayUnion([currentUid])
-      });
+      // set + merge kullanarak alan yoksa bile sorunsuz çalışır
+      try {
+        await _firestore.collection('users').doc(targetUid).set({
+          'followers': FieldValue.arrayUnion([currentUid])
+        }, SetOptions(merge: true));
+      } catch (e) {
+        // Karşı tarafın dökümanı güncellenemezse bile takip işlemi başarılı sayılsın
+        LogService.w("Could not update target followers list: $e");
+      }
 
-      await batch.commit();
       LogService.i("User $currentUid started following $targetUid");
     } catch (e) {
       LogService.e("Follow user error", e);
@@ -399,21 +400,20 @@ class ProfileService {
     if (currentUid == null || currentUid == targetUid) return;
 
     try {
-      final batch = _firestore.batch();
-      
-      // 1. Kendi following listemden çıkar
-      final currentUserRef = _firestore.collection('users').doc(currentUid);
-      batch.update(currentUserRef, {
+      // 1. Kendi following listemden çıkar (kendi dökümanım, her zaman izin var)
+      await _firestore.collection('users').doc(currentUid).update({
         'following': FieldValue.arrayRemove([targetUid])
       });
       
       // 2. Karşı tarafın followers listesinden çıkar
-      final targetUserRef = _firestore.collection('users').doc(targetUid);
-      batch.update(targetUserRef, {
-        'followers': FieldValue.arrayRemove([currentUid])
-      });
+      try {
+        await _firestore.collection('users').doc(targetUid).set({
+          'followers': FieldValue.arrayRemove([currentUid])
+        }, SetOptions(merge: true));
+      } catch (e) {
+        LogService.w("Could not update target followers list: $e");
+      }
 
-      await batch.commit();
       LogService.i("User $currentUid unfollowed $targetUid");
     } catch (e) {
       LogService.e("Unfollow user error", e);

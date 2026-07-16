@@ -544,6 +544,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildProfileCompletionCard(dynamic profile) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final percentage = _calculateCompletionPercentage(profile);
     final message = _getCompletionMessage(percentage);
     
@@ -562,11 +563,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: isDark ? AppColors.cardDark : Colors.white,
                 shape: BoxShape.circle,
-                border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
+                border: Border.all(color: isDark ? Colors.white10 : const Color(0xFFEEEEEE), width: 1.0),
               ),
-              child: const Icon(Icons.verified, color: Colors.black, size: 20),
+              child: Icon(Icons.verified, color: isDark ? Colors.white : Colors.black, size: 20),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -578,7 +579,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     style: GoogleFonts.outfit(
                       fontSize: 16,
                       fontWeight: FontWeight.w900,
-                      color: Colors.black,
+                      color: isDark ? Colors.white : Colors.black,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -587,7 +588,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     style: GoogleFonts.outfit(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
-                      color: Colors.black.withValues(alpha: 0.7),
+                      color: isDark ? Colors.white70 : Colors.black.withValues(alpha: 0.7),
                     ),
                   ),
                 ],
@@ -602,10 +603,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? AppColors.cardDark : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-        boxShadow: [AppColors.neoShadowSmall],
+        border: Border.all(color: isDark ? Colors.white10 : const Color(0xFFEEEEEE), width: 1.0),
+        boxShadow: isDark ? [] : [AppColors.neoShadowSmall],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -618,7 +619,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 style: GoogleFonts.outfit(
                   fontSize: 12,
                   fontWeight: FontWeight.w900,
-                  color: Colors.black,
+                  color: isDark ? Colors.white : Colors.black,
                 ),
               ),
               Text(
@@ -634,9 +635,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SizedBox(height: 12),
           Container(
             decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.05),
+              color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: Colors.black, width: 2),
+              border: Border.all(color: isDark ? Colors.white : Colors.black, width: 2),
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(8),
@@ -656,7 +657,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   message.toUpperCase(),
                   style: GoogleFonts.outfit(
                     fontSize: 14,
-                    color: Colors.black,
+                    color: isDark ? Colors.white : Colors.black,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -677,14 +678,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   decoration: BoxDecoration(
                     color: AppColors.primary,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
+                    border: Border.all(color: isDark ? Colors.white10 : const Color(0xFFEEEEEE), width: 1.0),
                   ),
                   child: Text(
                     'TAMAMLA',
                     style: GoogleFonts.outfit(
                       fontWeight: FontWeight.w900,
                       fontSize: 12,
-                      color: Colors.black,
+                      color: isDark ? Colors.white : Colors.black,
                     ),
                   ),
                 ),
@@ -697,21 +698,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildPremiumBadge(String tier) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isPlatinum = tier == 'platinum';
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: isPlatinum ? Colors.white : AppColors.primary,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-        boxShadow: [AppColors.neoShadowSmall],
+        border: Border.all(color: isDark ? Colors.white10 : const Color(0xFFEEEEEE), width: 1.0),
+        boxShadow: isDark ? [] : [AppColors.neoShadowSmall],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
             isPlatinum ? Icons.workspace_premium_rounded : Icons.star_rounded,
-            color: Colors.black,
+            color: isDark ? Colors.white : Colors.black,
             size: 14,
           ),
           const SizedBox(width: 4),
@@ -720,7 +722,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             style: GoogleFonts.outfit(
               fontSize: 10,
               fontWeight: FontWeight.w900,
-              color: Colors.black,
+              color: isDark ? Colors.white : Colors.black,
             ),
           ),
         ],
@@ -731,16 +733,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildCreditAndTierCard(dynamic profile) {
     return Consumer2<CreditProvider, SubscriptionProvider>(
       builder: (context, creditProvider, subProvider, _) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
         final tier = subProvider.currentTier;
         final isPremium = tier != 'free';
 
         return Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: isDark ? AppColors.cardDark : Colors.white,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-            boxShadow: [AppColors.neoShadowSmall],
+            border: Border.all(color: isDark ? Colors.white10 : const Color(0xFFEEEEEE), width: 1.0),
+            boxShadow: isDark ? [] : [AppColors.neoShadowSmall],
           ),
           child: Column(
             children: [
@@ -767,7 +770,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               style: GoogleFonts.outfit(
                                 fontSize: 26,
                                 fontWeight: FontWeight.w900,
-                                color: Colors.black,
+                                color: isDark ? Colors.white : Colors.black,
                               ),
                             ),
                             Text(
@@ -775,7 +778,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               style: GoogleFonts.outfit(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w800,
-                                color: Colors.black.withValues(alpha: 0.5),
+                                color: isDark ? Colors.white54 : Colors.black.withValues(alpha: 0.5),
                               ),
                             ),
                           ],
@@ -789,22 +792,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       decoration: BoxDecoration(
                         color: AppColors.orange,
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.black, width: 1.5),
-                        boxShadow: const [
-                          BoxShadow(color: Colors.black, offset: Offset(2, 2)),
+                        border: Border.all(color: isDark ? Colors.white : Colors.black, width: 1.5),
+                        boxShadow: [
+                          BoxShadow(color: isDark ? Colors.white : Colors.black, offset: const Offset(2, 2)),
                         ],
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.local_fire_department, color: Colors.black, size: 16),
+                          Icon(Icons.local_fire_department, color: isDark ? Colors.white : Colors.black, size: 16),
                           const SizedBox(width: 4),
                           Text(
                             '${creditProvider.streak}',
                             style: GoogleFonts.outfit(
                               fontSize: 14,
                               fontWeight: FontWeight.w900,
-                              color: Colors.black,
+                              color: isDark ? Colors.white : Colors.black,
                             ),
                           ),
                         ],
@@ -819,7 +822,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: _buildMiniBtn(
                       icon: Icons.play_circle_filled_rounded,
                       label: 'İZLE & KAZAN',
-                      color: Colors.black,
+                      color: isDark ? Colors.white : Colors.black,
                       textColor: Colors.white,
                       onTap: () => Navigator.push(
                         context,
@@ -833,7 +836,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       icon: isPremium ? Icons.workspace_premium_rounded : Icons.star_rounded,
                       label: isPremium ? tier.toUpperCase() : 'ÜYELİK',
                       color: Colors.white,
-                      textColor: Colors.black,
+                      textColor: isDark ? Colors.white : Colors.black,
                       onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute(builder: (_) => const PremiumOfferScreen()),
@@ -854,8 +857,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required String label,
     required Color color,
     required VoidCallback onTap,
-    Color textColor = Colors.black,
+    Color textColor = Colors.white,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -863,7 +867,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         decoration: BoxDecoration(
           color: color,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
+          border: Border.all(color: isDark ? Colors.white10 : const Color(0xFFEEEEEE), width: 1.0),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -948,15 +952,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required String value,
     required VoidCallback onTap,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isDark ? AppColors.cardDark : Colors.white,
           borderRadius: BorderRadius.circular(AppColors.neoRadiusSmall),
-          border: Border.all(color: const Color(0xFFEEEEEE), width: 1.0),
-          boxShadow: [AppColors.neoShadowSmall],
+          border: Border.all(color: isDark ? Colors.white10 : const Color(0xFFEEEEEE), width: 1.0),
+          boxShadow: isDark ? [] : [AppColors.neoShadowSmall],
         ),
         child: Column(
           children: [
@@ -965,7 +970,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               style: GoogleFonts.outfit(
                 fontSize: 22,
                 fontWeight: FontWeight.w900,
-                color: Colors.black,
+                color: isDark ? Colors.white : Colors.black,
               ),
             ),
             const SizedBox(height: 4),

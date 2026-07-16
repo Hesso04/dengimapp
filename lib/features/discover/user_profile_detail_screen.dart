@@ -44,8 +44,9 @@ class _UserProfileDetailScreenState extends State<UserProfileDetailScreen> {
       return _buildProfileUI(context, widget.user!);
     }
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: isDark ? AppColors.scaffoldDark : Colors.white,
       body: FutureBuilder<DocumentSnapshot>(
         future: FirebaseFirestore.instance.collection('users').doc(widget.userId).get(),
         builder: (context, snapshot) {
@@ -53,7 +54,7 @@ class _UserProfileDetailScreenState extends State<UserProfileDetailScreen> {
             return const Center(child: CircularProgressIndicator(color: AppColors.primary));
           }
           if (!snapshot.hasData || !snapshot.data!.exists) {
-            return const Center(child: Text("Kullanıcı bulunamadı", style: TextStyle(color: Colors.black)));
+            return Center(child: Text("Kullanıcı bulunamadı", style: TextStyle(color: isDark ? Colors.white : Colors.black)));
           }
 
           final data = snapshot.data!.data() as Map<String, dynamic>;
@@ -69,8 +70,9 @@ class _UserProfileDetailScreenState extends State<UserProfileDetailScreen> {
         ? profile.photoUrls! 
         : [profile.imageUrl];
     
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: isDark ? AppColors.scaffoldDark : Colors.white,
       body: Stack(
         children: [
           CustomScrollView(
@@ -79,7 +81,7 @@ class _UserProfileDetailScreenState extends State<UserProfileDetailScreen> {
               // 1. Image Header
               SliverAppBar(
                 expandedHeight: MediaQuery.of(context).size.height * 0.6,
-                backgroundColor: Colors.white,
+                backgroundColor: isDark ? AppColors.scaffoldDark : Colors.white,
                 elevation: 0,
                 leading: const SizedBox.shrink(), // Custom lead handled in Stack
                 flexibleSpace: FlexibleSpaceBar(
@@ -125,10 +127,10 @@ class _UserProfileDetailScreenState extends State<UserProfileDetailScreen> {
                 child: Transform.translate(
                   offset: const Offset(0, -30),
                   child: Container(
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-                      border: Border(top: BorderSide(color: Color(0xFFEEEEEE), width: 1.0)),
+                    decoration: BoxDecoration(
+                      color: isDark ? AppColors.scaffoldDark : Colors.white,
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+                      border: Border(top: BorderSide(color: isDark ? Colors.white10 : const Color(0xFFEEEEEE), width: 1.0)),
                     ),
                     padding: const EdgeInsets.fromLTRB(24, 32, 24, 120),
                     child: Column(
@@ -150,7 +152,7 @@ class _UserProfileDetailScreenState extends State<UserProfileDetailScreen> {
                                           style: GoogleFonts.outfit(
                                             fontSize: 28,
                                             fontWeight: FontWeight.w900,
-                                            color: Colors.black,
+                                            color: isDark ? Colors.white : Colors.black,
                                             letterSpacing: -1.0,
                                           ),
                                           overflow: TextOverflow.ellipsis,
@@ -177,7 +179,7 @@ class _UserProfileDetailScreenState extends State<UserProfileDetailScreen> {
                                         style: GoogleFonts.outfit(
                                           fontSize: 14,
                                           fontWeight: FontWeight.w800,
-                                          color: Colors.black.withValues(alpha: 0.5),
+                                          color: isDark ? Colors.white54 : Colors.black.withValues(alpha: 0.5),
                                         ),
                                       ),
                                     ),
@@ -206,7 +208,7 @@ class _UserProfileDetailScreenState extends State<UserProfileDetailScreen> {
                           style: GoogleFonts.outfit(
                             fontSize: 16,
                             fontWeight: FontWeight.w500,
-                            color: Colors.black87,
+                            color: isDark ? Colors.white.withValues(alpha: 0.87) : Colors.black87,
                             height: 1.5,
                           ),
                         ),
@@ -286,32 +288,34 @@ class _UserProfileDetailScreenState extends State<UserProfileDetailScreen> {
   }
 
   Widget _buildSectionTitle(String title) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Text(
       title,
       style: GoogleFonts.outfit(
         fontSize: 14,
         fontWeight: FontWeight.w900,
-        color: Colors.black,
+        color: isDark ? Colors.white : Colors.black,
         letterSpacing: 1.2,
       ),
     );
   }
 
   Widget _buildInterestTag(String text) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? AppColors.cardDark : Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-        boxShadow: [AppColors.neoShadowSmall],
+        border: Border.all(color: isDark ? Colors.white10 : const Color(0xFFEEEEEE), width: 1.0),
+        boxShadow: isDark ? [] : [AppColors.neoShadowSmall],
       ),
       child: Text(
         text.toUpperCase(),
         style: GoogleFonts.outfit(
           fontSize: 12,
           fontWeight: FontWeight.w900,
-          color: Colors.black,
+          color: isDark ? Colors.white : Colors.black,
         ),
       ),
     );
@@ -339,12 +343,13 @@ class _UserProfileDetailScreenState extends State<UserProfileDetailScreen> {
       }
     }
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: isOnline ? AppColors.green.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
+        color: isOnline ? AppColors.green.withValues(alpha: 0.1) : (isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05)),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: isOnline ? AppColors.green : Colors.black26, width: AppColors.neoBorderWidthSmall),
+        border: Border.all(color: isOnline ? AppColors.green : (isDark ? Colors.white24 : Colors.black26), width: AppColors.neoBorderWidthSmall),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -362,7 +367,7 @@ class _UserProfileDetailScreenState extends State<UserProfileDetailScreen> {
             style: GoogleFonts.outfit(
               fontSize: 10,
               fontWeight: FontWeight.w900,
-              color: isOnline ? AppColors.green : Colors.black54,
+              color: isOnline ? AppColors.green : (isDark ? Colors.white54 : Colors.black54),
             ),
           ),
         ],
@@ -393,24 +398,25 @@ class _UserProfileDetailScreenState extends State<UserProfileDetailScreen> {
   }
 
   Widget _buildInfoChip(IconData icon, String text) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.03),
+        color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.black.withValues(alpha: 0.1), width: AppColors.neoBorderWidthSmall),
+        border: Border.all(color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.1), width: AppColors.neoBorderWidthSmall),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: Colors.black54),
+          Icon(icon, size: 16, color: isDark ? Colors.white54 : Colors.black54),
           const SizedBox(width: 8),
           Text(
             text.toUpperCase(),
             style: GoogleFonts.outfit(
               fontSize: 11,
               fontWeight: FontWeight.w800,
-              color: Colors.black87,
+              color: isDark ? Colors.white.withValues(alpha: 0.87) : Colors.black87,
             ),
           ),
         ],
@@ -419,18 +425,19 @@ class _UserProfileDetailScreenState extends State<UserProfileDetailScreen> {
   }
 
   Widget _buildFloatingButton({required IconData icon, required VoidCallback onTap}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: 48,
         height: 48,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isDark ? AppColors.cardDark : Colors.white,
           shape: BoxShape.circle,
-          border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-          boxShadow: [AppColors.neoShadowSmall],
+          border: Border.all(color: isDark ? Colors.white10 : const Color(0xFFEEEEEE), width: 1.0),
+          boxShadow: isDark ? [] : [AppColors.neoShadowSmall],
         ),
-        child: Icon(icon, color: Colors.black, size: 22),
+        child: Icon(icon, color: isDark ? Colors.white : Colors.black, size: 22),
       ),
     );
   }
@@ -441,6 +448,7 @@ class _UserProfileDetailScreenState extends State<UserProfileDetailScreen> {
     required Color color, 
     required VoidCallback onTap
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -448,20 +456,20 @@ class _UserProfileDetailScreenState extends State<UserProfileDetailScreen> {
         decoration: BoxDecoration(
           color: color,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-          boxShadow: [AppColors.neoShadowSmall],
+          border: Border.all(color: isDark ? Colors.white10 : const Color(0xFFEEEEEE), width: 1.0),
+          boxShadow: isDark ? [] : [AppColors.neoShadowSmall],
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: color == AppColors.primary ? Colors.white : Colors.black, size: 24),
+            Icon(icon, color: color == AppColors.primary ? Colors.white : (isDark ? Colors.white : Colors.black), size: 24),
             const SizedBox(width: 16),
             Text(
               label,
               style: GoogleFonts.outfit(
                 fontSize: 16,
                 fontWeight: FontWeight.w900,
-                color: color == AppColors.primary ? Colors.white : Colors.black,
+                color: color == AppColors.primary ? Colors.white : (isDark ? Colors.white : Colors.black),
                 letterSpacing: 0.5,
               ),
             ),
@@ -646,15 +654,17 @@ class _UserProfileDetailScreenState extends State<UserProfileDetailScreen> {
     final followersCount = targetUser.followers.length;
     final followingCount = targetUser.following.length;
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Column(
       children: [
         // İstatisikler
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            _buildStatColumn('Takipçi', followersCount),
-            Container(height: 30, width: 2, color: Colors.black12),
-            _buildStatColumn('Takip', followingCount),
+            _buildStatColumn('Takipçi', followersCount, isDark),
+            Container(height: 30, width: 2, color: isDark ? Colors.white12 : Colors.black12),
+            _buildStatColumn('Takip', followingCount, isDark),
           ],
         ),
         const SizedBox(height: 16),
@@ -665,8 +675,13 @@ class _UserProfileDetailScreenState extends State<UserProfileDetailScreen> {
               child: _buildNeoButton(
                 label: isFollowing ? 'TAKİPTEN ÇIK' : 'TAKİP ET',
                 icon: isFollowing ? Icons.person_remove : Icons.person_add,
-                color: isFollowing ? Colors.white : AppColors.primary,
-                textColor: isFollowing ? Colors.black : Colors.white,
+                color: isFollowing 
+                    ? (isDark ? AppColors.cardDark : Colors.white) 
+                    : AppColors.primary,
+                textColor: isFollowing 
+                    ? (isDark ? Colors.white : Colors.black) 
+                    : Colors.white,
+                isDark: isDark,
                 onTap: () async {
                   HapticFeedback.lightImpact();
                   try {
@@ -688,8 +703,9 @@ class _UserProfileDetailScreenState extends State<UserProfileDetailScreen> {
               child: _buildNeoButton(
                 label: 'MESAJ GÖNDER',
                 icon: Icons.send_rounded,
-                color: Colors.white,
-                textColor: Colors.black,
+                color: isDark ? AppColors.cardDark : Colors.white,
+                textColor: isDark ? Colors.white : Colors.black,
+                isDark: isDark,
                 onTap: () async {
                   HapticFeedback.lightImpact();
                   try {
@@ -724,7 +740,7 @@ class _UserProfileDetailScreenState extends State<UserProfileDetailScreen> {
     );
   }
 
-  Widget _buildStatColumn(String label, int count) {
+  Widget _buildStatColumn(String label, int count, bool isDark) {
     return Column(
       children: [
         Text(
@@ -732,7 +748,7 @@ class _UserProfileDetailScreenState extends State<UserProfileDetailScreen> {
           style: GoogleFonts.outfit(
             fontSize: 20,
             fontWeight: FontWeight.w900,
-            color: Colors.black,
+            color: isDark ? Colors.white : Colors.black,
           ),
         ),
         Text(
@@ -740,7 +756,7 @@ class _UserProfileDetailScreenState extends State<UserProfileDetailScreen> {
           style: GoogleFonts.outfit(
             fontSize: 10,
             fontWeight: FontWeight.w800,
-            color: Colors.black54,
+            color: isDark ? Colors.white54 : Colors.black54,
           ),
         ),
       ],
@@ -752,7 +768,8 @@ class _UserProfileDetailScreenState extends State<UserProfileDetailScreen> {
     required IconData icon, 
     required Color color, 
     required Color textColor,
-    required VoidCallback onTap
+    required VoidCallback onTap,
+    bool isDark = false,
   }) {
     return GestureDetector(
       onTap: onTap,
@@ -761,8 +778,8 @@ class _UserProfileDetailScreenState extends State<UserProfileDetailScreen> {
         decoration: BoxDecoration(
           color: color,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-          boxShadow: [AppColors.neoShadowSmall],
+          border: Border.all(color: isDark ? Colors.white10 : const Color(0xFFEEEEEE), width: 1.0),
+          boxShadow: isDark ? [] : [AppColors.neoShadowSmall],
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,

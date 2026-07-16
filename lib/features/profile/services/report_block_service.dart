@@ -445,10 +445,11 @@ class BlockUserDialog {
     required String userName,
     required VoidCallback onBlock,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1F2937),
+        backgroundColor: isDark ? AppColors.cardDark : Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(
           children: [
@@ -457,7 +458,7 @@ class BlockUserDialog {
             Text(
               'Engelle',
               style: GoogleFonts.plusJakartaSans(
-                color: Colors.white,
+                color: isDark ? Colors.white : Colors.black87,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -469,7 +470,7 @@ class BlockUserDialog {
           '• Mesajlaşma sona erecek\n'
           '• Eşleşme silinecek',
           style: GoogleFonts.plusJakartaSans(
-            color: Colors.white70,
+            color: isDark ? Colors.white70 : Colors.black54,
             height: 1.5,
           ),
         ),
@@ -478,7 +479,7 @@ class BlockUserDialog {
             onPressed: () => Navigator.pop(context, false),
             child: Text(
               'İptal',
-              style: GoogleFonts.plusJakartaSans(color: Colors.white54),
+              style: GoogleFonts.plusJakartaSans(color: isDark ? Colors.white54 : Colors.black45),
             ),
           ),
           ElevatedButton(

@@ -186,15 +186,17 @@ class _FollowsListScreenState extends State<FollowsListScreen> {
     final titleText = widget.type == 'followers' ? 'TAKİPÇİLER' : 'TAKİP EDİLENLER';
     final isOwnProfile = widget.userId == context.watch<UserProvider>().currentUser?.uid;
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: AppColors.scaffold,
+      backgroundColor: isDark ? AppColors.scaffoldDark : AppColors.scaffold,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: isDark ? AppColors.cardDark : Colors.white,
         elevation: 0,
         centerTitle: true,
-        shape: const Border(bottom: BorderSide(color: Color(0xFFEEEEEE), width: 1.0)),
+        shape: Border(bottom: BorderSide(color: isDark ? Colors.white10 : const Color(0xFFEEEEEE), width: 1.0)),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black, size: 20),
+          icon: Icon(Icons.arrow_back_ios_new, color: isDark ? Colors.white : Colors.black, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -203,7 +205,7 @@ class _FollowsListScreenState extends State<FollowsListScreen> {
             fontSize: 20,
             fontWeight: FontWeight.w900,
             letterSpacing: -0.5,
-            color: Colors.black,
+            color: isDark ? Colors.white : Colors.black,
           ),
         ),
       ),
@@ -215,22 +217,22 @@ class _FollowsListScreenState extends State<FollowsListScreen> {
               padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: isDark ? AppColors.cardDark : Colors.white,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFEEEEEE), width: 1.0),
-                  boxShadow: [AppColors.neoShadowSmall],
+                  border: Border.all(color: isDark ? Colors.white10 : const Color(0xFFEEEEEE), width: 1.0),
+                  boxShadow: isDark ? [] : [AppColors.neoShadowSmall],
                 ),
                 child: TextField(
                   controller: _searchController,
                   onChanged: _onSearchChanged,
-                  style: GoogleFonts.outfit(fontSize: 15, color: Colors.black, fontWeight: FontWeight.w600),
+                  style: GoogleFonts.outfit(fontSize: 15, color: isDark ? Colors.white : Colors.black, fontWeight: FontWeight.w600),
                   decoration: InputDecoration(
                     hintText: "İSME GÖRE ARA...",
                     hintStyle: GoogleFonts.outfit(color: Colors.grey, fontWeight: FontWeight.w600, fontSize: 13),
-                    prefixIcon: const Icon(Icons.search, color: Colors.black54),
+                    prefixIcon: Icon(Icons.search, color: isDark ? Colors.white54 : Colors.black54),
                     suffixIcon: _searchQuery.isNotEmpty
                         ? IconButton(
-                            icon: const Icon(Icons.clear, color: Colors.black54),
+                            icon: Icon(Icons.clear, color: isDark ? Colors.white54 : Colors.black54),
                             onPressed: () {
                               _searchController.clear();
                               _onSearchChanged('');
@@ -256,8 +258,9 @@ class _FollowsListScreenState extends State<FollowsListScreen> {
   }
 
   Widget _buildBody(bool isOwnProfile) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator(color: Colors.black));
+      return Center(child: CircularProgressIndicator(color: isDark ? Colors.white : Colors.black));
     }
 
     if (_allUsers.isEmpty) {
@@ -268,15 +271,15 @@ class _FollowsListScreenState extends State<FollowsListScreen> {
       return Center(
         child: Text(
           "KULLANICI BULUNAMADI",
-          style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.w900, color: Colors.black54),
+          style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.w900, color: isDark ? Colors.white54 : Colors.black54),
         ),
       );
     }
 
     return RefreshIndicator(
       onRefresh: _loadList,
-      color: Colors.black,
-      backgroundColor: Colors.white,
+      color: isDark ? Colors.white : Colors.black,
+      backgroundColor: isDark ? AppColors.cardDark : Colors.white,
       child: ListView.builder(
         padding: const EdgeInsets.all(24),
         itemCount: _filteredUsers.length,
@@ -289,6 +292,7 @@ class _FollowsListScreenState extends State<FollowsListScreen> {
   }
 
   Widget _buildUserTile(UserProfile user, bool isOwnProfile) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final photoUrl = (user.photoUrls?.isNotEmpty == true)
         ? user.photoUrls!.first
         : 'https://images.unsplash.com/photo-1511367461989-f85a21fda167?w=500';
@@ -301,10 +305,10 @@ class _FollowsListScreenState extends State<FollowsListScreen> {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? AppColors.cardDark : Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFEEEEEE), width: 1.0),
-        boxShadow: [AppColors.neoShadowSmall],
+        border: Border.all(color: isDark ? Colors.white10 : const Color(0xFFEEEEEE), width: 1.0),
+        boxShadow: isDark ? [] : [AppColors.neoShadowSmall],
       ),
       child: Row(
         children: [
@@ -316,14 +320,14 @@ class _FollowsListScreenState extends State<FollowsListScreen> {
               height: 56,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: const Color(0xFFEEEEEE), width: 1.0),
+                border: Border.all(color: isDark ? Colors.white10 : const Color(0xFFEEEEEE), width: 1.0),
               ),
               child: ClipOval(
                 child: CachedNetworkImage(
                   imageUrl: photoUrl,
                   fit: BoxFit.cover,
                   placeholder: (_, __) => Container(color: AppColors.scaffold),
-                  errorWidget: (_, __, ___) => const Icon(Icons.person, color: Colors.black),
+                  errorWidget: (_, __, ___) => Icon(Icons.person, color: isDark ? Colors.white : Colors.black),
                 ),
               ),
             ),
@@ -343,20 +347,20 @@ class _FollowsListScreenState extends State<FollowsListScreen> {
                     style: GoogleFonts.outfit(
                       fontSize: 16,
                       fontWeight: FontWeight.w900,
-                      color: Colors.black,
+                      color: isDark ? Colors.white : Colors.black,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      const Icon(Icons.location_on, size: 12, color: Colors.black54),
+                      Icon(Icons.location_on, size: 12, color: isDark ? Colors.white54 : Colors.black54),
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
                           locationText.toUpperCase(),
                           style: GoogleFonts.outfit(
                             fontSize: 11,
-                            color: Colors.black54,
+                            color: isDark ? Colors.white54 : Colors.black54,
                             fontWeight: FontWeight.w700,
                           ),
                           overflow: TextOverflow.ellipsis,
@@ -376,10 +380,10 @@ class _FollowsListScreenState extends State<FollowsListScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: isDark ? AppColors.cardDark : Colors.white,
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: const Color(0xFFEEEEEE), width: 1.0),
-                  boxShadow: [AppColors.neoShadowSmall],
+                  border: Border.all(color: isDark ? Colors.white10 : const Color(0xFFEEEEEE), width: 1.0),
+                  boxShadow: isDark ? [] : [AppColors.neoShadowSmall],
                 ),
                 child: Text(
                   'ÇIK',
@@ -393,7 +397,7 @@ class _FollowsListScreenState extends State<FollowsListScreen> {
             )
           else
             IconButton(
-              icon: const Icon(Icons.arrow_forward_ios, color: Colors.black45, size: 16),
+              icon: Icon(Icons.arrow_forward_ios, color: isDark ? Colors.white38 : Colors.black45, size: 16),
               onPressed: () => _navigateToProfile(user),
             ),
         ],
@@ -411,6 +415,7 @@ class _FollowsListScreenState extends State<FollowsListScreen> {
   }
 
   Widget _buildEmptyState({required bool isFollowers}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final title = isFollowers ? "HENÜZ TAKİPÇİN YOK" : "KİMSEYİ TAKİP ETMİYORSUN";
     final desc = isFollowers
         ? "Profilini doldurarak ve insanlarla etkileşime girerek takipçi kazanabilirsin!"
@@ -425,21 +430,21 @@ class _FollowsListScreenState extends State<FollowsListScreen> {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: isDark ? AppColors.cardDark : Colors.white,
                 shape: BoxShape.circle,
-                border: Border.all(color: const Color(0xFFEEEEEE), width: 1.0),
-                boxShadow: [AppColors.neoShadowSmall],
+                border: Border.all(color: isDark ? Colors.white10 : const Color(0xFFEEEEEE), width: 1.0),
+                boxShadow: isDark ? [] : [AppColors.neoShadowSmall],
               ),
               child: Icon(
                 isFollowers ? Icons.people_outline : Icons.person_add_alt_1_outlined,
                 size: 48,
-                color: Colors.black,
+                color: isDark ? Colors.white : Colors.black,
               ),
             ),
             const SizedBox(height: 32),
             Text(
               title,
-              style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w900, color: Colors.black),
+              style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w900, color: isDark ? Colors.white : Colors.black),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),

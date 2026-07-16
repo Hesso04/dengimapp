@@ -15,6 +15,7 @@ import '../services/chat_service.dart';
 import '../widgets/chat_list_item_data.dart';
 import '../widgets/chat_input_widget.dart';
 import '../../auth/services/report_service.dart';
+import '../../profile/services/report_block_service.dart';
 import '../../payment/premium_offer_screen.dart';
 import 'call_screen.dart';
 import '../../../core/utils/error_handler.dart';
@@ -84,9 +85,10 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   }
 
   void _showChatOptions() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.surface,
+      backgroundColor: isDark ? AppColors.cardDark : AppColors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -118,15 +120,15 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                 final confirm = await showDialog<bool>(
                   context: context,
                   builder: (context) => AlertDialog(
-                    backgroundColor: Colors.white,
+                    backgroundColor: isDark ? AppColors.scaffoldDark : Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(24),
-                      side: BorderSide(color: Color(0xFFEEEEEE), width: 1.0),
+                      side: BorderSide(color: isDark ? Colors.white10 : const Color(0xFFEEEEEE), width: 1.0),
                     ),
-                    title: Text('KULLANICIYI ENGELLE?', style: GoogleFonts.outfit(color: Colors.black, fontWeight: FontWeight.w900)),
+                    title: Text('KULLANICIYI ENGELLE?', style: GoogleFonts.outfit(color: isDark ? Colors.white : Colors.black, fontWeight: FontWeight.w900)),
                     content: Text(
                       '${widget.otherUserName} ENGELLENSİN Mİ? SİZE MESAJ GÖNDEREMEYECEK.',
-                      style: GoogleFonts.outfit(color: Colors.black, fontWeight: FontWeight.w700),
+                      style: GoogleFonts.outfit(color: isDark ? Colors.white70 : Colors.black, fontWeight: FontWeight.w700),
                     ),
                     actions: [
                       TextButton(
@@ -163,15 +165,15 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                 final confirm = await showDialog<bool>(
                   context: context,
                   builder: (context) => AlertDialog(
-                    backgroundColor: Colors.white,
+                    backgroundColor: isDark ? AppColors.scaffoldDark : Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(24),
-                      side: BorderSide(color: Color(0xFFEEEEEE), width: 1.0),
+                      side: BorderSide(color: isDark ? Colors.white10 : const Color(0xFFEEEEEE), width: 1.0),
                     ),
-                    title: Text('SOHBETİ SİL?', style: GoogleFonts.outfit(color: Colors.black, fontWeight: FontWeight.w900)),
+                    title: Text('SOHBETİ SİL?', style: GoogleFonts.outfit(color: isDark ? Colors.white : Colors.black, fontWeight: FontWeight.w900)),
                     content: Text(
                       'BU SOHBET SİLİNECEK. BU İŞLEM GERİ ALINAMAZ.',
-                      style: GoogleFonts.outfit(color: Colors.black, fontWeight: FontWeight.w700),
+                      style: GoogleFonts.outfit(color: isDark ? Colors.white70 : Colors.black, fontWeight: FontWeight.w700),
                     ),
                     actions: [
                       TextButton(
@@ -203,16 +205,17 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   Widget build(BuildContext context) {
     final currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser == null) return const SizedBox();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: AppColors.scaffold,
+      backgroundColor: isDark ? AppColors.scaffoldDark : AppColors.scaffold,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: isDark ? AppColors.cardDark : Colors.white,
         elevation: 0,
         centerTitle: false,
-        shape: Border(bottom: BorderSide(color: Color(0xFFEEEEEE), width: 1.0)),
+        shape: Border(bottom: BorderSide(color: isDark ? Colors.white10 : const Color(0xFFEEEEEE), width: 1.0)),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black, size: 20),
+          icon: Icon(Icons.arrow_back_ios_new, color: isDark ? Colors.white : Colors.black, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
         title: Row(
@@ -236,7 +239,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                     style: GoogleFonts.outfit(
                       fontSize: 16,
                       fontWeight: FontWeight.w900,
-                      color: Colors.black,
+                      color: isDark ? Colors.white : Colors.black,
                       letterSpacing: -0.5,
                     ),
                   ),
@@ -255,7 +258,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.call, color: Colors.black, size: 22),
+            icon: Icon(Icons.call, color: isDark ? Colors.white : Colors.black, size: 22),
             onPressed: () {
               final userProvider = context.read<UserProvider>();
               final userTier = userProvider.currentUser?.subscriptionTier ?? 'free';
@@ -280,7 +283,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
             },
           ),
           IconButton(
-            icon: const Icon(Icons.more_vert, color: Colors.black, size: 24),
+            icon: Icon(Icons.more_vert, color: isDark ? Colors.white : Colors.black, size: 24),
             onPressed: _showChatOptions,
           ),
         ],
@@ -299,7 +302,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                   return Center(
                     child: Text(
                       'HENÜZ MESAJ YOK',
-                      style: GoogleFonts.outfit(color: Colors.black.withValues(alpha: 0.3), fontWeight: FontWeight.w900, fontSize: 12),
+                      style: GoogleFonts.outfit(color: isDark ? Colors.white.withValues(alpha: 0.3) : Colors.black.withValues(alpha: 0.3), fontWeight: FontWeight.w900, fontSize: 12),
                     ),
                   );
                 }
@@ -354,13 +357,14 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
   /// Yanıt önizlemesi
   Widget _buildReplyPreview() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.cardDark : Colors.white,
         border: Border(
-          top: BorderSide(color: Color(0xFFEEEEEE), width: 1.0),
-          left: BorderSide(color: AppColors.primary, width: AppColors.neoBorderWidthLarge),
+          top: BorderSide(color: isDark ? Colors.white10 : const Color(0xFFEEEEEE), width: 1.0),
+          left: const BorderSide(color: AppColors.primary, width: AppColors.neoBorderWidthLarge),
         ),
       ),
       child: Row(
@@ -385,7 +389,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                       : _replyingTo!.content,
                   style: GoogleFonts.outfit(
                     fontSize: 13,
-                    color: Colors.black,
+                    color: isDark ? Colors.white : Colors.black,
                     fontWeight: FontWeight.w700,
                   ),
                   maxLines: 1,
@@ -395,7 +399,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.close, color: Colors.black, size: 20),
+            icon: Icon(Icons.close, color: isDark ? Colors.white : Colors.black, size: 20),
             onPressed: () => setState(() => _replyingTo = null),
           ),
         ],
@@ -425,6 +429,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
   /// Tepki seçici aç
   void _showReactionPicker(ChatMessage message) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -432,10 +437,10 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
         height: 100,
         margin: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isDark ? AppColors.cardDark : Colors.white,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-          boxShadow: [AppColors.neoShadowSmall],
+          border: Border.all(color: isDark ? Colors.white10 : const Color(0xFFEEEEEE), width: 1.0),
+          boxShadow: isDark ? [] : [AppColors.neoShadowSmall],
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -506,27 +511,30 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     setState(() => _isSubmittingReport = true);
 
     try {
-      final success = await ReportService().reportUser(
+      final success = await ReportBlockService().reportUser(
         reportedUserId: widget.otherUserId,
-        reason: reason,
+        reason: reason.displayName,
+        category: reason.name,
+        description: 'Sohbet üzerinden şikayet',
       );
 
-      if (mounted && success) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Raporunuz alındı. Teşekkür ederiz.'),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: Text(
+              success
+                  ? '✅ Raporunuz alındı. Teşekkür ederiz.'
+                  : '❌ Şikayet gönderilemedi. Tekrar deneyin.',
+            ),
+            backgroundColor: success ? Colors.green : Colors.red,
           ),
         );
       }
     } catch (e) {
       if (mounted) {
-        final errMsg = e.toString().contains('already-reported')
-            ? 'Bu kullanıcıyı zaten şikayet ettiniz.'
-            : ErrorHandler.getErrorMessage(e);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(errMsg),
+            content: Text(ErrorHandler.getErrorMessage(e)),
             backgroundColor: Colors.orange,
           ),
         );

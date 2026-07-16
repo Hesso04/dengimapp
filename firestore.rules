@@ -41,11 +41,11 @@ service cloud.firestore {
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['followers']) &&
           (
             (
-              request.resource.data.followers.hasAll(resource.data.followers) &&
-              resource.data.followers.hasAll(request.resource.data.followers.removeAll([request.auth.uid]))
+              request.resource.data.followers.hasAll(resource.data.get('followers', [])) &&
+              resource.data.get('followers', []).hasAll(request.resource.data.followers.removeAll([request.auth.uid]))
             ) || (
-              resource.data.followers.hasAll(request.resource.data.followers) &&
-              request.resource.data.followers.hasAll(resource.data.followers.removeAll([request.auth.uid]))
+              resource.data.get('followers', []).hasAll(request.resource.data.followers) &&
+              request.resource.data.followers.hasAll(resource.data.get('followers', []).removeAll([request.auth.uid]))
             )
           )
         ) ||
