@@ -100,7 +100,6 @@ class _ReportDialogState extends State<ReportDialog> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor = isDark ? AppColors.scaffoldDark : Colors.white;
     final textColor = isDark ? Colors.white : Colors.black;
-    final subtitleColor = isDark ? Colors.white70 : Colors.black87;
 
     return Container(
       decoration: BoxDecoration(
