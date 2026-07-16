@@ -1,5 +1,6 @@
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:agora_token_generator/agora_token_generator.dart';
 import '../utils/log_service.dart';
 
 class AgoraService {
@@ -7,8 +8,9 @@ class AgoraService {
   factory AgoraService() => _instance;
   AgoraService._internal();
 
-  // Senin verdiğin Agora App ID
-  static const String appId = "7b8bc94f1593413b8dfd81f4d0d0b464";
+  // Agora App ID ve Primary Certificate
+  static const String appId = "0b227b12c2e54a2e9f5f20b30653c198";
+  static const String appCertificate = "8b5ba9f9ef6f4606ac52ff53022228a7";
 
   RtcEngine? _engine;
   bool _isInitialized = false;
@@ -17,8 +19,8 @@ class AgoraService {
     if (_isInitialized) return;
 
     try {
-      // Mikrofon ve Kamera izinlerini kontrol et
-      await [Permission.microphone, Permission.camera].request();
+      // Sadece mikrofon iznini iste (Sesli arama için)
+      await Permission.microphone.request();
 
       _engine = createAgoraRtcEngine();
       await _engine!.initialize(const RtcEngineContext(
@@ -33,7 +35,7 @@ class AgoraService {
     }
   }
 
-  // Kanala katıl (Sesli veya Görüntülü)
+  // Kanala katıl (Sesli arama desteği ile)
   Future<void> joinChannel({
     required String channelId,
     required int uid,
@@ -42,29 +44,34 @@ class AgoraService {
   }) async {
     if (_engine == null) await init();
 
-    await _engine!.setChannelProfile(
-      isHost ? ChannelProfileType.channelProfileLiveBroadcasting : ChannelProfileType.channelProfileCommunication
+    // İletişim kanal ayarları
+    await _engine!.setChannelProfile(ChannelProfileType.channelProfileCommunication);
+    await _engine!.enableAudio();
+
+    // Video devre dışı bırakılıyor (Sesli Arama)
+    await _engine!.disableVideo();
+
+    // Agora Güvenlik sertifikası gereği dinamik token üretiyoruz
+    final token = RtcTokenBuilder.buildTokenWithUid(
+      appId: appId,
+      appCertificate: appCertificate,
+      channelName: channelId,
+      uid: uid,
+      tokenExpireSeconds: 3600, // 1 Saat geçerli token
     );
-
-    if (isHost) {
-      await _engine!.setClientRole(role: ClientRoleType.clientRoleBroadcaster);
-    }
-
-    if (isVideo) {
-      await _engine!.enableVideo();
-      await _engine!.startPreview();
-    } else {
-      await _engine!.enableAudio();
-    }
 
     await _engine!.joinChannel(
-      token: "", // Token mantığı eklenecek (Test için boş bırakılabilir)
+      token: token,
       channelId: channelId,
       uid: uid,
-      options: const ChannelMediaOptions(),
+      options: const ChannelMediaOptions(
+        publishMicrophoneTrack: true,
+        publishCameraTrack: false,
+        clientRoleType: ClientRoleType.clientRoleBroadcaster,
+      ),
     );
     
-    LogService.i("Joined Agora Channel: $channelId");
+    LogService.i("Joined Agora Channel: $channelId with token: ${token.substring(0, 10)}...");
   }
 
   Future<void> leaveChannel() async {

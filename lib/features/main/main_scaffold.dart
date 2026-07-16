@@ -1,5 +1,7 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/services/notification_service.dart';
@@ -72,6 +74,7 @@ class _MainScaffoldState extends State<MainScaffold> {
   }
 
   void _onTabTapped(int index) {
+    HapticFeedback.selectionClick();
     setState(() {
       _currentIndex = index;
     });
@@ -82,7 +85,9 @@ class _MainScaffoldState extends State<MainScaffold> {
     final connectivityProvider = context.watch<ConnectivityProvider>();
     final configProvider = context.watch<SystemConfigProvider>();
     final isMapEnabled = configProvider.isMapEnabled;
-    
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     final screens = _getScreens(isMapEnabled);
     final navItems = _getNavItems(isMapEnabled);
 
@@ -90,93 +95,103 @@ class _MainScaffoldState extends State<MainScaffold> {
       _currentIndex = 0;
     }
 
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final borderColor = isDark ? const Color(0xFF262629) : const Color(0xFFEEEEEE);
-
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      body: Column(
-        children: [
-          if (!connectivityProvider.isConnected)
-            const OfflineBanner(),
-          Expanded(
-            child: IndexedStack(
-              index: _currentIndex,
-              children: screens,
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
+      child: Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        extendBody: true, // body'nin tab bar altına uzanmasını sağla
+        body: Column(
+          children: [
+            if (!connectivityProvider.isConnected)
+              const OfflineBanner(),
+            Expanded(
+              child: IndexedStack(
+                index: _currentIndex,
+                children: screens,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
+        bottomNavigationBar: _buildBottomNav(navItems, isDark),
       ),
-      bottomNavigationBar: _buildBottomNav(navItems),
     );
   }
 
-  Widget _buildBottomNav(List<_NavItem> navItems) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final borderColor = isDark ? const Color(0xFF262629) : const Color(0xFFEEEEEE);
+  Widget _buildBottomNav(List<_NavItem> navItems, bool isDark) {
+    final bgColor = isDark
+        ? AppColors.scaffoldDark.withValues(alpha: 0.90)
+        : Colors.white.withValues(alpha: 0.90);
+    final borderColor = isDark
+        ? const Color(0xFF2A2A2E)
+        : const Color(0xFFF0F0F0);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.bottomNavigationBarTheme.backgroundColor ?? theme.colorScheme.surface,
-        border: Border(top: BorderSide(color: borderColor, width: 1.0)),
-      ),
-      padding: EdgeInsets.only(
-        left: 12, 
-        right: 12, 
-        top: 12, 
-        bottom: MediaQuery.of(context).padding.bottom + 12
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: List.generate(
-          navItems.length,
-          (index) => _buildNavItem(index, navItems),
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: Container(
+          decoration: BoxDecoration(
+            color: bgColor,
+            border: Border(
+              top: BorderSide(color: borderColor, width: 0.5),
+            ),
+          ),
+          padding: EdgeInsets.only(
+            left: 8,
+            right: 8,
+            top: 10,
+            bottom: MediaQuery.of(context).padding.bottom + 10,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: List.generate(
+              navItems.length,
+              (index) => _buildNavItem(index, navItems, isDark),
+            ),
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildNavItem(int index, List<_NavItem> navItems) {
+  Widget _buildNavItem(int index, List<_NavItem> navItems, bool isDark) {
     final isSelected = _currentIndex == index;
     final item = navItems[index];
     final badgeProvider = context.watch<BadgeProvider>();
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final borderColor = isDark ? const Color(0xFF262629) : const Color(0xFFEEEEEE);
-    final unselectedColor = theme.bottomNavigationBarTheme.unselectedItemColor ?? AppColors.textSecondary;
-    
+
     int badgeCount = 0;
-    if (item.label == 'Mesajlar') { 
+    if (item.label == 'Mesajlar') {
       badgeCount = badgeProvider.chatBadge;
     } else if (item.label == 'Beğeniler') {
       badgeCount = badgeProvider.likesBadge;
     }
 
+    final activeColor = AppColors.primary;
+    final inactiveColor = isDark
+        ? Colors.white.withValues(alpha: 0.40)
+        : AppColors.textSecondary;
+
     return GestureDetector(
       onTap: () => _onTabTapped(index),
       behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-          border: isSelected 
-              ? Border.all(color: borderColor, width: 1.0) 
-              : Border.all(color: Colors.transparent, width: AppColors.neoBorderWidth),
-        ),
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // İkon + Badge
             Stack(
               clipBehavior: Clip.none,
               children: [
-                Icon(
-                  isSelected ? item.activeIcon : item.icon,
-                  size: 26,
-                  color: isSelected ? Colors.white : unselectedColor,
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  child: Icon(
+                    isSelected ? item.activeIcon : item.icon,
+                    key: ValueKey('${item.label}_$isSelected'),
+                    size: 26,
+                    color: isSelected ? activeColor : inactiveColor,
+                  ),
                 ),
                 if (badgeCount > 0)
                   Positioned(
@@ -185,9 +200,12 @@ class _MainScaffoldState extends State<MainScaffold> {
                     child: Container(
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
-                        color: AppColors.red,
+                        color: AppColors.primary,
                         shape: BoxShape.circle,
-                        border: Border.all(color: isDark ? const Color(0xFF1B1B1D) : Colors.white, width: 1.0),
+                        border: Border.all(
+                          color: isDark ? AppColors.scaffoldDark : Colors.white,
+                          width: 1.5,
+                        ),
                       ),
                       constraints: const BoxConstraints(
                         minWidth: 18,
@@ -206,17 +224,28 @@ class _MainScaffoldState extends State<MainScaffold> {
                   ),
               ],
             ),
-            if (isSelected) ...[
-              const SizedBox(height: 4),
-              Text(
-                item.label,
-                style: GoogleFonts.outfit(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                ),
+            const SizedBox(height: 4),
+            // Label
+            Text(
+              item.label,
+              style: GoogleFonts.outfit(
+                fontSize: 10,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                color: isSelected ? activeColor : inactiveColor,
               ),
-            ]
+            ),
+            const SizedBox(height: 4),
+            // Seçim Göstergesi — küçük nokta
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+              width: isSelected ? 16 : 0,
+              height: isSelected ? 3 : 0,
+              decoration: BoxDecoration(
+                color: activeColor,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
           ],
         ),
       ),

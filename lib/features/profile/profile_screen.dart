@@ -102,14 +102,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       placeholder: (context, url) => Container(color: theme.colorScheme.surface),
                       errorWidget: (context, url, error) => const Icon(Icons.error),
                     ),
-                    // Header Border
+                    // Soft fade gradient overlay
                     Positioned(
                       bottom: 0,
                       left: 0,
                       right: 0,
                       child: Container(
-                        height: 4,
-                        color: elementColor,
+                        height: 180,
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.transparent,
+                              Colors.black54,
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                     // Buttons at Top
@@ -152,12 +161,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Row(
                         children: [
                           Text(
-                            '$name, $age'.toUpperCase(),
+                            '$name, $age',
                             style: GoogleFonts.outfit(
-                              fontSize: 32,
-                              fontWeight: FontWeight.w900,
+                              fontSize: 30,
+                              fontWeight: FontWeight.w700,
                               color: elementColor,
-                              letterSpacing: -1.0,
+                              letterSpacing: -0.5,
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -178,14 +187,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          Icon(Icons.location_on, color: elementColor, size: 16),
-                          const SizedBox(width: 6),
+                          Icon(Icons.location_on_rounded, color: elementColor.withValues(alpha: 0.6), size: 15),
+                          const SizedBox(width: 4),
                           Text(
-                            location.toUpperCase(),
+                            location,
                             style: GoogleFonts.outfit(
                               fontSize: 14,
                               color: elementColor.withValues(alpha: 0.6),
-                              fontWeight: FontWeight.w800,
+                              fontWeight: FontWeight.w400,
                             ),
                           ),
                         ],

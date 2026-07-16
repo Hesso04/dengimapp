@@ -50,25 +50,19 @@ class _ChatsScreenState extends State<ChatsScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
-          side: BorderSide(color: Color(0xFFEEEEEE), width: 1.0),
-        ),
-        title: Text('SOHBETİ SİL?', style: GoogleFonts.outfit(color: Colors.black, fontWeight: FontWeight.w900)),
+        title: Text('Sohbeti Sil?', style: GoogleFonts.outfit(fontWeight: FontWeight.w700)),
         content: Text(
-          '${chat.otherUserName} İLE OLAN SOHBETİNİZ SİLİNECEK. BU İŞLEM GERİ ALINAMAZ.',
-          style: GoogleFonts.outfit(color: Colors.black, fontWeight: FontWeight.w700),
+          '${chat.otherUserName} ile olan sohbetiniz silinecek. Bu işlem geri alınamaz.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text('İPTAL', style: GoogleFonts.outfit(color: AppColors.textSecondary, fontWeight: FontWeight.w900)),
+            child: Text('İptal', style: GoogleFonts.outfit(color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(foregroundColor: AppColors.red),
-            child: Text('SİL', style: GoogleFonts.outfit(color: AppColors.red, fontWeight: FontWeight.w900)),
+            child: Text('Sil', style: GoogleFonts.outfit(color: AppColors.red, fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -97,8 +91,9 @@ class _ChatsScreenState extends State<ChatsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
@@ -111,7 +106,7 @@ class _ChatsScreenState extends State<ChatsScreen> {
               child: Consumer<ChatProvider>(
                 builder: (context, provider, child) {
                   if (provider.isLoading) {
-                    return const Center(child: CircularProgressIndicator(color: Colors.black));
+                    return const Center(child: CircularProgressIndicator(color: AppColors.primary));
                   }
                   
                   final chats = provider.conversations;
@@ -159,12 +154,14 @@ class _ChatsScreenState extends State<ChatsScreen> {
   }
 
   Widget _buildHeader() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final textColor = theme.colorScheme.onSurface;
+    final headerBg = isDark ? AppColors.scaffoldDark : AppColors.scaffold;
+
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(bottom: BorderSide(color: Color(0xFFEEEEEE), width: 1.0)),
-      ),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+      color: headerBg,
       child: Column(
         children: [
           Row(
@@ -173,20 +170,19 @@ class _ChatsScreenState extends State<ChatsScreen> {
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   color: AppColors.primary,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-                  boxShadow: [AppColors.neoShadowSmall],
+                  borderRadius: BorderRadius.circular(AppColors.neoRadiusSmall),
+                  boxShadow: [AppColors.primaryShadow],
                 ),
-                child: const Icon(Icons.chat_bubble_outline_rounded, color: Colors.white, size: 24),
+                child: const Icon(Icons.chat_bubble_outline_rounded, color: Colors.white, size: 22),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 14),
               Text(
-                "MESAJLAR",
+                'Mesajlar',
                 style: GoogleFonts.outfit(
-                  fontSize: 26,
-                  fontWeight: FontWeight.w900,
-                  color: Colors.black,
-                  letterSpacing: -1.0,
+                  fontSize: 24,
+                  fontWeight: FontWeight.w700,
+                  color: textColor,
+                  letterSpacing: -0.5,
                 ),
               ),
               const Spacer(),
@@ -195,7 +191,7 @@ class _ChatsScreenState extends State<ChatsScreen> {
               }),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           _buildSearchBar(),
         ],
       ),
@@ -203,30 +199,45 @@ class _ChatsScreenState extends State<ChatsScreen> {
   }
 
   Widget _buildSearchBar() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final fillColor = isDark ? AppColors.surfaceDark : AppColors.surfaceLight;
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      height: 52,
+      height: 48,
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-        boxShadow: [AppColors.neoShadowSmall],
+        color: fillColor,
+        borderRadius: BorderRadius.circular(AppColors.neoRadius),
       ),
       child: Row(
         children: [
-          const Icon(Icons.search, color: Colors.black, size: 22),
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
+          Icon(Icons.search_rounded, color: AppColors.textSecondary, size: 20),
+          const SizedBox(width: 10),
           Expanded(
             child: TextField(
               onChanged: (value) {
                 context.read<ChatProvider>().filterChats(value);
               },
               decoration: InputDecoration(
-                hintText: "SOHBETLERDE ARA...",
-                hintStyle: GoogleFonts.outfit(color: Colors.black.withValues(alpha: 0.3), fontSize: 13, fontWeight: FontWeight.bold),
+                hintText: 'Sohbetlerde ara...',
+                hintStyle: GoogleFonts.outfit(
+                  color: AppColors.textSecondary,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w400,
+                ),
                 border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                fillColor: Colors.transparent,
+                filled: true,
+                contentPadding: const EdgeInsets.symmetric(vertical: 14),
               ),
-              style: GoogleFonts.outfit(color: Colors.black, fontSize: 14, fontWeight: FontWeight.bold),
+              style: GoogleFonts.outfit(
+                color: theme.colorScheme.onSurface,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
           Consumer<ChatProvider>(
@@ -234,7 +245,10 @@ class _ChatsScreenState extends State<ChatsScreen> {
               if (provider.searchQuery.isEmpty) return const SizedBox.shrink();
               return GestureDetector(
                 onTap: () => provider.clearSearch(),
-                child: const Icon(Icons.close_rounded, color: Colors.black, size: 20),
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: Icon(Icons.cancel_rounded, color: AppColors.textSecondary, size: 18),
+                ),
               );
             },
           ),
@@ -244,94 +258,118 @@ class _ChatsScreenState extends State<ChatsScreen> {
   }
 
   Widget _buildEmptyChats() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final textColor = theme.colorScheme.onSurface;
+    final subColor = isDark ? Colors.white.withValues(alpha: 0.45) : AppColors.textSecondary;
+    final iconBg = isDark ? AppColors.surfaceDark : AppColors.surfaceLight;
+
     return Center(
-       child: Padding(
-         padding: const EdgeInsets.symmetric(horizontal: 40),
-         child: Column(
-           mainAxisAlignment: MainAxisAlignment.center,
-           children: [
-             Container(
-               width: 100,
-               height: 100,
-               decoration: BoxDecoration(
-                 color: Colors.white,
-                 shape: BoxShape.circle,
-                 border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-                 boxShadow: [AppColors.neoShadowSmall],
-               ),
-               child: const Icon(Icons.chat_bubble_outline_rounded, size: 48, color: Colors.black),
-             ),
-             const SizedBox(height: 32),
-             Text(
-               "Henüz mesajınız yok 💬", 
-               style: GoogleFonts.outfit(
-                 color: Colors.black, 
-                 fontSize: 20, 
-                 fontWeight: FontWeight.w900,
-               ),
-             ),
-             const SizedBox(height: 12),
-             Text(
-               "Eşleşmelerinizle sohbet etmeye\nburadan başlayabilirsiniz.", 
-               textAlign: TextAlign.center,
-               style: GoogleFonts.outfit(
-                 color: Colors.black.withValues(alpha: 0.5), 
-                 fontSize: 14, 
-                 fontWeight: FontWeight.w800,
-                 height: 1.5,
-               ),
-             ),
-             const SizedBox(height: 32),
-             GestureDetector(
-               onTap: () {
-                 ScaffoldMessenger.of(context).showSnackBar(
-                   SnackBar(
-                     content: Text('KEŞFET SEKMESİNE GİDİP YENİ KİŞİLERLE EŞLEŞ!'.toUpperCase(), style: GoogleFonts.outfit(fontWeight: FontWeight.w900, color: Colors.white)),
-                     duration: const Duration(seconds: 2),
-                     backgroundColor: Colors.black,
-                   ),
-                 );
-               },
-               child: Container(
-                 padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                 decoration: BoxDecoration(
-                   color: AppColors.primary, // Black
-                   borderRadius: BorderRadius.circular(16),
-                   border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-                   boxShadow: [AppColors.neoShadowSmall],
-                 ),
-                 child: Row(
-                   mainAxisSize: MainAxisSize.min,
-                   children: [
-                     const Icon(Icons.explore_rounded, color: Colors.white, size: 20),
-                     const SizedBox(width: 12),
-                     Text(
-                       "KEŞFETMEYE BAŞLA", 
-                       style: GoogleFonts.outfit(fontWeight: FontWeight.w900, fontSize: 16, color: Colors.white)
-                     ),
-                   ],
-                 ),
-               ),
-             ),
-           ],
-         ),
-       ),
-     );
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 40),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: iconBg,
+                shape: BoxShape.circle,
+                boxShadow: [AppColors.neoShadow],
+              ),
+              child: Icon(
+                Icons.chat_bubble_outline_rounded,
+                size: 34,
+                color: AppColors.primary,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Henüz mesajınız yok 💬',
+              style: GoogleFonts.outfit(
+                color: textColor,
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.3,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'Eşleşmelerinizle sohbet etmeye\nburadan başlayabilirsiniz.',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.outfit(
+                color: subColor,
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+                height: 1.6,
+              ),
+            ),
+            const SizedBox(height: 32),
+            GestureDetector(
+              onTap: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      'Keşfet sekmesine gidip yeni kişilerle eşleş!',
+                      style: GoogleFonts.outfit(fontWeight: FontWeight.w500, color: Colors.white),
+                    ),
+                    duration: const Duration(seconds: 2),
+                    backgroundColor: AppColors.primary,
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppColors.neoRadiusSmall),
+                    ),
+                  ),
+                );
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(AppColors.neoRadius),
+                  boxShadow: [AppColors.primaryShadow],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.explore_rounded, color: Colors.white, size: 18),
+                    const SizedBox(width: 10),
+                    Text(
+                      'Keşfetmeye Başla',
+                      style: GoogleFonts.outfit(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildIconButton(IconData icon, VoidCallback onTap) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final bg = isDark ? AppColors.surfaceDark : AppColors.surfaceLight;
+    final iconColor = theme.colorScheme.onSurface;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 44,
-        height: 44,
+        width: 42,
+        height: 42,
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
+          color: bg,
+          borderRadius: BorderRadius.circular(AppColors.neoRadius),
           boxShadow: [AppColors.neoShadowSmall],
         ),
-        child: Icon(icon, color: Colors.black, size: 22),
+        child: Icon(icon, color: iconColor, size: 20),
       ),
     );
   }
@@ -356,23 +394,28 @@ class _ChatsScreenState extends State<ChatsScreen> {
           return const SizedBox.shrink();
         }
 
+        final theme = Theme.of(context);
+        final isDark = theme.brightness == Brightness.dark;
+        final labelColor = isDark ? Colors.white.withValues(alpha: 0.5) : AppColors.textSecondary;
+        final nameColor = theme.colorScheme.onSurface;
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
               child: Text(
-                "YENİ EŞLEŞMELER",
+                'Yeni Eşleşmeler',
                 style: GoogleFonts.outfit(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w900,
-                  color: Colors.black.withValues(alpha: 0.5),
-                  letterSpacing: 1.0,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: labelColor,
+                  letterSpacing: 0.3,
                 ),
               ),
             ),
             SizedBox(
-              height: 105,
+              height: 100,
               child: ListView.builder(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 scrollDirection: Axis.horizontal,
@@ -407,8 +450,8 @@ class _ChatsScreenState extends State<ChatsScreen> {
                               match.name,
                               style: GoogleFonts.outfit(
                                 fontSize: 10,
-                                fontWeight: FontWeight.w900,
-                                color: Colors.black,
+                                fontWeight: FontWeight.w600,
+                                color: nameColor,
                               ),
                               textAlign: TextAlign.center,
                               maxLines: 1,
@@ -422,9 +465,12 @@ class _ChatsScreenState extends State<ChatsScreen> {
                 },
               ),
             ),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 4),
-              child: Divider(color: Color(0xFFEEEEEE), height: 1),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+              child: Divider(
+                color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                height: 1,
+              ),
             ),
           ],
         );
@@ -438,7 +484,7 @@ class _ChatsScreenState extends State<ChatsScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const Center(child: CircularProgressIndicator(color: Colors.black)),
+      builder: (context) => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
     );
 
     try {

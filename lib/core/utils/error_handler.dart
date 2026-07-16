@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'log_service.dart';
 
 /// Global Error Handler
@@ -47,6 +48,66 @@ class ErrorHandler {
         ),
       ),
     );
+  }
+
+  /// Hata nesnesini Türkçe ve kullanıcı dostu bir açıklamaya dönüştürür
+  static String getErrorMessage(Object error) {
+    // Firebase Auth Hataları
+    if (error is FirebaseAuthException) {
+      switch (error.code) {
+        case 'user-not-found':
+        case 'wrong-password':
+          return 'E-posta adresi veya şifre hatalı.';
+        case 'email-already-in-use':
+          return 'Bu e-posta adresi başka bir hesap tarafından kullanılıyor.';
+        case 'invalid-email':
+          return 'Lütfen geçerli bir e-posta adresi giriniz.';
+        case 'weak-password':
+          return 'Şifre çok zayıf. Lütfen en az 6 karakterli güçlü bir şifre girin.';
+        case 'user-disabled':
+          return 'Hesabınız askıya alınmıştır. Destek ekibiyle iletişime geçin.';
+        case 'network-request-failed':
+          return 'İnternet bağlantısı kurulamadı. Lütfen ağınızı kontrol edin.';
+        case 'too-many-requests':
+          return 'Çok fazla başarısız giriş denemesi yaptınız. Lütfen daha sonra tekrar deneyin.';
+        default:
+          return error.message ?? 'Kimlik doğrulama işlemi sırasında bir hata oluştu.';
+      }
+    }
+    
+    // Firestore / Genel Firebase Hataları
+    if (error is FirebaseException) {
+      switch (error.code) {
+        case 'permission-denied':
+          return 'Bu işlem için yetkiniz bulunmamaktadır (Erişim reddedildi).';
+        case 'unavailable':
+          return 'Sunucuyla bağlantı kurulamadı. Lütfen daha sonra tekrar deneyin.';
+        case 'network-request-failed':
+          return 'İnternet bağlantısı hatası. Lütfen ağınızı kontrol edin.';
+        default:
+          return error.message ?? 'Veritabanı işlemi sırasında bir hata oluştu.';
+      }
+    }
+
+    // Network / Socket / Timeout Hataları
+    final errorStr = error.toString();
+    if (errorStr.contains('SocketException') || 
+        errorStr.contains('TimeoutException') || 
+        errorStr.contains('ClientException')) {
+      return 'İnternet bağlantısı bulunamadı veya sunucu yanıt vermiyor. Lütfen ağ bağlantınızı kontrol edin.';
+    }
+
+    // Özel İş Mantığı Hataları
+    if (errorStr.contains('already-reported')) {
+      return 'Bu kullanıcıyı zaten şikayet ettiniz.';
+    }
+
+    return 'İşlem gerçekleştirilirken beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.';
+  }
+
+  /// Exception nesnesini kullanıcı dostu bir Snackbar olarak gösterir
+  static void showException(BuildContext context, Object error) {
+    showError(context, getErrorMessage(error));
   }
 
   /// Başarı mesajı gösterme

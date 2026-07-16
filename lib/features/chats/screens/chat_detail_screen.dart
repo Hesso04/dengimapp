@@ -9,7 +9,6 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/services/typing_indicator_service.dart';
 import '../../../core/widgets/online_status_indicator.dart';
 import '../../../core/providers/user_provider.dart';
-import '../../../core/services/feature_flag_service.dart';
 
 import '../models/chat_models.dart';
 import '../services/chat_service.dart';
@@ -18,6 +17,7 @@ import '../widgets/chat_input_widget.dart';
 import '../../auth/services/report_service.dart';
 import '../../payment/premium_offer_screen.dart';
 import 'call_screen.dart';
+import '../../../core/utils/error_handler.dart';
 
 class ChatDetailScreen extends StatefulWidget {
   final String chatId;
@@ -42,6 +42,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   final ScrollController _scrollController = ScrollController();
   
   ChatMessage? _replyingTo;
+  bool _isSubmittingReport = false;
   
   // Tepki emojileri
   static const List<String> _reactionEmojis = ['❤️', '😂', '😮', '😢', '😡', '👍'];
@@ -278,30 +279,6 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
             },
           ),
           IconButton(
-            icon: const Icon(Icons.videocam, color: Colors.black, size: 24),
-            onPressed: () {
-              final userProvider = context.read<UserProvider>();
-              final userTier = userProvider.currentUser?.subscriptionTier ?? 'free';
-              
-              if (!FeatureFlagService().isVideoCallEnabled(userTier)) {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => PremiumOfferScreen()));
-                return;
-              }
-
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => CallScreen(
-                    channelId: widget.chatId,
-                    userName: widget.otherUserName,
-                    userAvatar: widget.otherUserAvatar,
-                    isVideo: true,
-                  ),
-                ),
-              );
-            },
-          ),
-          IconButton(
             icon: const Icon(Icons.more_vert, color: Colors.black, size: 24),
             onPressed: _showChatOptions,
           ),
@@ -523,34 +500,38 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   }
 
   Future<void> _submitReport(ReportReason reason) async {
+    if (_isSubmittingReport) return;
+    setState(() => _isSubmittingReport = true);
+
     try {
       final success = await ReportService().reportUser(
         reportedUserId: widget.otherUserId,
         reason: reason,
       );
 
-      if (mounted) {
-        if (success) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Raporunuz alındı. Teşekkür ederiz.'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Bu kullanıcıyı zaten raporladınız veya bir hata oluştu.'),
-              backgroundColor: Colors.orange,
-            ),
-          );
-        }
+      if (mounted && success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Raporunuz alındı. Teşekkür ederiz.'),
+            backgroundColor: Colors.green,
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {
+        final errMsg = e.toString().contains('already-reported')
+            ? 'Bu kullanıcıyı zaten şikayet ettiniz.'
+            : ErrorHandler.getErrorMessage(e);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Bir hata oluştu.')),
+          SnackBar(
+            content: Text(errMsg),
+            backgroundColor: Colors.orange,
+          ),
         );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmittingReport = false);
       }
     }
   }

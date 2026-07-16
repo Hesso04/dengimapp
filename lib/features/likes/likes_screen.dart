@@ -42,8 +42,9 @@ class _LikesScreenState extends State<LikesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: Consumer<LikesProvider>(
         builder: (context, provider, child) {
           return SafeArea(
@@ -235,62 +236,80 @@ class _LikesScreenState extends State<LikesScreen> {
   }
 
   Widget _buildSearchAndFilter(bool isPremium) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final fillColor = isDark ? AppColors.surfaceDark : AppColors.surfaceLight;
+    final textColor = theme.colorScheme.onSurface;
+    final subColor = isDark ? Colors.white.withValues(alpha: 0.5) : AppColors.textSecondary;
+
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+      padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
       child: Column(
         children: [
           Row(
             children: [
               Expanded(
                 child: Container(
-                  height: 48,
+                  height: 46,
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-                    boxShadow: [AppColors.neoShadowSmall],
+                    color: fillColor,
+                    borderRadius: BorderRadius.circular(AppColors.neoRadius),
                   ),
                   child: TextField(
                     controller: _searchController,
                     onChanged: (val) => setState(() => _searchQuery = val),
                     enabled: isPremium,
                     textAlignVertical: TextAlignVertical.center,
-                    style: GoogleFonts.outfit(color: Colors.black, fontSize: 13, fontWeight: FontWeight.w600),
+                    style: GoogleFonts.outfit(
+                      color: textColor,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,
+                    ),
                     decoration: InputDecoration(
-                      prefixIcon: const Icon(Icons.search, color: AppColors.textSecondary, size: 20),
-                      hintText: "BEĞENİLERDE ARA...",
-                      hintStyle: GoogleFonts.outfit(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600),
+                      prefixIcon: Icon(Icons.search_rounded, color: AppColors.textSecondary, size: 18),
+                      hintText: 'Beğenilerde ara...',
+                      hintStyle: GoogleFonts.outfit(
+                        color: AppColors.textSecondary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                      ),
                       border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      fillColor: Colors.transparent,
+                      filled: true,
                       isCollapsed: true,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 14),
                     ),
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               GestureDetector(
                 onTap: () {
                   if (!isPremium) {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const PremiumOfferScreen()));
+                    Navigator.push(context,
+                        MaterialPageRoute(builder: (_) => const PremiumOfferScreen()));
                   } else {
                     setState(() => _onlyOnline = !_onlyOnline);
                   }
                 },
-                child: Container(
-                  height: 48,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  height: 46,
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
                   decoration: BoxDecoration(
-                    color: _onlyOnline ? AppColors.green : Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-                    boxShadow: [AppColors.neoShadowSmall],
+                    color: _onlyOnline ? AppColors.green : fillColor,
+                    borderRadius: BorderRadius.circular(AppColors.neoRadius),
+                    boxShadow: _onlyOnline ? [AppColors.neoShadowSmall] : [],
                   ),
                   child: Center(
                     child: Text(
-                      "ONLINE",
+                      'Online',
                       style: GoogleFonts.outfit(
-                        color: _onlyOnline ? Colors.white : Colors.black,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w800,
+                        color: _onlyOnline ? Colors.white : subColor,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ),
@@ -303,11 +322,16 @@ class _LikesScreenState extends State<LikesScreen> {
               padding: const EdgeInsets.only(top: 8),
               child: Row(
                 children: [
-                  const Icon(Icons.lock_outline_rounded, color: AppColors.primary, size: 12),
+                  const Icon(Icons.lock_outline_rounded,
+                      color: AppColors.primary, size: 12),
                   const SizedBox(width: 6),
                   Text(
-                    "BEĞENİLERİ FİLTRELEMEK İÇİN PLATINUM'A YÜKSEL",
-                    style: GoogleFonts.outfit(color: Colors.black, fontSize: 10, fontWeight: FontWeight.w900),
+                    'Beğenileri filtrelemek için Platinum\'a yükselt',
+                    style: GoogleFonts.outfit(
+                      color: subColor,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ],
               ),
@@ -386,83 +410,99 @@ class _LikesScreenState extends State<LikesScreen> {
   }
 
   Widget _buildTopBar() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final textColor = theme.colorScheme.onSurface;
+    final bg = isDark ? AppColors.scaffoldDark : AppColors.scaffold;
+    final iconBg = isDark ? AppColors.surfaceDark : AppColors.surfaceLight;
+
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(bottom: BorderSide(color: Color(0xFFEEEEEE), width: 1.0)),
-      ),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+      color: bg,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _buildCircleIcon(Icons.arrow_back_ios_new, onTap: () => Navigator.pop(context)),
+          GestureDetector(
+            onTap: () => Navigator.pop(context),
+            child: Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: iconBg,
+                borderRadius: BorderRadius.circular(AppColors.neoRadius),
+              ),
+              child: Icon(Icons.arrow_back_ios_new_rounded, color: textColor, size: 18),
+            ),
+          ),
           Text(
-            "BEĞENİLER",
+            'Beğeniler',
             style: GoogleFonts.outfit(
               fontSize: 20,
-              fontWeight: FontWeight.w900,
-              color: Colors.black,
+              fontWeight: FontWeight.w700,
+              color: textColor,
               letterSpacing: -0.5,
             ),
           ),
-          _buildCircleIcon(Icons.filter_list_rounded, color: AppColors.primary),
+          GestureDetector(
+            onTap: () {},
+            child: Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                borderRadius: BorderRadius.circular(AppColors.neoRadius),
+              ),
+              child: const Icon(Icons.filter_list_rounded, color: Colors.white, size: 20),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildCircleIcon(IconData icon, {VoidCallback? onTap, Color? color}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 44,
-        height: 44,
-        decoration: BoxDecoration(
-          color: color ?? Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-          boxShadow: [AppColors.neoShadowSmall],
-        ),
-        child: Icon(icon, color: Colors.black, size: 22),
-      ),
-    );
-  }
-
   Widget _buildTabs() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final bg = isDark ? AppColors.scaffoldDark : AppColors.scaffold;
+
     return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      color: bg,
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
       child: Row(
         children: [
-          Expanded(child: _buildTabItem("SENİ BEĞENENLER", 0)),
-          const SizedBox(width: 12),
-          Expanded(child: _buildTabItem("EŞLEŞMELER", 1)),
+          Expanded(child: _buildTabItem('Seni Beğenenler', 0)),
+          const SizedBox(width: 10),
+          Expanded(child: _buildTabItem('Eşleşmeler', 1)),
         ],
       ),
     );
   }
 
   Widget _buildTabItem(String title, int index) {
-    bool isActive = _activeTab == index;
+    final isActive = _activeTab == index;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final inactiveBg = isDark ? AppColors.surfaceDark : AppColors.surfaceLight;
+    final inactiveText = isDark ? Colors.white.withValues(alpha: 0.6) : AppColors.textSecondary;
+
     return GestureDetector(
       onTap: () => setState(() => _activeTab = index),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 14),
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeInOut,
+        padding: const EdgeInsets.symmetric(vertical: 13),
         decoration: BoxDecoration(
-          color: isActive ? AppColors.primary : Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-          boxShadow: [AppColors.neoShadowSmall],
+          color: isActive ? AppColors.primary : inactiveBg,
+          borderRadius: BorderRadius.circular(AppColors.neoRadius),
+          boxShadow: isActive ? [AppColors.primaryShadow] : [],
         ),
         child: Text(
           title,
           textAlign: TextAlign.center,
           style: GoogleFonts.outfit(
-            fontSize: 10,
-            fontWeight: FontWeight.w900,
-            color: isActive ? Colors.white : Colors.black,
-            letterSpacing: 0.5,
+            fontSize: 13,
+            fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+            color: isActive ? Colors.white : inactiveText,
           ),
         ),
       ),
@@ -470,46 +510,45 @@ class _LikesScreenState extends State<LikesScreen> {
   }
 
   Widget _buildEmptyMatches() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final textColor = theme.colorScheme.onSurface;
+    final subColor = isDark ? Colors.white.withValues(alpha: 0.45) : AppColors.textSecondary;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 80, horizontal: 20),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            width: 120,
-            height: 120,
+            width: 80,
+            height: 80,
             decoration: BoxDecoration(
-              color: AppColors.surfaceLight,
+              color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
               shape: BoxShape.circle,
-              border: Border.all(color: AppColors.primary.withValues(alpha: 0.2), width: 1.0),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.primary.withValues(alpha: 0.1),
-                  blurRadius: 20,
-                  spreadRadius: 5,
-                ),
-              ],
+              boxShadow: [AppColors.neoShadow],
             ),
-            child: const Icon(Icons.favorite_rounded, size: 60, color: AppColors.primary),
+            child: const Icon(Icons.favorite_rounded, size: 40, color: AppColors.primary),
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 24),
           Text(
-            "HENÜZ EŞLEŞME YOK",
+            'Henüz eşleşme yok',
             style: GoogleFonts.outfit(
-              color: Colors.black,
-              fontSize: 22,
-              fontWeight: FontWeight.w900,
+              color: textColor,
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.3,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Text(
-            "Keşfet'e gidip insanları beğenmeye başla.\nKarşılıklı beğeniler eşleşme oluşturur!",
+            'Keşfet\'e gidip insanları beğenmeye başla.\nKarşılıklı beğeniler eşleşme oluşturur!',
             textAlign: TextAlign.center,
             style: GoogleFonts.outfit(
-              color: Colors.black.withValues(alpha: 0.5),
-              fontSize: 12,
-              fontWeight: FontWeight.w800,
-              height: 1.5,
+              color: subColor,
+              fontSize: 13,
+              fontWeight: FontWeight.w400,
+              height: 1.6,
             ),
           ),
         ],

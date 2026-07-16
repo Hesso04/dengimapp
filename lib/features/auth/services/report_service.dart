@@ -100,7 +100,7 @@ class ReportService extends BaseService {
 
       if (existingReport.docs.isNotEmpty) {
         LogService.w('User already reported this user');
-        return false; // Zaten bekleyen rapor var
+        throw Exception("already-reported");
       }
 
       // Yeni rapor oluştur
@@ -126,7 +126,7 @@ class ReportService extends BaseService {
 
       LogService.i('User $reportedUserId reported for ${reason.name}');
       return true;
-    }, operationName: 'reportUser', defaultValue: false) ?? false;
+    }, operationName: 'reportUser', defaultValue: false, rethrowError: true) ?? false;
   }
 
   /// Gönderdiğim raporları getir

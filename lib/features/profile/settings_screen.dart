@@ -446,7 +446,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _showChangePasswordDialog() {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final elementColor = isDark ? Colors.white : Colors.black;
     final borderColor = isDark ? const Color(0xFF262629) : const Color(0xFFEEEEEE);
 
     showDialog(

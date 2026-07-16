@@ -85,6 +85,7 @@ class ChatMessage {
   final String content;
   final DateTime timestamp;
   final bool isRead;
+  final bool isDelivered; // YENİ
   final MessageType type;
   final List<String> deletedFor; // Soft delete
   final Map<String, dynamic>? storyReply; // Story context
@@ -101,6 +102,7 @@ class ChatMessage {
     required this.content,
     required this.timestamp,
     this.isRead = false,
+    this.isDelivered = false, // YENİ
     this.type = MessageType.text,
     this.deletedFor = const [],
     this.storyReply,
@@ -115,6 +117,7 @@ class ChatMessage {
       'content': content,
       'timestamp': Timestamp.fromDate(timestamp),
       'isRead': isRead,
+      'isDelivered': isDelivered, // YENİ
       'type': type.name,
       'storyReply': storyReply,
       'reactions': reactions,
@@ -131,6 +134,7 @@ class ChatMessage {
       content: data['content'] ?? '',
       timestamp: (data['timestamp'] as Timestamp? ?? Timestamp.now()).toDate(),
       isRead: data['isRead'] ?? false,
+      isDelivered: data['isDelivered'] ?? false, // YENİ
       type: MessageType.values.firstWhere((e) => e.name == (data['type'] ?? 'text'), orElse: () => MessageType.text),
       storyReply: data['storyReply'] != null ? Map<String, dynamic>.from(data['storyReply']) : null,
       deletedFor: List<String>.from(data['deletedFor'] ?? []),

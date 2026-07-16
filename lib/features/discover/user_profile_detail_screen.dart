@@ -14,6 +14,7 @@ import '../../core/providers/user_provider.dart';
 import '../auth/services/profile_service.dart';
 import '../chats/services/chat_service.dart';
 import '../chats/screens/chat_detail_screen.dart';
+import '../../core/utils/error_handler.dart';
 
 class UserProfileDetailScreen extends StatefulWidget {
   final String? userId;
@@ -667,9 +668,7 @@ class _UserProfileDetailScreenState extends State<UserProfileDetailScreen> {
                     }
                   } catch (e) {
                     if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Bir hata oluştu.')),
-                      );
+                      ErrorHandler.showException(context, e);
                     }
                   }
                 },

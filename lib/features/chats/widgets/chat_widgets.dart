@@ -3,13 +3,11 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:just_audio/just_audio.dart';
-import 'package:provider/provider.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/providers/user_provider.dart';
 import '../models/chat_models.dart';
 
 
-/// Sohbet listesi öğesi - Premium Tasarım
+/// Sohbet listesi öğesi - Modern Dating App Tasarımı
 class ChatListItem extends StatelessWidget {
   final ChatConversation chat;
   final VoidCallback onTap;
@@ -26,116 +24,159 @@ class ChatListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final nameColor = theme.colorScheme.onSurface;
+    final subColor = isDark
+        ? Colors.white.withValues(alpha: 0.40)
+        : AppColors.textSecondary;
+    final timeColor = isDark
+        ? Colors.white.withValues(alpha: 0.35)
+        : AppColors.textSecondary;
+
+    return GestureDetector(
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 16),
-        decoration: const BoxDecoration(
-          border: Border(bottom: BorderSide(color: Color(0xFFEEEEEE), width: 1.0)),
-        ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 0),
         child: Row(
           children: [
-            // Avatar with thick border
+            // Avatar — gradient placeholder
             Stack(
               children: [
-                Container(
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-                    boxShadow: [AppColors.neoShadowSmall],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(30),
-                    child: CachedNetworkImage(
-                      imageUrl: chat.userAvatar,
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) => Container(color: Colors.white),
-                    ),
-                  ),
-                ),
+                _buildAvatar(isDark),
                 if (chat.isOnline)
                   Positioned(
-                    right: 0,
-                    bottom: 0,
+                    right: 1,
+                    bottom: 1,
                     child: Container(
-                      width: 16,
-                      height: 16,
+                      width: 14,
+                      height: 14,
                       decoration: BoxDecoration(
                         color: AppColors.green,
                         shape: BoxShape.circle,
-                        border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
+                        border: Border.all(
+                          color: isDark ? AppColors.scaffoldDark : Colors.white,
+                          width: 2,
+                        ),
                       ),
                     ),
                   ),
               ],
             ),
-            
-            const SizedBox(width: 16),
-            
-            // Content
+
+            const SizedBox(width: 14),
+
+            // İçerik
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                   Row(
-                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                     children: [
-                       Text(
-                         chat.userName.toUpperCase(),
-                         style: GoogleFonts.outfit(
-                           fontSize: 16,
-                           fontWeight: FontWeight.w900,
-                           color: Colors.black,
-                         ),
-                       ),
-                       Text(
-                         _formatTime(chat.lastMessageTime),
-                         style: GoogleFonts.outfit(
-                           fontSize: 12,
-                           color: Colors.black.withValues(alpha: 0.7),
-                           fontWeight: FontWeight.w800,
-                         ),
-                       ),
-                     ],
-                   ),
-                   const SizedBox(height: 4),
-                   Row(
-                     children: [
-                       Expanded(
-                         child: Text(
-                           chat.lastMessage,
-                           style: GoogleFonts.outfit(
-                             fontSize: 13,
-                             color: Colors.black.withValues(alpha: 0.6),
-                             fontWeight: chat.unreadCount > 0 ? FontWeight.w800 : FontWeight.w500,
-                           ),
-                           maxLines: 1,
-                           overflow: TextOverflow.ellipsis,
-                         ),
-                       ),
-                       if (chat.unreadCount > 0)
-                         Container(
-                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                           decoration: BoxDecoration(
-                             color: AppColors.primary,
-                             borderRadius: BorderRadius.circular(8),
-                             border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-                             boxShadow: [AppColors.neoShadowSmall],
-                           ),
-                           child: Text(
-                             '${chat.unreadCount}',
-                             style: GoogleFonts.outfit(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900),
-                           ),
-                         ),
-                     ],
-                   ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        chat.userName,
+                        style: GoogleFonts.outfit(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: nameColor,
+                        ),
+                      ),
+                      Text(
+                        _formatTime(chat.lastMessageTime),
+                        style: GoogleFonts.outfit(
+                          fontSize: 12,
+                          color: timeColor,
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          chat.lastMessage,
+                          style: GoogleFonts.outfit(
+                            fontSize: 13,
+                            color: chat.unreadCount > 0
+                                ? nameColor
+                                : subColor,
+                            fontWeight: chat.unreadCount > 0
+                                ? FontWeight.w600
+                                : FontWeight.w400,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (chat.unreadCount > 0)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            '${chat.unreadCount}',
+                            style: GoogleFonts.outfit(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                 ],
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAvatar(bool isDark) {
+    final hasAvatar = chat.userAvatar.isNotEmpty;
+    final initial = chat.userName.isNotEmpty
+        ? chat.userName[0].toUpperCase()
+        : '?';
+
+    if (hasAvatar) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(30),
+        child: CachedNetworkImage(
+          imageUrl: chat.userAvatar,
+          width: 58,
+          height: 58,
+          fit: BoxFit.cover,
+          placeholder: (_, __) => _buildGradientPlaceholder(initial),
+          errorWidget: (_, __, ___) => _buildGradientPlaceholder(initial),
+        ),
+      );
+    }
+    return _buildGradientPlaceholder(initial);
+  }
+
+  Widget _buildGradientPlaceholder(String initial) {
+    return Container(
+      width: 58,
+      height: 58,
+      decoration: const BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: AppColors.primaryGradient,
+      ),
+      child: Center(
+        child: Text(
+          initial,
+          style: GoogleFonts.outfit(
+            color: Colors.white,
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ),
     );
@@ -521,25 +562,28 @@ class _ChatBubbleState extends State<ChatBubble> {
 
   /// Read Receipt Indicator
   Widget _buildReadReceipt(bool isMe) {
-    // Üç durum: Gönderildi (✓), İletildi (✓✓), Okundu (✓✓ mavi)
-    // ÖNEMLİ: Okundu bilgisi sadece Platinum üyeler için gösterilir
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
-    final isPlatinum = userProvider.currentUser?.subscriptionTier == 'platinum';
-
     final bool isRead = widget.message.isRead;
+    final bool isDelivered = widget.message.isDelivered;
     
     IconData icon;
     Color color;
     
-    if (isRead && isPlatinum) {
-      icon = Icons.done_all; // ✓✓
-      color = const Color(0xFF10B981); // Green - okundu
-    } else if (isRead && !isPlatinum) {
-      // Platinum değilse ama okunduysa bile gri çift tık (iletildi gibi) göster
-      icon = Icons.done_all; 
+    if (isRead) {
+      icon = Icons.done_all_rounded; // ✓✓
+      // Görüldü tick has AppColors.primary (Rose-Red) with a circular white background for contrast
+      return Container(
+        padding: const EdgeInsets.all(1.5),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, size: 11, color: AppColors.primary),
+      );
+    } else if (isDelivered) {
+      icon = Icons.done_all_rounded; // ✓✓
       color = isMe ? Colors.white70 : Colors.black38;
     } else {
-      icon = Icons.done; // ✓
+      icon = Icons.done_rounded; // ✓
       color = isMe ? Colors.white70 : Colors.black38; 
     }
     

@@ -14,97 +14,136 @@ class DiscoverEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final textColor = theme.colorScheme.onSurface;
+    final subTextColor = isDark
+        ? Colors.white.withValues(alpha: 0.45)
+        : AppColors.textSecondary;
+    final iconBg = isDark ? AppColors.surfaceDark : AppColors.surfaceLight;
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 40),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            // Küçük, yumuşak ikon — %40 küçültüldü (120 → 72)
             Container(
-              width: 120,
-              height: 120,
+              width: 72,
+              height: 72,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: iconBg,
                 shape: BoxShape.circle,
-                border: Border.all(color: Colors.black, width: 3),
-                boxShadow: const [
-                  BoxShadow(color: Colors.black, offset: Offset(4, 4)),
-                ],
+                boxShadow: [AppColors.neoShadow],
               ),
-              child: const Icon(Icons.explore_rounded, size: 60, color: Colors.black),
+              child: Icon(
+                Icons.explore_rounded,
+                size: 36,
+                color: AppColors.primary,
+              ),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 24),
             Text(
-              "Şu an için bu kadar 🎉 🎉",
+              'Şu an için bu kadar 🎉',
               style: GoogleFonts.outfit(
-                color: Colors.black,
-                fontSize: 22,
-                fontWeight: FontWeight.w900,
+                color: textColor,
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.5,
               ),
+              textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             Text(
-              "Yakındaki tüm profilleri gördün.\nDaha fazla kişi için filtrelerini genişlet\nveya daha sonra tekrar dene.",
+              'Yakınındakileri bulmak için\nfiltrelerini genişlet veya daha sonra tekrar dene.',
               textAlign: TextAlign.center,
               style: GoogleFonts.outfit(
-                color: Colors.black.withValues(alpha: 0.5),
+                color: subTextColor,
                 fontSize: 14,
-                height: 1.5,
-                fontWeight: FontWeight.w800,
+                height: 1.6,
+                fontWeight: FontWeight.w400,
               ),
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: 36),
+            // Butonlar — çerçevesiz, soft
             Row(
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Expanded(
-                  child: GestureDetector(
+                  child: _ModernButton(
+                    label: 'Filtreler',
+                    isPrimary: true,
                     onTap: onShowFilters,
-                    child: Container(
-                      height: 56,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.black, width: 2.5),
-                        boxShadow: const [
-                          BoxShadow(color: Colors.black, offset: Offset(4, 4)),
-                        ],
-                      ),
-                      child: Center(
-                        child: Text(
-                          "FİLTRELER",
-                          style: GoogleFonts.outfit(fontWeight: FontWeight.w900, color: Colors.black),
-                        ),
-                      ),
-                    ),
                   ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 12),
                 Expanded(
-                  child: GestureDetector(
-                    onTap: () => context.read<DiscoveryProvider>().loadDiscoveryUsers(),
-                    child: Container(
-                      height: 56,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.black, width: 2.5),
-                        boxShadow: const [
-                          BoxShadow(color: Colors.black, offset: Offset(4, 4)),
-                        ],
-                      ),
-                      child: Center(
-                        child: Text(
-                          "YENİLE",
-                          style: GoogleFonts.outfit(fontWeight: FontWeight.w900, color: Colors.black),
-                        ),
-                      ),
-                    ),
+                  child: _ModernButton(
+                    label: 'Yenile',
+                    isPrimary: false,
+                    onTap: () =>
+                        context.read<DiscoveryProvider>().loadDiscoveryUsers(),
                   ),
                 ),
               ],
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ModernButton extends StatefulWidget {
+  final String label;
+  final bool isPrimary;
+  final VoidCallback onTap;
+
+  const _ModernButton({
+    required this.label,
+    required this.isPrimary,
+    required this.onTap,
+  });
+
+  @override
+  State<_ModernButton> createState() => _ModernButtonState();
+}
+
+class _ModernButtonState extends State<_ModernButton> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) {
+        setState(() => _pressed = false);
+        widget.onTap();
+      },
+      onTapCancel: () => setState(() => _pressed = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        height: 52,
+        decoration: BoxDecoration(
+          color: widget.isPrimary
+              ? AppColors.primary.withValues(alpha: _pressed ? 0.85 : 1.0)
+              : (isDark ? AppColors.surfaceDark : AppColors.surfaceLight),
+          borderRadius: BorderRadius.circular(AppColors.neoRadius),
+          boxShadow: widget.isPrimary ? [AppColors.primaryShadow] : [AppColors.neoShadowSmall],
+        ),
+        child: Center(
+          child: Text(
+            widget.label,
+            style: GoogleFonts.outfit(
+              fontWeight: FontWeight.w600,
+              fontSize: 15,
+              color: widget.isPrimary
+                  ? Colors.white
+                  : (isDark ? Colors.white : AppColors.textPrimary),
+            ),
+          ),
         ),
       ),
     );

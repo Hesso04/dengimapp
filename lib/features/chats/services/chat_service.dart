@@ -80,6 +80,10 @@ class ChatService {
 
   /// Mesajları Getir (Realtime)
   Stream<List<ChatMessage>> getMessages(String chatId) {
+    final user = currentUser;
+    if (user != null) {
+      _markIncomingMessagesAsDelivered(chatId);
+    }
     return _firestore
         .collection('conversations')
         .doc(chatId)
@@ -89,6 +93,31 @@ class ChatService {
         .map((snapshot) {
       return snapshot.docs.map((doc) => ChatMessage.fromFirestore(doc)).toList();
     });
+  }
+
+  /// Karşı taraftan gelen mesajları iletildi olarak işaretle
+  Future<void> _markIncomingMessagesAsDelivered(String chatId) async {
+    final user = currentUser;
+    if (user == null) return;
+    try {
+      final query = await _firestore
+          .collection('conversations')
+          .doc(chatId)
+          .collection('messages')
+          .where('senderId', isNotEqualTo: user.uid)
+          .where('isDelivered', isEqualTo: false)
+          .get();
+
+      if (query.docs.isEmpty) return;
+
+      final batch = _firestore.batch();
+      for (var doc in query.docs) {
+        batch.update(doc.reference, {'isDelivered': true});
+      }
+      await batch.commit();
+    } catch (e) {
+      LogService.e("Failed to mark messages as delivered: $e");
+    }
   }
 
   /// Mesaj Gönder
@@ -121,6 +150,7 @@ class ChatService {
       'content': content,
       'timestamp': timestamp,
       'isRead': false,
+      'isDelivered': false, // YENİ
       'type': type.name,
     };
     
@@ -229,9 +259,34 @@ class ChatService {
     final user = currentUser;
     if (user == null) return;
 
-    await _firestore.collection('conversations').doc(chatId).update({
-      'unreadCounts.${user.uid}': 0,
-    });
+    try {
+      // 1. unreadCounts'u sıfırla
+      await _firestore.collection('conversations').doc(chatId).update({
+        'unreadCounts.${user.uid}': 0,
+      });
+
+      // 2. Diğer kullanıcının gönderdiği okunmamış mesajları getir
+      final unreadQuery = await _firestore
+          .collection('conversations')
+          .doc(chatId)
+          .collection('messages')
+          .where('senderId', isNotEqualTo: user.uid)
+          .where('isRead', isEqualTo: false)
+          .get();
+
+      if (unreadQuery.docs.isEmpty) return;
+
+      final batch = _firestore.batch();
+      for (var doc in unreadQuery.docs) {
+        batch.update(doc.reference, {
+          'isRead': true,
+          'isDelivered': true,
+        });
+      }
+      await batch.commit();
+    } catch (e) {
+      LogService.e("markAsRead error", e);
+    }
   }
 
   /// Mesaj Sil (Soft Delete - sadece kendi tarafında)
