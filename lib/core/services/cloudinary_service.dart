@@ -1,8 +1,10 @@
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:image_picker/image_picker.dart';
 import '../utils/log_service.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
 
 class CloudinaryService {
   // Demo amaçlı kamuya açık bir preset kullanıyoruz
@@ -13,6 +15,7 @@ class CloudinaryService {
   static Future<String?> uploadImage(XFile file) async {
     return _uploadWithRetry(() async {
       try {
+        final compressedFile = await _compressImage(file);
         final url = Uri.parse("https://api.cloudinary.com/v1_1/$_cloudName/image/upload");
         
         // Web ve mobil için farklı yükleme stratejisi
@@ -21,15 +24,15 @@ class CloudinaryService {
         
         if (kIsWeb) {
           // Web için bytes kullan
-          final bytes = await file.readAsBytes();
+          final bytes = await compressedFile.readAsBytes();
           request.files.add(http.MultipartFile.fromBytes(
             'file',
             bytes,
-            filename: file.name,
+            filename: compressedFile.name,
           ));
         } else {
           // Mobil için path kullan
-          request.files.add(await http.MultipartFile.fromPath('file', file.path));
+          request.files.add(await http.MultipartFile.fromPath('file', compressedFile.path));
         }
 
         final response = await request.send();
@@ -74,6 +77,7 @@ class CloudinaryService {
   static Future<String?> uploadImageBytes(Uint8List bytes, {String filename = 'image.jpg'}) async {
     return _uploadWithRetry(() async {
       try {
+        final compressedBytes = await _compressBytes(bytes);
         final url = Uri.parse("https://api.cloudinary.com/v1_1/$_cloudName/image/upload");
         final request = http.MultipartRequest("POST", url);
 
@@ -82,7 +86,7 @@ class CloudinaryService {
         // Upload raw bytes
         request.files.add(http.MultipartFile.fromBytes(
           'file', 
-          bytes, 
+          compressedBytes, 
           filename: filename
         ));
 
@@ -181,6 +185,52 @@ class CloudinaryService {
         rethrow;
       }
     });
+  }
+
+  static Future<XFile> _compressImage(XFile file) async {
+    if (kIsWeb) return file;
+    try {
+      final dir = await getTemporaryDirectory();
+      final targetPath = "${dir.absolute.path}/temp_compress_${DateTime.now().millisecondsSinceEpoch}.jpg";
+      
+      final compressedFile = await FlutterImageCompress.compressAndGetFile(
+        file.path,
+        targetPath,
+        quality: 80,
+        minWidth: 1080,
+        minHeight: 1080,
+        format: CompressFormat.jpeg,
+      );
+      
+      if (compressedFile != null) {
+        final newFile = XFile(compressedFile.path);
+        final originalSize = await File(file.path).length();
+        final compressedSize = await File(newFile.path).length();
+        LogService.i("Image compressed: from ${(originalSize / 1024).toStringAsFixed(1)} KB to ${(compressedSize / 1024).toStringAsFixed(1)} KB");
+        return newFile;
+      }
+    } catch (e) {
+      LogService.e("Failed to compress image, uploading original file: $e");
+    }
+    return file;
+  }
+
+  static Future<Uint8List> _compressBytes(Uint8List bytes) async {
+    if (kIsWeb) return bytes;
+    try {
+      final compressedBytes = await FlutterImageCompress.compressWithList(
+        bytes,
+        quality: 80,
+        minWidth: 1080,
+        minHeight: 1080,
+        format: CompressFormat.jpeg,
+      );
+      LogService.i("Image bytes compressed: from ${(bytes.length / 1024).toStringAsFixed(1)} KB to ${(compressedBytes.length / 1024).toStringAsFixed(1)} KB");
+      return compressedBytes;
+    } catch (e) {
+      LogService.e("Failed to compress image bytes, uploading original bytes: $e");
+    }
+    return bytes;
   }
 }
 

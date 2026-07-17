@@ -83,6 +83,7 @@ dependencies:
   purchases_flutter: ^8.11.0
   cloud_functions: ^5.6.2
   firebase_crashlytics: ^4.3.10
+  flutter_image_compress: ^2.5.0
 
 dev_dependencies:
   flutter_test:
