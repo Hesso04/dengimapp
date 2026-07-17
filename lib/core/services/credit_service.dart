@@ -82,25 +82,39 @@ class CreditService {
     }
   }
 
-  /// Kredi harca - Yetersiz bakiyede false döner
+  /// Kredi harca - Yetersiz bakiyede false döner (Transaction ile güvenli)
   Future<bool> spendCredits(int amount, String reason) async {
     if (_uid == null || amount <= 0) return false;
+    
+    final userRef = _firestore.collection('users').doc(_uid);
+    
     try {
-      final currentBalance = await getBalance();
-      if (currentBalance < amount) {
-        LogService.w("Insufficient credits: has $currentBalance, needs $amount");
-        return false;
-      }
-
-      await _firestore.collection('users').doc(_uid).update({
-        'credits': FieldValue.increment(-amount),
+      final success = await _firestore.runTransaction<bool>((transaction) async {
+        final userSnapshot = await transaction.get(userRef);
+        if (!userSnapshot.exists) {
+          return false;
+        }
+        
+        final currentBalance = userSnapshot.data()?['credits']?.toInt() ?? 0;
+        if (currentBalance < amount) {
+          LogService.w("Insufficient credits inside transaction: has $currentBalance, needs $amount");
+          return false;
+        }
+        
+        transaction.update(userRef, {
+          'credits': currentBalance - amount,
+        });
+        return true;
       });
 
-      await _logTransaction(-amount, reason, 'spend');
-      LogService.i("Credits spent: -$amount ($reason)");
-      return true;
+      if (success) {
+        await _logTransaction(-amount, reason, 'spend');
+        LogService.i("Credits spent: -$amount ($reason)");
+        return true;
+      }
+      return false;
     } catch (e) {
-      LogService.e("Credit spend error", e);
+      LogService.e("Credit spend transaction error", e);
       return false;
     }
   }

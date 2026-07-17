@@ -1,6 +1,6 @@
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:agora_token_generator/agora_token_generator.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import '../utils/log_service.dart';
 
 class AgoraService {
@@ -8,9 +8,8 @@ class AgoraService {
   factory AgoraService() => _instance;
   AgoraService._internal();
 
-  // Agora App ID ve Primary Certificate
+  // Agora App ID
   static const String appId = "0b227b12c2e54a2e9f5f20b30653c198";
-  static const String appCertificate = "8b5ba9f9ef6f4606ac52ff53022228a7";
 
   RtcEngine? _engine;
   bool _isInitialized = false;
@@ -51,14 +50,20 @@ class AgoraService {
     // Video devre dışı bırakılıyor (Sesli Arama)
     await _engine!.disableVideo();
 
-    // Agora Güvenlik sertifikası gereği dinamik token üretiyoruz
-    final token = RtcTokenBuilder.buildTokenWithUid(
-      appId: appId,
-      appCertificate: appCertificate,
-      channelName: channelId,
-      uid: uid,
-      tokenExpireSeconds: 3600, // 1 Saat geçerli token
-    );
+    // Cloud Function üzerinden güvenli Agora Token'ı alıyoruz
+    String token = "";
+    try {
+      final HttpsCallable callable = FirebaseFunctions.instance.httpsCallable('generateAgoraToken');
+      final results = await callable.call(<String, dynamic>{
+        'channelName': channelId,
+        'uid': uid,
+        'role': 'publisher',
+      });
+      token = results.data['token'] ?? "";
+    } catch (e) {
+      LogService.e("Failed to generate Agora token via Cloud Function: $e");
+      rethrow;
+    }
 
     await _engine!.joinChannel(
       token: token,
@@ -71,7 +76,8 @@ class AgoraService {
       ),
     );
     
-    LogService.i("Joined Agora Channel: $channelId with token: ${token.substring(0, 10)}...");
+    final displayToken = token.length > 10 ? token.substring(0, 10) : token;
+    LogService.i("Joined Agora Channel: $channelId with token: $displayToken...");
   }
 
   Future<void> leaveChannel() async {

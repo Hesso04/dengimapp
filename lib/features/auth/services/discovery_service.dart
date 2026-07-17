@@ -210,23 +210,10 @@ class DiscoveryService {
 
       if (!isLike) return false;
 
-      // 2. Add to target user's "likes" collection (who liked them)
-      await _firestore
-          .collection('users')
-          .doc(targetUserId)
-          .collection('likes')
-          .doc(user.uid)
-          .set({
-        'fromUserId': user.uid,
-        'type': swipeType,
-        'timestamp': FieldValue.serverTimestamp(),
-        'viewed': false, // For badge counting
-      });
-
-      LogService.i("Like added to $targetUserId's likes collection");
-
-      // 3. Check for Match (did they also like us?)
-      LogService.i("Checking for match with $targetUserId...");
+      // Beğeniler, eşleşmeler ve bildirimler artık onSwipeCreated veritabanı 
+      // tetikleyicisi (Cloud Function) ile sunucu tarafında güvenli olarak işlenmektedir.
+      LogService.i("Checking for match with $targetUserId (read-only)...");
+      
       final matchDoc = await _firestore
           .collection('users')
           .doc(targetUserId)
@@ -234,39 +221,9 @@ class DiscoveryService {
           .doc(user.uid)
           .get();
 
-      if (matchDoc.exists) {
-         LogService.i("Match doc found. Type: ${matchDoc.data()?['type']}");
-      } else {
-         LogService.w("Match doc NOT found at users/$targetUserId/swipes/${user.uid}");
-      }
-
       if (matchDoc.exists && (matchDoc.data()?['type'] == 'like' || matchDoc.data()?['type'] == 'super_like')) {
-        LogService.i("MATCH FOUND! Creating match...");
-        await _createMatch(user.uid, targetUserId);
-        
-        // Mark the likes as viewed/matched to avoid double badges
-        await _firestore.collection('users').doc(targetUserId).collection('likes').doc(user.uid).set({
-          'fromUserId': user.uid,
-          'type': swipeType,
-          'timestamp': FieldValue.serverTimestamp(),
-          'viewed': true, // Auto view since it's a match
-          'matched': true,
-        });
-
-        await _firestore.collection('users').doc(user.uid).collection('likes').doc(targetUserId).get().then((doc) {
-          if (doc.exists) {
-            doc.reference.update({'viewed': true, 'matched': true});
-          }
-        });
-
-        // Send match notifications to both users
-        await sendNotification(targetUserId, type: 'match', title: "Eşleşme! 🎉", body: "Tebrikler, yeni bir eşleşmen var!");
-        await sendNotification(user.uid, type: 'match', title: "Eşleşme! 🎉", body: "Tebrikler, yeni bir eşleşmen var!");
-
-        return true;
-      } else {
-        // No match yet - send like notification
-        await sendNotification(targetUserId, type: 'like', title: "Biri seni beğendi 💖", body: "Seni beğenenleri görmek için hemen tıkla!");
+        LogService.i("MATCH DETECTED! Handled by server.");
+        return true; // Eşleşme gerçekleşti UI feedback tetiklenebilir
       }
 
       return false;
@@ -411,47 +368,7 @@ class DiscoveryService {
     }
   }
 
-  Future<void> _createMatch(String uid1, String uid2) async {
-    final matchId = uid1.compareTo(uid2) < 0 ? '${uid1}_$uid2' : '${uid2}_$uid1';
-    
-    // 1. Create Match Record
-    await _firestore.collection('matches').doc(matchId).set({
-      'userIds': [uid1, uid2],
-      'timestamp': FieldValue.serverTimestamp(),
-      'seenBy': [], // Tracking who viewed the match
-    });
 
-    // 2. Create Initial Conversation
-    await _firestore.collection('conversations').doc(matchId).set({
-      'userIds': [uid1, uid2],
-      'lastMessage': 'Eşleştiniz! 🎉 İlk mesajı sen gönder.',
-      'lastMessageTime': FieldValue.serverTimestamp(),
-      'lastMessageSenderId': 'system',
-      'unreadCounts': {
-        uid1: 0,
-        uid2: 0,
-      }
-    });
-
-    // 3. Update User Match Counts
-    try {
-      await _firestore.collection('users').doc(uid1).update({
-        'matchCount': FieldValue.increment(1),
-      });
-    } catch (e) {
-      LogService.e("Failed to update own matchCount", e);
-    }
-    
-    try {
-      await _firestore.collection('users').doc(uid2).update({
-        'matchCount': FieldValue.increment(1),
-      });
-    } catch (e) {
-      LogService.w("Failed to update target user matchCount (expected if no write permission): $e");
-    }
-
-    LogService.i("Match and Conversation created: $matchId");
-  }
 
 
   Future<List<UserProfile>> getMatchedUsers() async {
