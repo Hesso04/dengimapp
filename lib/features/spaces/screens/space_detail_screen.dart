@@ -35,6 +35,7 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
         hostName: '', 
         hostAvatar: '', 
         createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
       ),
     );
 

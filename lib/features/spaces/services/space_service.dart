@@ -71,6 +71,7 @@ class SpaceService {
         speakers: [hostAsSpeaker],
         listenerIds: [],
         createdAt: DateTime.now(),
+        updatedAt: DateTime.now(), // YENİ: Heartbeat
       );
 
       await docRef.set(space.toMap());
@@ -197,6 +198,17 @@ class SpaceService {
       }
     } catch (e) {
       LogService.e("Error moving to listener", e);
+    }
+  }
+
+  /// Odanın heartbeat durumunu (updatedAt) güncelle
+  Future<void> updateSpaceHeartbeat(String spaceId) async {
+    try {
+      await _firestore.collection('spaces').doc(spaceId).update({
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      LogService.e("Failed to update space heartbeat: $e");
     }
   }
 }

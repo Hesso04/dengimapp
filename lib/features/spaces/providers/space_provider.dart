@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async'; // YENİ: Heartbeat Timer için
 import '../models/space_model.dart';
 import '../services/space_service.dart';
 import '../../auth/models/user_profile.dart';
@@ -12,6 +13,7 @@ class SpaceProvider extends ChangeNotifier {
   List<SpaceRoom> _spaces = [];
   bool _isLoading = false;
   SpaceRoom? _currentSpace;
+  Timer? _heartbeatTimer; // YENİ: Heartbeat Timer
 
   List<SpaceRoom> get spaces => _spaces;
   bool get isLoading => _isLoading;
@@ -46,6 +48,8 @@ class SpaceProvider extends ChangeNotifier {
         isHost: true,
       );
 
+      _startHeartbeat(roomId); // YENİ: Heartbeat başlat
+
       _isLoading = false;
       notifyListeners();
       return roomId;
@@ -72,6 +76,7 @@ class SpaceProvider extends ChangeNotifier {
   }
 
   Future<void> leaveSpace(String spaceId, String userId) async {
+    _stopHeartbeat(); // YENİ: Heartbeat durdur
     await _spaceService.leaveSpace(spaceId, userId);
     
     // Agora Kanalından Ayrıl
@@ -91,4 +96,26 @@ class SpaceProvider extends ChangeNotifier {
   }
 
   // More methods as needed...
+  
+  void _startHeartbeat(String roomId) {
+    _heartbeatTimer?.cancel();
+    _heartbeatTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
+      _spaceService.updateSpaceHeartbeat(roomId);
+    });
+    LogService.i("Space heartbeat started for room: $roomId");
+  }
+
+  void _stopHeartbeat() {
+    if (_heartbeatTimer != null) {
+      _heartbeatTimer!.cancel();
+      _heartbeatTimer = null;
+      LogService.i("Space heartbeat stopped.");
+    }
+  }
+
+  @override
+  void dispose() {
+    _stopHeartbeat();
+    super.dispose();
+  }
 }

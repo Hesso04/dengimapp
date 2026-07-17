@@ -33,9 +33,9 @@ service cloud.firestore {
       // Create: Only owner and must be valid
       allow create: if isAuthenticated() && isOwner(userId) && isValidProfile();
       
-      // Update: Only owner (without changing UID) OR admin OR modifying followers list OR incrementing reportCount
+      // Update: Only owner (without changing UID/credits/premium/role) OR admin OR modifying followers list OR incrementing reportCount
       allow update: if isAuthenticated() && (
-        isOwner(userId) || 
+        (isOwner(userId) && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['credits', 'isPremium', 'subscriptionTier', 'role'])) || 
         isAdmin() || 
         (
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['followers']) &&

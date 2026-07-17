@@ -39,6 +39,7 @@ class SpaceRoom {
   final int listenerCount;
   final bool isPrivate;
   final DateTime createdAt;
+  final DateTime updatedAt; // YENİ: Oda heartbeat takibi için
   final DateTime? scheduledAt;
   final String? agoraToken; // Agora RTC token
 
@@ -57,6 +58,7 @@ class SpaceRoom {
     this.listenerCount = 0,
     this.isPrivate = false,
     required this.createdAt,
+    required this.updatedAt, // YENİ
     this.scheduledAt,
     this.agoraToken,
   });
@@ -77,6 +79,7 @@ class SpaceRoom {
       'listenerCount': listenerCount,
       'isPrivate': isPrivate,
       'createdAt': Timestamp.fromDate(createdAt),
+      'updatedAt': Timestamp.fromDate(updatedAt), // YENİ
       'scheduledAt': scheduledAt != null ? Timestamp.fromDate(scheduledAt!) : null,
       'agoraToken': agoraToken,
     };
@@ -108,6 +111,7 @@ class SpaceRoom {
       listenerCount: data['listenerCount'] ?? 0,
       isPrivate: data['isPrivate'] ?? false,
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      updatedAt: (data['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(), // YENİ
       scheduledAt: (data['scheduledAt'] as Timestamp?)?.toDate(),
       agoraToken: data['agoraToken'],
     );
@@ -137,6 +141,7 @@ class SpaceRoom {
       listenerCount: listenerCount ?? this.listenerCount,
       isPrivate: isPrivate,
       createdAt: createdAt,
+      updatedAt: DateTime.now(), // Heartbeat anında güncellenir
       scheduledAt: scheduledAt,
       agoraToken: agoraToken,
     );
