@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'log_service.dart';
 
 /// Global Error Handler
@@ -17,6 +18,11 @@ class ErrorHandler {
     FlutterError.onError = (FlutterErrorDetails details) {
       LogService.e('Flutter Error', details.exception, details.stack);
       
+      // Raporla Crashlytics'e (Sadece mobilde)
+      if (!kIsWeb) {
+        FirebaseCrashlytics.instance.recordFlutterError(details);
+      }
+      
       // Debug modda console'a yaz
       if (kDebugMode) {
         FlutterError.presentError(details);
@@ -26,6 +32,11 @@ class ErrorHandler {
     // Platform hataları (async hatalar dahil)
     PlatformDispatcher.instance.onError = (error, stack) {
       LogService.e('Platform Error', error, stack);
+      
+      // Raporla Crashlytics'e (Sadece mobilde)
+      if (!kIsWeb) {
+        FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+      }
       return true; // Hatayı yutma, crash etme
     };
   }

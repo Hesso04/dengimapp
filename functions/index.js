@@ -233,3 +233,73 @@ exports.onSwipeCreated = functions.firestore
     }
     return null;
   });
+
+exports.onUserDeleted = functions.auth.user().onDelete(async (user) => {
+  const userId = user.uid;
+  const db = admin.firestore();
+  const bucket = admin.storage().bucket();
+
+  console.log(`Starting cascade delete for user: ${userId}`);
+
+  try {
+    // 1. Delete user photo folder in Firebase Storage
+    try {
+      await bucket.deleteFiles({
+        prefix: `user_photos/${userId}/`
+      });
+      console.log(`Deleted storage files for user: ${userId}`);
+    } catch (err) {
+      console.error(`Error deleting storage files: ${err.message}`);
+    }
+
+    // 2. Delete sub-collections (swipes, likes, visitors, stats, blocked_users, notifications)
+    const subCollections = ['swipes', 'likes', 'visitors', 'stats', 'blocked_users', 'notifications'];
+    for (const coll of subCollections) {
+      const snapshot = await db.collection("users").doc(userId).collection(coll).get();
+      if (!snapshot.empty) {
+        const batch = db.batch();
+        snapshot.docs.forEach((doc) => batch.delete(doc.reference));
+        await batch.commit();
+      }
+      console.log(`Deleted sub-collection ${coll} for user: ${userId}`);
+    }
+
+    // 3. Delete user document from users collection
+    await db.collection("users").doc(userId).delete();
+    console.log(`Deleted user profile document for user: ${userId}`);
+
+    // 4. Handle Matches & Conversations
+    const matchesSnapshot = await db
+      .collection("matches")
+      .where("userIds", "arrayContains", userId)
+      .get();
+
+    for (const matchDoc of matchesSnapshot.docs) {
+      const matchId = matchDoc.id;
+      const otherUserId = matchDoc.data().userIds.find(id => id !== userId);
+
+      // Delete match document
+      await matchDoc.reference.delete();
+
+      // Delete conversation and messages
+      const convRef = db.collection("conversations").doc(matchId);
+      const messagesSnapshot = await convRef.collection("messages").get();
+      
+      const batch = db.batch();
+      messagesSnapshot.docs.forEach((doc) => batch.delete(doc.reference));
+      batch.delete(convRef);
+      await batch.commit();
+
+      // Decrement other user's matchCount
+      if (otherUserId) {
+        await db.collection("users").doc(otherUserId).update({
+          matchCount: admin.firestore.FieldValue.increment(-1),
+        }).catch(err => console.error(`Failed to decrement matchCount for ${otherUserId}:`, err));
+      }
+    }
+    console.log(`Finished cascade delete for user: ${userId}`);
+  } catch (error) {
+    console.error(`Cascade delete failed for user ${userId}:`, error);
+  }
+  return null;
+});
