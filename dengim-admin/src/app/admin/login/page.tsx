@@ -203,9 +203,14 @@ export default function LoginPage() {
     return (
         <div className="min-h-screen flex items-center justify-center bg-background-dark p-4">
             <div className="w-full max-w-md space-y-8 glass p-8 rounded-2xl border border-primary/20">
-                <div className="text-center">
-                    <h1 className="text-3xl font-bold text-primary mb-2">DENGIM</h1>
-                    <p className="text-white/60 text-sm">Admin Paneli Girişi</p>
+                <div className="text-center flex flex-col items-center">
+                    <img 
+                        src="/logo.png" 
+                        alt="Dengim Logo" 
+                        className="w-16 h-16 rounded-2xl object-cover mb-4 shadow-lg shadow-primary/20 border border-primary/20"
+                    />
+                    <h1 className="text-3xl font-black uppercase tracking-tight text-white">DENGİM</h1>
+                    <p className="text-primary text-xs font-bold uppercase tracking-widest mt-1">Dating Admin Portal</p>
                 </div>
 
                 <div className="space-y-4">

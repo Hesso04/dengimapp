@@ -108,9 +108,16 @@ export function Sidebar() {
             )}>
                 {/* Logo */}
                 <div className="h-16 flex items-center px-6 border-b border-white/5">
-                    <Link href="/" className="flex items-center gap-2">
-                        <span className="text-2xl font-bold text-primary">DENGIM</span>
-                        <span className="text-sm font-medium text-white/70">Admin</span>
+                    <Link href="/admin" className="flex items-center gap-3">
+                        <img 
+                            src="/logo.png" 
+                            alt="Dengim Logo" 
+                            className="w-8 h-8 rounded-lg object-cover"
+                        />
+                        <div className="flex flex-col">
+                            <span className="text-lg font-black tracking-tight text-white leading-tight">DENGİM</span>
+                            <span className="text-[10px] font-bold text-primary uppercase tracking-wider leading-none">Dating</span>
+                        </div>
                     </Link>
                 </div>
 
