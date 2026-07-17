@@ -20,7 +20,7 @@ class ChatService {
   // Profile cache to avoid repetitive fetches (N+1 problem)
   static final Map<String, UserProfile> _profileCache = {};
 
-  /// Sohbet Listesini Getir (Realtime)
+  /// Sohbet Listesini Getir (Realtime - Optimizasyonlu)
   Stream<List<ChatConversation>> getConversations() {
     final user = currentUser;
     if (user == null) return const Stream.empty();
@@ -30,7 +30,7 @@ class ChatService {
         .where('userIds', arrayContains: user.uid)
         .orderBy('lastMessageTime', descending: true)
         .snapshots()
-        .asyncMap((snapshot) async {
+        .map((snapshot) {
           final chats = <ChatConversation>[];
           
           for (var doc in snapshot.docs) {
@@ -45,37 +45,35 @@ class ChatService {
             var chat = ChatConversation.fromFirestore(doc, user.uid);
             
             if (chat.otherUserId.isNotEmpty) {
-               // Check cache first
-               if (_profileCache.containsKey(chat.otherUserId)) {
-                 final cachedProfile = _profileCache[chat.otherUserId]!;
-                 chat = chat.copyWithDetails(
-                   name: cachedProfile.name,
-                   avatar: cachedProfile.imageUrl,
-                   isOnline: cachedProfile.isOnline,
-                 );
-               } else {
-                 try {
-                   final userDoc = await _firestore.collection('users').doc(chat.otherUserId).get();
-                   if (userDoc.exists) {
-                     final userProfile = UserProfile.fromMap(userDoc.data()!);
-                     _profileCache[chat.otherUserId] = userProfile; // Update cache
-                     chat = chat.copyWithDetails(
-                       name: userProfile.name,
-                       avatar: userProfile.imageUrl,
-                       isOnline: userProfile.isOnline,
-                     );
-                   } else {
-                     chat = chat.copyWithDetails(name: "Silinmiş Kullanıcı");
-                   }
-                 } catch (e) {
-                   LogService.e("Error fetching user details for chat: $e");
-                 }
-               }
+              if (_profileCache.containsKey(chat.otherUserId)) {
+                final cachedProfile = _profileCache[chat.otherUserId]!;
+                chat = chat.copyWithDetails(
+                  name: chat.otherUserName.isEmpty ? cachedProfile.name : chat.otherUserName,
+                  avatar: chat.otherUserAvatar.isEmpty ? cachedProfile.imageUrl : chat.otherUserAvatar,
+                  isOnline: cachedProfile.isOnline,
+                );
+              } else if (chat.otherUserName.isEmpty) {
+                // Eğer denormalize edilmiş veri yoksa arka planda sessizce çekip önbelleğe al
+                _loadAndCacheProfile(chat.otherUserId);
+              }
             }
             chats.add(chat);
           }
           return chats;
         });
+  }
+
+  /// Profil bilgilerini asenkron olarak arka planda önbelleğe al
+  Future<void> _loadAndCacheProfile(String userId) async {
+    try {
+      final userDoc = await _firestore.collection('users').doc(userId).get();
+      if (userDoc.exists) {
+        final userProfile = UserProfile.fromMap(userDoc.data()!);
+        _profileCache[userId] = userProfile;
+      }
+    } catch (e) {
+      LogService.e("Failed to cache profile for $userId: $e");
+    }
   }
 
   /// Mesajları Getir (Realtime)

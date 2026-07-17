@@ -161,6 +161,20 @@ exports.onSwipeCreated = functions.firestore
             seenBy: [],
           });
 
+          // Fetch profiles for both users to store denormalized names and avatars
+          const userDoc = await db.collection("users").doc(userId).get();
+          const targetDoc = await db.collection("users").doc(targetId).get();
+
+          const userProfile = {
+            name: userDoc.exists ? (userDoc.data().name || "") : "",
+            avatar: userDoc.exists ? (userDoc.data().photoUrls?.[0] || "") : "",
+          };
+
+          const targetProfile = {
+            name: targetDoc.exists ? (targetDoc.data().name || "") : "",
+            avatar: targetDoc.exists ? (targetDoc.data().photoUrls?.[0] || "") : "",
+          };
+
           // Create conversation record
           await db.collection("conversations").doc(matchId).set({
             userIds: [userId, targetId],
@@ -171,6 +185,10 @@ exports.onSwipeCreated = functions.firestore
               [userId]: 0,
               [targetId]: 0,
             },
+            userProfiles: {
+              [userId]: userProfile,
+              [targetId]: targetProfile,
+            }
           });
 
           // Increment match counts
@@ -303,3 +321,42 @@ exports.onUserDeleted = functions.auth.user().onDelete(async (user) => {
   }
   return null;
 });
+
+exports.onUserProfileUpdated = functions.firestore
+  .document("users/{userId}")
+  .onUpdate(async (change, context) => {
+    const before = change.before.data();
+    const after = change.after.data();
+    const userId = context.params.userId;
+
+    const nameChanged = before.name !== after.name;
+    const photoChanged = (before.photoUrls?.[0] || "") !== (after.photoUrls?.[0] || "");
+
+    if (!nameChanged && !photoChanged) return null;
+
+    const db = admin.firestore();
+    const newName = after.name || "";
+    const newAvatar = after.photoUrls?.[0] || "";
+
+    try {
+      const conversationsSnapshot = await db
+        .collection("conversations")
+        .where("userIds", "arrayContains", userId)
+        .get();
+
+      if (conversationsSnapshot.empty) return null;
+
+      const batch = db.batch();
+      conversationsSnapshot.docs.forEach((doc) => {
+        batch.update(doc.reference, {
+          [`userProfiles.${userId}.name`]: newName,
+          [`userProfiles.${userId}.avatar`]: newAvatar,
+        });
+      });
+      await batch.commit();
+      console.log(`Updated userProfiles for user ${userId} in ${conversationsSnapshot.size} conversations.`);
+    } catch (e) {
+      console.error("Error updating userProfiles in conversations:", e);
+    }
+    return null;
+  });

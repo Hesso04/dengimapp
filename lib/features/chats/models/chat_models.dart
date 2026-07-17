@@ -35,6 +35,16 @@ class ChatConversation {
     final List<String> userIds = List<String>.from(data['userIds'] ?? []);
     final String otherId = userIds.firstWhere((id) => id != currentUserId, orElse: () => '');
     
+    final userProfiles = data['userProfiles'] as Map<String, dynamic>?;
+    String otherName = '';
+    String otherAvatar = '';
+    
+    if (userProfiles != null && userProfiles.containsKey(otherId)) {
+      final profile = userProfiles[otherId] as Map<String, dynamic>;
+      otherName = profile['name'] ?? '';
+      otherAvatar = profile['avatar'] ?? '';
+    }
+    
     return ChatConversation(
       id: doc.id,
       userIds: userIds,
@@ -42,6 +52,8 @@ class ChatConversation {
       lastMessageTime: (data['lastMessageTime'] as Timestamp? ?? Timestamp.now()).toDate(),
       unreadCounts: Map<String, dynamic>.from(data['unreadCounts'] ?? {}),
       otherUserId: otherId,
+      otherUserName: otherName,
+      otherUserAvatar: otherAvatar,
     );
   }
 
