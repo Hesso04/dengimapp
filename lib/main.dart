@@ -46,6 +46,24 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
   LogService.i('Handling a background message: ${message.messageId}');
+  
+  final data = message.data;
+  final chatId = data['chatId'];
+  final messageId = data['messageId'];
+  
+  if (chatId != null && messageId != null) {
+    try {
+      await FirebaseFirestore.instance
+          .collection('conversations')
+          .doc(chatId)
+          .collection('messages')
+          .doc(messageId)
+          .update({'isDelivered': true});
+      LogService.i('Message $messageId marked as delivered in background.');
+    } catch (e) {
+      LogService.e('Failed to mark message as delivered in background: $e');
+    }
+  }
 }
 
 void main() async {

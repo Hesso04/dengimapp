@@ -14,6 +14,7 @@ exports.onNotificationCreated = functions.firestore
     const type = data.type || "general";
     const senderId = data.senderId || "";
     const chatId = data.chatId || "";
+    const messageId = data.messageId || "";
 
     try {
       // Get target user profile to read their FCM token
@@ -40,6 +41,7 @@ exports.onNotificationCreated = functions.firestore
           type: type,
           senderId: senderId,
           chatId: chatId,
+          messageId: messageId,
           clickAction: "FLUTTER_NOTIFICATION_CLICK",
         },
         android: {
