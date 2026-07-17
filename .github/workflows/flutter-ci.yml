@@ -121,7 +121,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: dengim-apk
-        path: build/app/outputs/flutter-apk/app-release.apk
+        path: android/app/build/outputs/apk/release/app-release.apk
         retention-days: 30
       
     - name: 🚀 Upload to Firebase App Distribution
@@ -130,7 +130,7 @@ jobs:
         appId: ${{ secrets.FIREBASE_APP_ID }}
         token: ${{ secrets.FIREBASE_TOKEN }}
         groups: testers
-        file: build/app/outputs/flutter-apk/app-release.apk
+        file: android/app/build/outputs/apk/release/app-release.apk
 
     - name: 📤 Upload Build Logs on Failure
       if: failure()
