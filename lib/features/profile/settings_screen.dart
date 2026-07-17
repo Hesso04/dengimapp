@@ -106,6 +106,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     MaterialPageRoute(builder: (_) => const BlockedUsersScreen()),
                   ),
                 ),
+                Consumer<UserProvider>(
+                  builder: (context, provider, _) {
+                    final user = provider.currentUser;
+                    return _buildSwitchItem(
+                      context,
+                      "Hesabımı Dondur",
+                      Icons.pause_circle_outline,
+                      user?.isFrozen ?? false,
+                      (value) async {
+                        await ProfileService().updateProfile(isFrozen: value);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(value 
+                                ? "Hesabınız donduruldu. Keşfet akışında gizleniyorsunuz." 
+                                : "Hesabınız tekrar aktif hale getirildi."),
+                              backgroundColor: value ? AppColors.error : AppColors.primary,
+                            ),
+                          );
+                        }
+                      },
+                    );
+                  },
+                ),
                 
                 const SizedBox(height: 32),
                 _buildSectionHeader("KEŞFET"),

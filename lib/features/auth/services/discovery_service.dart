@@ -95,6 +95,9 @@ class DiscoveryService {
             // Incognito filter (Client-side to handle missing fields)
             if (profile.isIncognitoMode) return false;
 
+            // Freeze Account filter
+            if (profile.isFrozen) return false;
+
             // Relax completion check to allow showing all registered users
             // if (!profile.isComplete) return false;
             

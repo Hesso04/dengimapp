@@ -249,6 +249,7 @@ class ProfileService {
     bool? isVerified,
     bool? isGhostMode,
     bool? isIncognitoMode,
+    bool? isFrozen,
     String? subscriptionTier,
     int? credits,
     bool? hasReceivedWelcomeBonus,
@@ -283,6 +284,7 @@ class ProfileService {
     if (isVerified != null) updates['isVerified'] = isVerified;
     if (isGhostMode != null) updates['isGhostMode'] = isGhostMode;
     if (isIncognitoMode != null) updates['isIncognitoMode'] = isIncognitoMode;
+    if (isFrozen != null) updates['isFrozen'] = isFrozen;
     if (subscriptionTier != null) updates['subscriptionTier'] = subscriptionTier;
     if (credits != null) updates['credits'] = credits;
     if (hasReceivedWelcomeBonus != null) updates['hasReceivedWelcomeBonus'] = hasReceivedWelcomeBonus;

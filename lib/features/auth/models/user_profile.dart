@@ -48,6 +48,7 @@ class UserProfile {
   final List<String> followers; // YENİ: Takipçiler
   final List<String> following; // YENİ: Takip ettikleri
   final String searchName;
+  final bool isFrozen; // YENİ: Hesap Dondurma
 
   // Zamanlar
   final DateTime createdAt;
@@ -89,6 +90,7 @@ class UserProfile {
     this.boostUntil,
     this.isGhostMode = false,
     this.isIncognitoMode = false,
+    this.isFrozen = false, // YENİ
     this.hasReceivedWelcomeBonus = false,
     this.followers = const [],
     this.following = const [],
@@ -181,6 +183,7 @@ class UserProfile {
       'boostUntil': boostUntil != null ? Timestamp.fromDate(boostUntil!) : null,
       'isGhostMode': isGhostMode,
       'isIncognitoMode': isIncognitoMode,
+      'isFrozen': isFrozen, // YENİ
       'hasReceivedWelcomeBonus': hasReceivedWelcomeBonus,
       'followers': followers,
       'following': following,
@@ -248,6 +251,7 @@ class UserProfile {
           : null,
       isGhostMode: map['isGhostMode'] ?? false,
       isIncognitoMode: map['isIncognitoMode'] ?? false,
+      isFrozen: map['isFrozen'] ?? false, // YENİ
       hasReceivedWelcomeBonus: map['hasReceivedWelcomeBonus'] ?? false,
       followers: List<String>.from(map['followers'] ?? []),
       following: List<String>.from(map['following'] ?? []),
