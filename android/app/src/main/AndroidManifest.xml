@@ -1,4 +1,5 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     
     <!-- İzinler -->
     <uses-permission android:name="android.permission.INTERNET"/>
@@ -8,6 +9,9 @@
     <!-- Android 13+ için Medya İzinleri -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
     <uses-permission android:name="android.permission.CAMERA"/>
+    
+    <!-- Üçüncü parti kütüphanelerin getirdiği gereksiz Media Projection iznini zorla kaldır -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" tools:node="remove" />
 
     <application
         android:label="Dengim"
