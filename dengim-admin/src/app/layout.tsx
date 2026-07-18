@@ -9,6 +9,9 @@ export const metadata: Metadata = {
         shortcut: "/favicon.ico",
         apple: "/logo.png",
     },
+    verification: {
+        google: "U59EEGyEqCWisGgtZmELsFMI3OiYiVx9eDyzy4U-yBk",
+    },
 };
 
 import { AuthProvider } from "@/components/layout/AuthProvider";
