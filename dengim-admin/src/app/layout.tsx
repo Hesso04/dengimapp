@@ -4,6 +4,11 @@ import "./globals.css";
 export const metadata: Metadata = {
     title: "Dengim - Ses Odaklı Tanışma ve Eşleşme Uygulaması",
     description: "Klasik tanışma uygulamalarını unutun. Dengim ile ses tonlarıyla kendinizi ifade edin, Agora ses odalarında canlı sohbet edin ve yapay zeka desteğiyle ruh eşinizi bulun.",
+    icons: {
+        icon: "/favicon.ico",
+        shortcut: "/favicon.ico",
+        apple: "/logo.png",
+    },
 };
 
 import { AuthProvider } from "@/components/layout/AuthProvider";

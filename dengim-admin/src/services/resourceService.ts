@@ -27,9 +27,9 @@ export const ResourceService = {
 
         // Default values if not exists
         return {
-            privacyPolicyUrl: 'https://dengim.space/privacy',
-            termsOfServiceUrl: 'https://dengim.space/terms',
-            supportEmail: 'support@dengim.space',
+            privacyPolicyUrl: 'https://dengim.app/privacy',
+            termsOfServiceUrl: 'https://dengim.app/terms',
+            supportEmail: 'support@dengim.app',
             whatsappNumber: '+905410000000',
             instagramUrl: 'https://instagram.com/dengimapp',
             twitterUrl: 'https://twitter.com/dengimapp',

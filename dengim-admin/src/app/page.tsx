@@ -406,13 +406,13 @@ export default function LandingPage() {
                             <div className="space-y-3 text-sm">
                                 <Link href="/terms" className="block text-zinc-500 hover:text-[#FF4B55] transition-colors">Kullanım Koşulları</Link>
                                 <Link href="/privacy" className="block text-zinc-500 hover:text-[#FF4B55] transition-colors">Gizlilik Politikası</Link>
-                                <a href="mailto:destek@dengim.app" className="block text-zinc-500 hover:text-[#FF4B55] transition-colors">KVKK Başvurusu</a>
+                                <a href="mailto:support@dengim.app" className="block text-zinc-500 hover:text-[#FF4B55] transition-colors">KVKK Başvurusu</a>
                             </div>
                         </div>
                         <div>
                             <h4 className="font-bold text-white text-sm mb-4 uppercase tracking-wider">İletişim</h4>
                             <div className="space-y-3 text-sm">
-                                <a href="mailto:destek@dengim.app" className="block text-zinc-500 hover:text-[#FF4B55] transition-colors">destek@dengim.app</a>
+                                <a href="mailto:support@dengim.app" className="block text-zinc-500 hover:text-[#FF4B55] transition-colors">support@dengim.app</a>
                                 <a href="https://instagram.com/dengimapp" target="_blank" rel="noopener noreferrer" className="block text-zinc-500 hover:text-[#FF4B55] transition-colors">Instagram</a>
                                 <a href="https://twitter.com/dengimapp" target="_blank" rel="noopener noreferrer" className="block text-zinc-500 hover:text-[#FF4B55] transition-colors">X (Twitter)</a>
                             </div>

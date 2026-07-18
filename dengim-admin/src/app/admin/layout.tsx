@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-    title: "DENGIM Admin Panel",
-    description: "DENGIM Dating App - Admin & VIP Management Platform",
+    title: "DENGİM - Yönetim Paneli",
+    description: "Dengim Dating App - Admin & VIP Yönetim Platformu",
 };
 
 export default function AdminLayout({

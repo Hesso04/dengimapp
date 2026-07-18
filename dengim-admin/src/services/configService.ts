@@ -15,7 +15,7 @@ export const ConfigService = {
                 isCreditsEnabled: false,
                 isMapEnabled: false,
                 minVersion: "1.0.0",
-                contactEmail: "support@dengim.com"
+                contactEmail: "support@dengim.app"
             };
         } catch (error) {
             console.error("Get config error:", error);
