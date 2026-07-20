@@ -65,6 +65,7 @@ exports.onNotificationCreated = functions.firestore
             channelId: "dengim_messages_channel",
             priority: "max",
             visibility: "public",
+            icon: "ic_stat_name",
           },
         },
         apns: {

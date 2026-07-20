@@ -26,7 +26,7 @@ class NotificationService {
     // 1. Android/iOS Local Notification Setup
     if (!kIsWeb) {
       const AndroidInitializationSettings initializationSettingsAndroid =
-          AndroidInitializationSettings('@mipmap/ic_launcher');
+          AndroidInitializationSettings('@drawable/ic_stat_name');
       const InitializationSettings initializationSettings = InitializationSettings(
         android: initializationSettingsAndroid,
       );
@@ -175,6 +175,7 @@ class NotificationService {
       'Dengim Eşleşmeler',
       importance: Importance.max,
       priority: Priority.high,
+      icon: '@drawable/ic_stat_name',
       showWhen: true,
     );
     const NotificationDetails platformChannelSpecifics =
