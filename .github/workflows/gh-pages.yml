@@ -24,6 +24,7 @@ jobs:
         run: |
           cd dengim-admin
           npm install --legacy-peer-deps
+          export CI=false
           npm run build
 
       - name: Deploy to GitHub Pages

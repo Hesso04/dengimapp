@@ -3,6 +3,7 @@
 import { useParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+
 export async function generateStaticParams() {
     return [{ username: 'user' }, { username: 'demo' }];
 }
@@ -32,7 +33,7 @@ export default function UserPublicProfilePage() {
             <header className="max-w-md mx-auto w-full flex items-center justify-between py-4 border-b border-white/5">
                 <Link href="/" className="flex items-center gap-2">
                     <div className="w-8 h-8 relative rounded-lg overflow-hidden flex items-center justify-center bg-zinc-900">
-                        <Image src="/logo.png" alt="Dengim Logo" width={32} height={32} className="object-cover" />
+                        <img src="/logo.png" alt="Dengim Logo" className="w-8 h-8 object-cover" />
                     </div>
                     <span className="text-xl font-black bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">DENGİM</span>
                 </Link>
