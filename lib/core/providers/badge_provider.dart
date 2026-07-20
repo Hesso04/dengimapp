@@ -19,7 +19,7 @@ class BadgeProvider extends ChangeNotifier {
     final uid = _auth.currentUser?.uid;
     if (uid == null) return;
 
-    // Listen to unread messages (conversations collection with unreadCounts map)
+    // Listen to unread messages (conversations collection with unreadCount or unreadCounts map)
     _firestore
         .collection('conversations')
         .where('userIds', arrayContains: uid)
@@ -28,12 +28,14 @@ class BadgeProvider extends ChangeNotifier {
       int unreadCount = 0;
       for (var doc in snapshot.docs) {
         final data = doc.data();
-        final unreadCounts = data['unreadCounts'] as Map<String, dynamic>?;
-        if (unreadCounts != null) {
-          final count = unreadCounts[uid] as int? ?? 0;
-          // Sadece karşı taraftan gelen mesajları/sistem mesajlarını ama gerçekten okunmamışsa say
-          if (count > 0 && data['lastMessageSenderId'] != uid) {
-            unreadCount++;
+        final deletedFor = List<String>.from(data['deletedFor'] ?? []);
+        if (deletedFor.contains(uid)) continue;
+
+        final unreadMap = (data['unreadCount'] ?? data['unreadCounts']) as Map<String, dynamic>?;
+        if (unreadMap != null) {
+          final count = (unreadMap[uid] as num?)?.toInt() ?? 0;
+          if (count > 0) {
+            unreadCount += count;
           }
         }
       }
@@ -49,7 +51,6 @@ class BadgeProvider extends ChangeNotifier {
         .where('userIds', arrayContains: uid)
         .snapshots()
         .listen((snapshot) {
-      // Filter in client side since array-not-contains is not available in multiple filters
       _matchCount = snapshot.docs.where((doc) {
         final seenBy = List<String>.from(doc.data()['seenBy'] ?? []);
         return !seenBy.contains(uid);
@@ -80,6 +81,7 @@ class BadgeProvider extends ChangeNotifier {
 
     try {
       await _firestore.collection('conversations').doc(conversationId).update({
+        'unreadCount.$uid': 0,
         'readBy': FieldValue.arrayUnion([uid]),
       });
     } catch (e) {
@@ -90,6 +92,9 @@ class BadgeProvider extends ChangeNotifier {
   void markMatchesAsViewed() async {
     final uid = _auth.currentUser?.uid;
     if (uid == null) return;
+
+    _matchCount = 0;
+    notifyListeners();
 
     try {
       final matchesSnapshot = await _firestore
@@ -119,6 +124,10 @@ class BadgeProvider extends ChangeNotifier {
   void markLikesAsViewed() async {
     final uid = _auth.currentUser?.uid;
     if (uid == null) return;
+
+    _likeCount = 0;
+    _matchCount = 0;
+    notifyListeners();
 
     // Also mark matches as viewed
     markMatchesAsViewed();

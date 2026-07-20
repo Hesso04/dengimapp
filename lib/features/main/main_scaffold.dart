@@ -175,6 +175,15 @@ class _MainScaffoldState extends State<MainScaffold> {
     setState(() {
       _currentIndex = index;
     });
+
+    final configProvider = context.read<SystemConfigProvider>();
+    final navItems = _getNavItems(configProvider.isMapEnabled);
+    if (index < navItems.length) {
+      final label = navItems[index].label;
+      if (label == 'Beğeniler') {
+        context.read<BadgeProvider>().markLikesAsViewed();
+      }
+    }
   }
 
   @override

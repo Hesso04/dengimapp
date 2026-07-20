@@ -287,28 +287,40 @@ class ChatService {
     try {
       // 1. unreadCounts'u sıfırla
       await _firestore.collection('conversations').doc(chatId).update({
-        'unreadCounts.${user.uid}': 0,
-      });
+      // 1. Sohbet belgesindeki okunmamış sayısını sıfırla
+      await _firestore.collection('conversations').doc(chatId).set({
+        'unreadCount': { user.uid: 0 },
+        'unreadCounts': { user.uid: 0 },
+      }, SetOptions(merge: true));
 
-      // 2. Diğer kullanıcının gönderdiği okunmamış mesajları getir
+      // 2. Karşı tarafın gönderdiği okunmamış mesajları bellek içi filtreleme ile güncelle (Composite Index Hatasını önler)
       final unreadQuery = await _firestore
           .collection('conversations')
           .doc(chatId)
           .collection('messages')
-          .where('senderId', isNotEqualTo: user.uid)
           .where('isRead', isEqualTo: false)
           .get();
 
       if (unreadQuery.docs.isEmpty) return;
 
       final batch = _firestore.batch();
+      bool hasUpdates = false;
+
       for (var doc in unreadQuery.docs) {
-        batch.update(doc.reference, {
-          'isRead': true,
-          'isDelivered': true,
-        });
+        final senderId = doc.data()['senderId'];
+        if (senderId != user.uid) {
+          batch.update(doc.reference, {
+            'isRead': true,
+            'isDelivered': true,
+            'readAt': FieldValue.serverTimestamp(),
+          });
+          hasUpdates = true;
+        }
       }
-      await batch.commit();
+
+      if (hasUpdates) {
+        await batch.commit();
+      }
     } catch (e) {
       LogService.e("markAsRead error", e);
     }
