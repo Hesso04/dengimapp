@@ -272,12 +272,19 @@ class DiscoveryService {
         final myDoc = await _firestore.collection('users').doc(user.uid).get();
         final myName = myDoc.data()?['name'] ?? 'Biri';
 
-        await _sendNotificationToUser(
-          targetUid: targetUserId,
-          title: "YENİ EŞLEŞME! 🎉",
-          body: "$myName ile karşılıklı eşleştiniz! Hemen sohbet etmeye başlayın.",
-          type: "match",
-        );
+        try {
+          await NotificationService().sendPushNotification(
+            targetUid: targetUserId,
+            title: "YENİ EŞLEŞME! 🎉",
+            body: "$myName ile karşılıklı eşleştiniz! Hemen sohbet etmeye başlayın.",
+            data: {
+              'type': 'match',
+              'clickAction': 'FLUTTER_NOTIFICATION_CLICK',
+            },
+          );
+        } catch (e) {
+          LogService.e("Failed to send match push notification", e);
+        }
 
         return true; // Match happened!
       }
