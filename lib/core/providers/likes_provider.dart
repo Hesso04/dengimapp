@@ -39,15 +39,23 @@ class LikesProvider extends ChangeNotifier {
       LogService.e("Likes stream error", e);
     });
 
-    // Matches stream
+    // Matches stream (In-memory sorting to prevent Firestore composite index exception)
     _matchesSubscription?.cancel();
     _matchesSubscription = _firestore
         .collection('matches')
         .where('userIds', arrayContains: uid)
-        .orderBy('timestamp', descending: true)
         .snapshots()
         .listen((snapshot) async {
-      await _fetchMatchProfiles(snapshot.docs, uid);
+      final docs = snapshot.docs.toList()
+        ..sort((a, b) {
+          final tA = (a.data())['timestamp'] as Timestamp?;
+          final tB = (b.data())['timestamp'] as Timestamp?;
+          if (tA == null && tB == null) return 0;
+          if (tA == null) return 1;
+          if (tB == null) return -1;
+          return tB.compareTo(tA);
+        });
+      await _fetchMatchProfiles(docs, uid);
     }, onError: (e) {
       LogService.e("Matches stream error", e);
     });

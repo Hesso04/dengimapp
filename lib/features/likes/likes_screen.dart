@@ -421,24 +421,41 @@ class _LikesScreenState extends State<LikesScreen> {
     final bg = isDark ? AppColors.scaffoldDark : AppColors.scaffold;
     final iconBg = isDark ? AppColors.surfaceDark : AppColors.surfaceLight;
 
+    final canPop = Navigator.canPop(context);
+
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
       color: bg,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          GestureDetector(
-            onTap: () => Navigator.pop(context),
-            child: Container(
+          if (canPop)
+            GestureDetector(
+              onTap: () {
+                if (Navigator.canPop(context)) {
+                  Navigator.pop(context);
+                }
+              },
+              child: Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: iconBg,
+                  borderRadius: BorderRadius.circular(AppColors.neoRadius),
+                ),
+                child: Icon(Icons.arrow_back_ios_new_rounded, color: textColor, size: 18),
+              ),
+            )
+          else
+            Container(
               width: 42,
               height: 42,
               decoration: BoxDecoration(
-                color: iconBg,
+                color: AppColors.primary,
                 borderRadius: BorderRadius.circular(AppColors.neoRadius),
               ),
-              child: Icon(Icons.arrow_back_ios_new_rounded, color: textColor, size: 18),
+              child: const Icon(Icons.favorite_rounded, color: Colors.white, size: 20),
             ),
-          ),
           Text(
             'Beğeniler',
             style: GoogleFonts.outfit(
