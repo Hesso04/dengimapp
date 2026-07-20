@@ -101,10 +101,12 @@ void main() async {
     );
     LogService.i("Firebase initialized successfully.");
 
-    // Remote Configuration'ı başlat
-    await ConfigService().init();
-    await FeatureFlagService().init();
-    await AdService().init();
+    // Remote Configuration, Feature Flags ve AdService'ı paralel başlat (Startup hızı için)
+    await Future.wait([
+      ConfigService().init(),
+      FeatureFlagService().init(),
+      AdService().init(),
+    ]);
 
     // Bildirim servisini başlat
     try {

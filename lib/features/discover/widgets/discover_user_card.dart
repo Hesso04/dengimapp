@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/providers/user_provider.dart';
+import '../../../core/extensions/string_extensions.dart';
 import '../../auth/models/user_profile.dart';
 
 class DiscoverUserCard extends StatefulWidget {
@@ -227,7 +228,7 @@ class _DiscoverUserCardState extends State<DiscoverUserCard> {
                 children: [
                   Expanded(
                     child: Text(
-                      '${user.name}, ${user.age}'.toUpperCase(),
+                      '${user.name.toTitleCase()}, ${user.age}',
                       style: GoogleFonts.outfit(
                         fontSize: 22,
                         fontWeight: FontWeight.w900,

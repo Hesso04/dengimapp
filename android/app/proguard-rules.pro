@@ -5,16 +5,15 @@
 -keep class io.flutter.plugins.** { *; }
 
 # ============================================================
-# ENUM KORUMASI (KRİTİK — Firestore crash'ini önler)
-# R8, enum sınıflarının values() ve valueOf() metodlarını
-# "kullanılmıyor" sanıp siliyor. Bu kural bunu engeller.
+# APPLICATION MODEL & ENUM PROTECTION
 # ============================================================
+-keep class com.dengim.** { *; }
+
 -keepclassmembers enum * {
     public static **[] values();
     public static ** valueOf(java.lang.String);
 }
 
-# Tüm enum sınıflarını koru
 -keepclassmembers class * extends java.lang.Enum {
     <fields>;
     public static **[] values();
@@ -27,9 +26,14 @@
 -keep class com.google.firebase.** { *; }
 -dontwarn com.google.firebase.**
 
-# Firestore internal sınıfları
+# Firestore internal classes & annotations
 -keep class com.google.firebase.firestore.** { *; }
 -keep class com.google.cloud.firestore.** { *; }
+
+-keepclassmembers class * {
+    @com.google.firebase.firestore.PropertyName <fields>;
+    @com.google.firebase.firestore.PropertyName <methods>;
+}
 
 # Firebase Auth
 -keep class com.google.firebase.auth.** { *; }
@@ -47,7 +51,25 @@
 -keep class com.google.firebase.storage.** { *; }
 
 # ============================================================
-# PROTOBUF & gRPC (Firestore arka planda bunları kullanır)
+# AGORA & WEBRTC (VOICE / VIDEO CALLS) KORUMASI
+# ============================================================
+-keep class io.agora.** { *; }
+-dontwarn io.agora.**
+
+-keep class io.agora.rtc2.** { *; }
+-dontwarn io.agora.rtc2.**
+
+-keep class org.webrtc.** { *; }
+-dontwarn org.webrtc.**
+
+# ============================================================
+# PERMISSION HANDLER & SYSTEM PLUGINS
+# ============================================================
+-keep class com.baseflow.permissionhandler.** { *; }
+-dontwarn com.baseflow.permissionhandler.**
+
+# ============================================================
+# PROTOBUF & gRPC (Firestore internal)
 # ============================================================
 -keep class com.google.protobuf.** { *; }
 -dontwarn com.google.protobuf.**
@@ -56,30 +78,18 @@
 -dontwarn io.grpc.**
 
 # ============================================================
-# GOOGLE PLAY SERVICES
+# GOOGLE PLAY SERVICES & CORE
 # ============================================================
 -keep class com.google.android.gms.** { *; }
 -dontwarn com.google.android.gms.**
+-dontwarn com.google.android.play.core.**
 
-# ============================================================
-# ANDROIDx
-# ============================================================
-# AndroidX Window extensions (provided by OEM, not bundled in app)
+# AndroidX Window extensions
 -dontwarn androidx.window.extensions.**
 -dontwarn androidx.window.sidecar.**
 
-# ============================================================
-# DİĞERLERİ
-# ============================================================
-# Google Play Core (deferred components, splitinstall - provided by Play Store at runtime)
--dontwarn com.google.android.play.core.**
-
 # Amazon Appstore SDK
 -dontwarn com.amazon.**
-
-# Agora RTC Engine
--keep class io.agora.** { *; }
--dontwarn io.agora.**
 
 # Google Sign-In
 -keep class com.google.android.gms.auth.** { *; }

@@ -19,6 +19,8 @@ import '../../profile/services/report_block_service.dart';
 import '../../payment/premium_offer_screen.dart';
 import 'call_screen.dart';
 import '../../../core/utils/error_handler.dart';
+import '../../../core/extensions/string_extensions.dart';
+import '../../discover/user_profile_detail_screen.dart';
 
 class ChatDetailScreen extends StatefulWidget {
   final String chatId;
@@ -227,43 +229,55 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
           icon: Icon(Icons.arrow_back_ios_new, color: isDark ? Colors.white : Colors.black, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Row(
-          children: [
-            OnlineStatusBadge(
-              userId: widget.otherUserId,
-              badgeSize: 12,
-              child: CircleAvatar(
-                radius: 18,
-                backgroundImage: NetworkImage(widget.otherUserAvatar),
+        title: GestureDetector(
+          onTap: () {
+            if (widget.otherUserId.isNotEmpty) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => UserProfileDetailScreen(userId: widget.otherUserId),
+                ),
+              );
+            }
+          },
+          child: Row(
+            children: [
+              OnlineStatusBadge(
+                userId: widget.otherUserId,
+                badgeSize: 12,
+                child: CircleAvatar(
+                  radius: 18,
+                  backgroundImage: NetworkImage(widget.otherUserAvatar),
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    widget.otherUserName.toUpperCase(),
-                    style: GoogleFonts.outfit(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w900,
-                      color: isDark ? Colors.white : Colors.black,
-                      letterSpacing: -0.5,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      widget.otherUserName.toTitleCase(),
+                      style: GoogleFonts.outfit(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                        color: isDark ? Colors.white : Colors.black,
+                        letterSpacing: -0.5,
+                      ),
                     ),
-                  ),
-                  LastSeenText(
-                    userId: widget.otherUserId,
-                    style: GoogleFonts.outfit(
-                      fontSize: 12,
-                      color: AppColors.textSecondary,
-                      fontWeight: FontWeight.w600,
+                    LastSeenText(
+                      userId: widget.otherUserId,
+                      style: GoogleFonts.outfit(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         actions: [
           IconButton(

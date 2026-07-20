@@ -52,9 +52,9 @@ class ChatService {
                   avatar: chat.otherUserAvatar.isEmpty ? cachedProfile.imageUrl : chat.otherUserAvatar,
                   isOnline: cachedProfile.isOnline,
                 );
-              } else if (chat.otherUserName.isEmpty) {
-                // Eğer denormalize edilmiş veri yoksa arka planda sessizce çekip önbelleğe al
-                _loadAndCacheProfile(chat.otherUserId);
+              } else {
+                // Eğer denormalize edilmiş veri yoksa arka planda sessizce çekip önbelleğe al ve Firestore'u güncelle
+                _loadAndCacheProfile(chat.otherUserId, doc.id);
               }
             }
             chats.add(chat);
@@ -63,13 +63,25 @@ class ChatService {
         });
   }
 
-  /// Profil bilgilerini asenkron olarak arka planda önbelleğe al
-  Future<void> _loadAndCacheProfile(String userId) async {
+  /// Profil bilgilerini asenkron olarak arka planda önbelleğe al ve eksikse konuşma belgesine yaz
+  Future<void> _loadAndCacheProfile(String userId, [String? chatId]) async {
     try {
       final userDoc = await _firestore.collection('users').doc(userId).get();
-      if (userDoc.exists) {
-        final userProfile = UserProfile.fromMap(userDoc.data()!);
+      final data = userDoc.data();
+      if (userDoc.exists && data != null) {
+        final userProfile = UserProfile.fromMap(data);
         _profileCache[userId] = userProfile;
+
+        if (chatId != null && chatId.isNotEmpty) {
+          await _firestore.collection('conversations').doc(chatId).set({
+            'userProfiles': {
+              userId: {
+                'name': userProfile.name,
+                'avatar': userProfile.imageUrl,
+              }
+            }
+          }, SetOptions(merge: true));
+        }
       }
     } catch (e) {
       LogService.e("Failed to cache profile for $userId: $e");

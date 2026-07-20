@@ -6,6 +6,7 @@ enum UserRole {
   admin,
 }
 
+@pragma('vm:entry-point')
 class UserProfile {
   final String uid;
   final String email;

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/extensions/string_extensions.dart';
 import '../auth/services/auth_service.dart';
 import '../auth/login_screen.dart';
 import 'settings_screen.dart';
@@ -170,7 +171,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Row(
                         children: [
                           Text(
-                            '$name, $age',
+                            '${name.toTitleCase()}, $age',
                             style: GoogleFonts.outfit(
                               fontSize: 30,
                               fontWeight: FontWeight.w700,
@@ -834,7 +835,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: _buildMiniBtn(
                       icon: Icons.play_circle_filled_rounded,
                       label: 'İZLE & KAZAN',
-                      color: isDark ? Colors.white : Colors.black,
+                      color: isDark ? const Color(0xFF26262A) : Colors.black,
                       textColor: Colors.white,
                       onTap: () => Navigator.push(
                         context,
@@ -847,7 +848,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: _buildMiniBtn(
                       icon: isPremium ? Icons.workspace_premium_rounded : Icons.star_rounded,
                       label: isPremium ? tier.toUpperCase() : 'ÜYELİK',
-                      color: Colors.white,
+                      color: isDark ? const Color(0xFF26262A) : Colors.white,
                       textColor: isDark ? Colors.white : Colors.black,
                       onTap: () => Navigator.push(
                         context,

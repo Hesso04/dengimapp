@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 enum MessageType { text, image, audio, call }
 
 /// Sohbet Listesi Modeli
+@pragma('vm:entry-point')
 class ChatConversation {
   final String id;
   final List<String> userIds;
@@ -91,6 +92,7 @@ class ChatConversation {
 }
 
 /// Mesaj Modeli
+@pragma('vm:entry-point')
 class ChatMessage {
   final String id;
   final String senderId;

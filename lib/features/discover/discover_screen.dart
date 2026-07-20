@@ -649,10 +649,10 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                   ),
                 ),
 
-              // Yüzen Aksiyon Butonları (Undo & Boost) - Sağ Altta
+              // Yüzen Aksiyon Butonları (Undo & Boost) - Sağ Altta (Temaya Uyumlu ve Güvenli Hizalama)
               Positioned(
-                bottom: 24,
-                right: 16,
+                bottom: 30,
+                right: 20,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -663,21 +663,24 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                           width: 48,
                           height: 48,
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.9),
+                            color: isDark ? AppColors.surfaceDark : Colors.white,
                             shape: BoxShape.circle,
-                            border: Border.all(color: Colors.black.withValues(alpha: 0.08)),
+                            border: Border.all(
+                              color: isDark ? Colors.white12 : Colors.black.withValues(alpha: 0.08),
+                              width: 1.2,
+                            ),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.15),
-                                blurRadius: 10,
+                                color: isDark ? Colors.black.withValues(alpha: 0.4) : Colors.black.withValues(alpha: 0.12),
+                                blurRadius: 12,
                                 offset: const Offset(0, 4),
                               ),
                             ],
                           ),
-                          child: const Icon(Icons.undo_rounded, color: Colors.amber, size: 22),
+                          child: const Icon(Icons.undo_rounded, color: AppColors.vibrantGold, size: 22),
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 14),
                     ],
                     GestureDetector(
                       onTap: _onBoost,
@@ -689,13 +692,13 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.purple.withValues(alpha: 0.3),
-                              blurRadius: 12,
+                              color: AppColors.primary.withValues(alpha: 0.35),
+                              blurRadius: 14,
                               offset: const Offset(0, 4),
                             ),
                           ],
                         ),
-                        child: const Icon(Icons.bolt_rounded, color: Colors.purpleAccent, size: 28),
+                        child: const Icon(Icons.bolt_rounded, color: Colors.white, size: 28),
                       ),
                     ),
                   ],

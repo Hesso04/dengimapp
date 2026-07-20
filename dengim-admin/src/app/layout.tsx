@@ -26,6 +26,8 @@ export default function RootLayout({
     return (
         <html lang="tr" className="dark">
             <head>
+                <link rel="icon" href="/favicon.ico" sizes="any" />
+                <link rel="apple-touch-icon" href="/logo.png" />
                 <link
                     href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
                     rel="stylesheet"

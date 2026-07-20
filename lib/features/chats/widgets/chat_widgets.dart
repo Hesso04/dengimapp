@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:just_audio/just_audio.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/extensions/string_extensions.dart';
 import '../models/chat_models.dart';
 
 
@@ -75,7 +76,7 @@ class ChatListItem extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        chat.userName,
+                        chat.userName.isEmpty ? 'Kullanıcı' : chat.userName.toTitleCase(),
                         style: GoogleFonts.outfit(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
@@ -141,9 +142,10 @@ class ChatListItem extends StatelessWidget {
 
   Widget _buildAvatar(bool isDark) {
     final hasAvatar = chat.userAvatar.isNotEmpty;
-    final initial = chat.userName.isNotEmpty
-        ? chat.userName[0].toUpperCase()
-        : '?';
+    final displayName = chat.userName.isEmpty ? 'Kullanıcı' : chat.userName;
+    final initial = displayName.isNotEmpty
+        ? displayName[0].toUpperCase()
+        : 'K';
 
     if (hasAvatar) {
       return ClipRRect(

@@ -14,12 +14,28 @@ class AgoraService {
   RtcEngine? _engine;
   bool _isInitialized = false;
 
+  /// Mikrofon izin durumunu doğrula ve gerekirse izin iste
+  Future<bool> checkAndRequestMicrophonePermission() async {
+    try {
+      var status = await Permission.microphone.status;
+      if (!status.isGranted) {
+        status = await Permission.microphone.request();
+      }
+      return status.isGranted;
+    } catch (e) {
+      LogService.e("Microphone permission check failed", e);
+      return false;
+    }
+  }
+
   Future<void> init() async {
     if (_isInitialized) return;
 
     try {
-      // Sadece mikrofon iznini iste (Sesli arama için)
-      await Permission.microphone.request();
+      final hasPermission = await checkAndRequestMicrophonePermission();
+      if (!hasPermission) {
+        LogService.w("Microphone permission not granted for Agora Service init.");
+      }
 
       _engine = createAgoraRtcEngine();
       await _engine!.initialize(const RtcEngineContext(
@@ -41,6 +57,11 @@ class AgoraService {
     bool isVideo = false,
     bool isHost = true,
   }) async {
+    final hasMicPermission = await checkAndRequestMicrophonePermission();
+    if (!hasMicPermission) {
+      LogService.w("Joining channel without granted mic permission.");
+    }
+
     if (_engine == null) await init();
 
     // İletişim kanal ayarları
