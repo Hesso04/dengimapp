@@ -165,7 +165,7 @@ export default function PremiumPage() {
                                             />
                                             <StatCard
                                                 title="Dönüşüm Oranı"
-                                                value={`${((premiumStats?.totalPremium || 0) / (stats?.totalUsers || 1) * 100).toFixed(1)}%`}
+                                                value={`${stats?.totalUsers ? Math.min(100, (premiumStats?.totalPremium || 0) / stats.totalUsers * 100).toFixed(1) : '0.0'}%`}
                                                 borderColor="border-l-accent-emerald"
                                             />
                                         </div>
