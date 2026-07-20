@@ -61,11 +61,16 @@ class LikesProvider extends ChangeNotifier {
     }
 
     final likerIds = likeDocs
-        .map((doc) => doc.data() as Map<String, dynamic>)
-        .where((data) => data['matched'] != true) // Eşleşmiş olanları gösterme
-        .map((data) => data['fromUserId'] as String?)
-        .where((id) => id != null)
-        .cast<String>()
+        .where((doc) {
+          final data = doc.data() as Map<String, dynamic>?;
+          return data != null && data['matched'] != true;
+        })
+        .map((doc) {
+          final data = doc.data() as Map<String, dynamic>;
+          final fromId = data['fromUserId'] as String?;
+          return (fromId != null && fromId.isNotEmpty) ? fromId : doc.id;
+        })
+        .where((id) => id.isNotEmpty)
         .toList();
 
     if (likerIds.isEmpty) {

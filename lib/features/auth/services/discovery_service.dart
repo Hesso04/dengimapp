@@ -213,20 +213,73 @@ class DiscoveryService {
 
       if (!isLike) return false;
 
-      // Beğeniler, eşleşmeler ve bildirimler artık onSwipeCreated veritabanı 
-      // tetikleyicisi (Cloud Function) ile sunucu tarafında güvenli olarak işlenmektedir.
-      LogService.i("Checking for match with $targetUserId (read-only)...");
-      
-      final matchDoc = await _firestore
+      // 2. Write to target user's likes subcollection so they see me in "Liked Me" list
+      await _firestore
+          .collection('users')
+          .doc(targetUserId)
+          .collection('likes')
+          .doc(user.uid)
+          .set({
+        'fromUserId': user.uid,
+        'timestamp': FieldValue.serverTimestamp(),
+        'type': swipeType,
+        'matched': false,
+        'viewed': false,
+      }, SetOptions(merge: true));
+
+      // 3. Check for Mutual Match (Read target user's swipe on me)
+      final targetSwipeDoc = await _firestore
           .collection('users')
           .doc(targetUserId)
           .collection('swipes')
           .doc(user.uid)
           .get();
 
-      if (matchDoc.exists && (matchDoc.data()?['type'] == 'like' || matchDoc.data()?['type'] == 'super_like')) {
-        LogService.i("MATCH DETECTED! Handled by server.");
-        return true; // Eşleşme gerçekleşti UI feedback tetiklenebilir
+      bool isMatch = targetSwipeDoc.exists &&
+          (targetSwipeDoc.data()?['type'] == 'like' || targetSwipeDoc.data()?['type'] == 'super_like');
+
+      if (isMatch) {
+        LogService.i("MUTUAL MATCH DETECTED between ${user.uid} and $targetUserId!");
+
+        // Determine deterministic match ID
+        final ids = [user.uid, targetUserId]..sort();
+        final matchId = "${ids[0]}_${ids[1]}";
+
+        // Create match entry in 'matches' collection
+        await _firestore.collection('matches').doc(matchId).set({
+          'id': matchId,
+          'userIds': ids,
+          'timestamp': FieldValue.serverTimestamp(),
+          'createdAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+
+        // Delete likes documents in both users' collections to clear Likes list
+        await _firestore
+            .collection('users')
+            .doc(user.uid)
+            .collection('likes')
+            .doc(targetUserId)
+            .delete().catchError((_) {});
+
+        await _firestore
+            .collection('users')
+            .doc(targetUserId)
+            .collection('likes')
+            .doc(user.uid)
+            .delete().catchError((_) {});
+
+        // Send Push Notification to Target User
+        final myDoc = await _firestore.collection('users').doc(user.uid).get();
+        final myName = myDoc.data()?['name'] ?? 'Biri';
+
+        await _sendNotificationToUser(
+          targetUid: targetUserId,
+          title: "YENİ EŞLEŞME! 🎉",
+          body: "$myName ile karşılıklı eşleştiniz! Hemen sohbet etmeye başlayın.",
+          type: "match",
+        );
+
+        return true; // Match happened!
       }
 
       return false;
@@ -460,7 +513,7 @@ class DiscoveryService {
     if (user == null) return [];
 
     try {
-      // Direkt kendi likes koleksiyonumdan beğenenleri çek
+      // Kendi likes koleksiyonumdan beğenenleri çek
       final likesSnapshot = await _firestore
           .collection('users')
           .doc(user.uid)
@@ -474,14 +527,14 @@ class DiscoveryService {
         return [];
       }
 
-      // Beğenen kullanıcı ID'lerini çıkar
+      // Eşleşmiş kullanıcıları filtrele ve sadece beğenen UID'leri al
       final likerUids = likesSnapshot.docs
-          .map((doc) => doc.data()['fromUserId'] as String?)
-          .where((id) => id != null && id.isNotEmpty)
-          .cast<String>()
+          .where((doc) => doc.data()['matched'] != true)
+          .map((doc) => (doc.data()['fromUserId'] as String?) ?? doc.id)
+          .where((id) => id.isNotEmpty)
           .toList();
 
-      LogService.i("Found ${likerUids.length} users who liked me");
+      LogService.i("Found ${likerUids.length} active users who liked me");
 
       if (likerUids.isEmpty) return [];
 
@@ -509,19 +562,17 @@ class DiscoveryService {
     if (user == null) return false;
 
     try {
-      // Bu aslında normal bir beğeni, ama zaten bizi beğenmiş biri olduğu için eşleşme olacak
       final matched = await swipeUser(targetUserId, swipeType: 'like');
       
-      if (matched) {
-        // Eşleşme olduysa, likes koleksiyonundan kaldırılabilir (viewed olarak işaretle)
-        await _firestore
-            .collection('users')
-            .doc(user.uid)
-            .collection('likes')
-            .doc(targetUserId)
-            .update({'viewed': true, 'matched': true});
-      }
-      
+      // Beğeniyi kabul ettiğimiz için kendi likes koleksiyonumuzdan bu kartı siliyoruz
+      await _firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('likes')
+          .doc(targetUserId)
+          .delete()
+          .catchError((_) {});
+
       return matched;
     } catch (e) {
       LogService.e("Like back error", e);
