@@ -285,8 +285,6 @@ class ChatService {
     if (user == null) return;
 
     try {
-      // 1. unreadCounts'u sıfırla
-      await _firestore.collection('conversations').doc(chatId).update({
       // 1. Sohbet belgesindeki okunmamış sayısını sıfırla
       await _firestore.collection('conversations').doc(chatId).set({
         'unreadCount': { user.uid: 0 },
