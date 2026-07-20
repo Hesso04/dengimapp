@@ -37,9 +37,6 @@ class _CreateGroupChatScreenState extends State<CreateGroupChatScreen> {
     if (currentUserId == null) return;
 
     try {
-      final userDoc = await FirebaseFirestore.instance.collection('users').doc(currentUserId).get();
-      final following = List<String>.from(userDoc.data()?['following'] ?? []);
-
       final usersSnap = await FirebaseFirestore.instance
           .collection('users')
           .limit(50)
@@ -90,7 +87,7 @@ class _CreateGroupChatScreenState extends State<CreateGroupChatScreen> {
       if (currentUserId == null) return;
 
       final allMemberIds = [currentUserId, ..._selectedUserIds];
-      final conversationId = await ChatService().createGroupConversation(
+      await ChatService().createGroupConversation(
         groupName: groupName,
         memberIds: allMemberIds,
       );
