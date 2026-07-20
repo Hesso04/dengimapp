@@ -46,14 +46,13 @@ Dengim projesi için planlanan **tüm kritik güvenlik, altyapı, performans, CI
 ### 9. Local ve CI/CD Android Derleme Sorunlarının Çözülmesi
 * **Düzeltmeler:**
   - [build.gradle.kts](file:///c:/Users/pcpos/OneDrive/Desktop/Aiprojeler/dengim/dengim/android/app/build.gradle.kts) dosyasına UTF-8 encoding kuralı eklendi.
-  - [flutter-ci.yml](file:///c:/Users/pcpos/OneDrive/Desktop/Aiprojeler/dengim/dengim/.github/workflows/flutter-ci.yml) dosyasındaki APK artifact yükleme yolları güncellendi.
+  - [flutter-ci.yml](file:///c:/Users/pcpos/OneDrive/Desktop/Aiprojeler/dengim/dengim/.github/workflows/flutter-ci.yml) dosyasındaki APK artifact yükleme yolları güncellendi. (Not: v1.0.4 aşamasında mobil CI tamamen kaldırılarak sadece web deploy odaklı yapıya geçilmiştir).
 
-### 10. Web ve Admin Panel Markalaşma, SEO & Google Search Console
+### 10. Web ve Admin Panel Markalaşma, Happn Tarzı Yeniden Tasarım, SEO & Google Search Console
 * **Düzeltmeler:**
+  - **Happn Tarzı Yeniden Tasarım (`page.tsx`):** `dengim.app` ana sayfası Happn estetiğinde, tam ekran Hero, degrade aydınlatmalı 3D mockup, interaktif ses dalgası animasyonları, dual language (TR/EN) dil desteği ve şık çerez banner'ı ile tamamen sıfırdan yazıldı.
+  - **Yasal Metinler ve Koyu Tema:** `/privacy` ve `/terms` sayfaları modern koyu temaya geçirildi, v1.0.4 özellikleri ile senkronize edildi ve TR/EN dinamik dil butonu entegre edildi.
   - **Favicon Onarımı (Statik Export Uyumluluğu):** Next.js statik export yapısı (`output: export`) ile uyumsuz olan dinamik `icon.tsx` silinip, yerine static HTML head etiketine `<link rel="icon" href="/favicon.ico" />` ve Apple touch icon yolları eklenerek Vercel build hataları tamamen giderildi.
-  - **Login Sayfası:** Resmi logo yerleştirildi ve başlık "DENGİM Dating Admin Portal" olarak güncellendi.
-  - **Sidebar Menüsü:** Dairesel simge eklendi ve marka adı "DENGİM Dating" olarak değiştirildi. Yönlendirme `/admin` rotasına bağlandı.
-  - **Site Başlığı:** [admin/layout.tsx](file:///c:/Users/pcpos/OneDrive/Desktop/Aiprojeler/dengim/dengim/dengim-admin/src/app/admin/layout.tsx) güncellenerek başlık **"DENGİM - Yönetim Paneli"** yapıldı.
   - **E-posta Güncellemeleri:** Tüm yasal referanslar, default config alanları ve footer e-postaları yeni resmi e-posta adresi olan **`support@dengim.app`** ile değiştirildi.
   - **Google Search Console Doğrulaması:** `dengim.app` web sitesi mülk sahipliğini doğrulamak için hem HTML dosyası `public/` klasörüne eklendi hem de meta verification kodu root layout'a entegre edildi.
 
