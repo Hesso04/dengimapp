@@ -1,6 +1,6 @@
 # 🔐 DENGİM — Güvenlik, Altyapı, Performans, Branding, Mobil Admin & Son Güncelleme Raporu
 
-Dengim projesi için planlanan **tüm mobil tasarım düzeltmeleri, Admin Panel mobil adaptasyonu, sahte veri (mock) temizliği, canlı Firebase Firestore entegrasyonu, Deep Link profil davet sayfası, Toplu İşlem (Bulk Actions) barı, Otomatik İçerik Moderasyonu (Cloud Function) ve PWA altyapısı** ile **1.0.3+10 Sürümü** çalışmaları başarıyla tamamlanmıştır.
+Dengim projesi için planlanan **tüm mobil tasarım düzeltmeleri, Admin Panel mobil adaptasyonu, sahte veri (mock) temizliği, canlı Firebase Firestore entegrasyonu, Deep Link profil davet sayfası, Toplu İşlem (Bulk Actions) barı, Otomatik İçerik Moderasyonu (Cloud Function), PWA altyapısı ve GitHub Pages Statik Derleme Onarımları** başarıyla tamamlanmış ve uzak depoya (main branch) push edilmiştir.
 
 ---
 
@@ -13,21 +13,24 @@ Dengim projesi için planlanan **tüm mobil tasarım düzeltmeleri, Admin Panel 
 
 ---
 
-## 🚀 Son Güncellemede Eklenen Kritik Özellikler
+## 🚀 Son Güncellemede Eklenen Kritik Özellikler & GitHub Pages Onarımı
 
-### 1. Paylaşılabilir Profil & Deep Link Desteği (`dengim.app/u/[username]`)
+### 1. GitHub Pages Statik Derleme Onarımı (`output: export`)
+- GitHub Pages sunucunuzun (`gh-pages.yml`) Next.js `next build` sırasında dinamik rotalardan (`u/[username]`) dolayı derleme hatası fırlatması engellendi. `generateStaticParams()` ihracı ve `eslint.ignoreDuringBuilds` eklendi.
+
+### 2. Paylaşılabilir Profil & Deep Link Desteği (`dengim.app/u/[username]`)
 - Kullanıcıların kendi profillerini veya arkadaş davet linklerini WhatsApp/Instagram üzerinden paylaştıklarında açılan şık web kartı tasarlandı.
 - Mobil cihazlardan tıklandığında doğrudan `dengim://user/[username]` deep link'ini tetikleyerek uygulamada profili açar.
 
-### 2. Admin Paneli Toplu İşlemler Barı (Batch Bulk Actions)
+### 3. Admin Paneli Toplu İşlemler Barı (Batch Bulk Actions)
 - Kullanıcılar listesinde birden fazla kullanıcı seçildiğinde ekranın altında yüzen (floating) **Bulk Action Bar** belirmesi sağlandı.
 - Seçili kullanıcılara tek tıkla toplu Mavi Tik verme, +50 Kredi ekleme veya toplu engelleme yapılması sağlandı.
 
-### 3. Otomatik İçerik Moderasyonu (Cloud Function `autoModerateUserContent`)
+### 4. Otomatik İçerik Moderasyonu (Cloud Function `autoModerateUserContent`)
 - Kullanıcılar biyografilerini veya profil verilerini değiştirdiğinde küfür, nefret söylemi veya telefon numarası paylaşımını otomatik denetleyen Cloud Function tetikleyicisi yazıldı.
 - İhlal durumunda kullanıcı belgesi `bioFlagged: true` olarak işaretlenir ve admin moderasyon kuyruğuna otomatik eklenir.
 
-### 4. Progressive Web App (PWA) Desteği
+### 5. Progressive Web App (PWA) Desteği
 - `manifest.json` ve iOS/Android tarayıcılarında "Ana Ekrana Ekle" (Add to Home Screen) standartları tamamlandı.
 
 ---
