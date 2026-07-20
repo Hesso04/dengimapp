@@ -39,7 +39,7 @@ export default function SettingsPage() {
     const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
     const [maintenanceMessage, setMaintenanceMessage] = useState('');
     const [minVersion, setMinVersion] = useState('1.0.0');
-    const [contactEmail, setContactEmail] = useState('support@dengim.com');
+    const [contactEmail, setContactEmail] = useState('support@dengim.app');
     const [darkMode, setDarkMode] = useState(true);
 
     // Admin Management States

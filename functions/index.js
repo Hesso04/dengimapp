@@ -362,3 +362,36 @@ exports.onUserProfileUpdated = functions.firestore
     }
     return null;
   });
+
+// Auto Content Moderation Trigger
+exports.autoModerateUserContent = functions.firestore
+  .document("users/{userId}")
+  .onWrite(async (change, context) => {
+    if (!change.after.exists) return null;
+    const data = change.after.data();
+    const userId = context.params.userId;
+    const db = admin.firestore();
+
+    const bio = data.bio || "";
+    const forbiddenKeywords = ["sik", "amk", "oc", "orospu", "piç", "siktir", "whatsapp", "0532", "0533", "0541", "0542", "0555", "0505"];
+
+    const hasForbiddenWord = forbiddenKeywords.some(word => bio.toLowerCase().includes(word));
+
+    if (hasForbiddenWord && !data.bioFlagged) {
+      console.log(`Auto-moderation flagged user ${userId} bio for forbidden keywords.`);
+      await db.collection("users").doc(userId).update({
+        bioFlagged: true,
+        flaggedReason: "Otomatik AI Moderasyon: İhlal içeren kelime veya telefon numarası tespiti.",
+      });
+
+      // Add entry to pending moderation queue
+      await db.collection("reports").add({
+        reportedUserId: userId,
+        reporterId: "SYSTEM_AI_MODERATION",
+        reason: "Biyografide yasaklı kelime veya iletişim bilgisi tespiti.",
+        status: "pending",
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    }
+    return null;
+  });

@@ -5,10 +5,11 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
 const navItems = [
-    { label: 'Panel', icon: 'dashboard', href: '/' },
-    { label: 'Analiz', icon: 'analytics', href: '/analytics' },
-    { label: 'Üyeler', icon: 'group', href: '/users' },
-    { label: 'Ayarlar', icon: 'settings', href: '/settings' },
+    { label: 'Panel', icon: 'dashboard', href: '/admin' },
+    { label: 'Üyeler', icon: 'group', href: '/admin/users' },
+    { label: 'Moderasyon', icon: 'verified_user', href: '/admin/moderation' },
+    { label: 'Raporlar', icon: 'report', href: '/admin/reports' },
+    { label: 'Ayarlar', icon: 'settings', href: '/admin/settings' },
 ];
 
 export function BottomNav() {

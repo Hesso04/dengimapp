@@ -93,6 +93,25 @@ export default function UsersPage() {
         }
     };
 
+    const handleBulkAction = async (action: 'ban' | 'verify' | 'add_credits') => {
+        if (selectedUsers.length === 0) return;
+        const msg = action === 'ban' ? 'Seçili kullanıcıları engellemek istediğinize emin misiniz?' :
+                    action === 'verify' ? 'Seçili kullanıcılara Mavi Tik onayını tanımlamak ister misiniz?' :
+                    'Seçili kullanıcıların bakiyesine +50 Kredi eklemek ister misiniz?';
+        if (!confirm(msg)) return;
+
+        try {
+            for (const uid of selectedUsers) {
+                await UserService.updateUserStatus(uid, action);
+            }
+            alert(`İşlem ${selectedUsers.length} kullanıcı için başarıyla tamamlandı.`);
+            setSelectedUsers([]);
+            fetchUsers();
+        } catch (e) {
+            alert('Toplu işlem sırasında hata oluştu.');
+        }
+    };
+
     // Pending verifications (gerçek veriden türetiliyor)
     const pendingVerifications = users.filter(u => !u.isVerified && u.photos && u.photos.length > 0).slice(0, 5);
 
@@ -224,6 +243,30 @@ export default function UsersPage() {
                     )}
                 </main>
                 <BottomNav />
+
+                {/* Floating Bulk Action Bar */}
+                {selectedUsers.length > 0 && (
+                    <div className="fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 z-40 bg-zinc-950/90 backdrop-blur-xl border border-primary/30 px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-4 animate-slide-up">
+                        <span className="text-xs font-bold text-white whitespace-nowrap">
+                            <span className="text-primary font-extrabold">{selectedUsers.length}</span> kullanıcı seçildi
+                        </span>
+                        <div className="h-4 w-px bg-white/10" />
+                        <div className="flex items-center gap-2">
+                            <Button size="sm" variant="ghost" onClick={() => handleBulkAction('verify')} className="text-xs text-emerald-400 hover:text-emerald-300">
+                                Mavi Tik Ver
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => handleBulkAction('add_credits')} className="text-xs text-amber-400 hover:text-amber-300">
+                                +50 Kredi
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => handleBulkAction('ban')} className="text-xs text-rose-500 hover:text-rose-400">
+                                Engelle
+                            </Button>
+                            <button onClick={() => setSelectedUsers([])} className="text-zinc-500 hover:text-white text-xs ml-2">
+                                İptal
+                            </button>
+                        </div>
+                    </div>
+                )}
 
                 {/* Edit Modal */}
                 {showUserModal && editingUser && (

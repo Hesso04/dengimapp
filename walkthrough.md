@@ -1,6 +1,6 @@
-# 🔐 DENGİM — Güvenlik, Altyapı, Performans, Branding ve Yeni Sürüm Raporu
+# 🔐 DENGİM — Güvenlik, Altyapı, Performans, Branding, Mobil Admin & Son Güncelleme Raporu
 
-Dengim projesi için planlanan **tüm kritik güvenlik, altyapı, performans, CI/CD, Web/Admin Panel markalaşma, Hesap Dondurma, Ses Odaları Heartbeat özellikleri** ile **1.0.3+10 Sürümü** başarıyla tamamlanıp uzak depoya (main branch) push edilmiştir.
+Dengim projesi için planlanan **tüm mobil tasarım düzeltmeleri, Admin Panel mobil adaptasyonu, sahte veri (mock) temizliği, canlı Firebase Firestore entegrasyonu, Deep Link profil davet sayfası, Toplu İşlem (Bulk Actions) barı, Otomatik İçerik Moderasyonu (Cloud Function) ve PWA altyapısı** ile **1.0.3+10 Sürümü** çalışmaları başarıyla tamamlanmıştır.
 
 ---
 
@@ -13,57 +13,33 @@ Dengim projesi için planlanan **tüm kritik güvenlik, altyapı, performans, CI
 
 ---
 
-## 🛠️ Tamamlanan Görevler ve Teknik Detaylar
+## 🚀 Son Güncellemede Eklenen Kritik Özellikler
 
-### 1. Agora Sertifika Güvenliği
-* **Düzeltme:** 
-  - [agora_service.dart](file:///c:/Users/pcpos/OneDrive/Desktop/Aiprojeler/dengim/dengim/lib/core/services/agora_service.dart) dosyasından sertifika ve yerel token oluşturucu kaldırıldı.
-  - [functions/index.js](file:///c:/Users/pcpos/OneDrive/Desktop/Aiprojeler/dengim/dengim/functions/index.js) dosyasına `generateAgoraToken` HTTPS Callable Cloud Function'ı eklendi.
+### 1. Paylaşılabilir Profil & Deep Link Desteği (`dengim.app/u/[username]`)
+- Kullanıcıların kendi profillerini veya arkadaş davet linklerini WhatsApp/Instagram üzerinden paylaştıklarında açılan şık web kartı tasarlandı.
+- Mobil cihazlardan tıklandığında doğrudan `dengim://user/[username]` deep link'ini tetikleyerek uygulamada profili açar.
 
-### 2. Firestore Kurallarının Sıkılaştırılması (Harden Security Rules)
-* **Düzeltme:** [firestore.rules](file:///c:/Users/pcpos/OneDrive/Desktop/Aiprojeler/dengim/dengim/firestore.rules) güncellendi:
-  - `likes`, `visitors`, `stories`, `spaces` ve `messages` koleksiyonları yetkisiz okuma/yazma girişimlerine karşı sıkılaştırıldı.
-  - **Kredi ve Premium Koruma:** Kullanıcıların kendi belgeleri altındaki `credits`, `isPremium`, `subscriptionTier` ve `role` alanlarını istemci üzerinden değiştirmeleri Firestore Rules ile kesin olarak engellendi.
+### 2. Admin Paneli Toplu İşlemler Barı (Batch Bulk Actions)
+- Kullanıcılar listesinde birden fazla kullanıcı seçildiğinde ekranın altında yüzen (floating) **Bulk Action Bar** belirmesi sağlandı.
+- Seçili kullanıcılara tek tıkla toplu Mavi Tik verme, +50 Kredi ekleme veya toplu engelleme yapılması sağlandı.
 
-### 3. Sunucu Taraflı Eşleşme (Server-side Match)
-* **Düzeltme:** İstemci tarafı match oluşturma metotları silindi. [functions/index.js](file:///c:/Users/pcpos/OneDrive/Desktop/Aiprojeler/dengim/dengim/functions/index.js) dosyasına `onSwipeCreated` Firestore tetikleyicisi yazıldı. Sunucu karşılıklı beğenileri otomatik denetler ve match/conversations kayıtlarını oluşturur.
+### 3. Otomatik İçerik Moderasyonu (Cloud Function `autoModerateUserContent`)
+- Kullanıcılar biyografilerini veya profil verilerini değiştirdiğinde küfür, nefret söylemi veya telefon numarası paylaşımını otomatik denetleyen Cloud Function tetikleyicisi yazıldı.
+- İhlal durumunda kullanıcı belgesi `bioFlagged: true` olarak işaretlenir ve admin moderasyon kuyruğuna otomatik eklenir.
 
-### 4. Güvenli Kredi Harcama Mantığı (Transaction)
-* **Düzeltme:** [credit_service.dart](file:///c:/Users/pcpos/OneDrive/Desktop/Aiprojeler/dengim/dengim/lib/core/services/credit_service.dart) dosyasındaki bakiye düşürme işlemi Firestore `runTransaction` ile atomik hale getirilerek race-condition engellendi.
+### 4. Progressive Web App (PWA) Desteği
+- `manifest.json` ve iOS/Android tarayıcılarında "Ana Ekrana Ekle" (Add to Home Screen) standartları tamamlandı.
 
-### 5. Veri Tutarlılığı ve Cascade Delete
-* **Düzeltme:** [functions/index.js](file:///c:/Users/pcpos/OneDrive/Desktop/Aiprojeler/dengim/dengim/functions/index.js) dosyasına `onUserDeleted` Firebase Auth tetikleyicisi yazıldı. Silinen kullanıcının fotoğrafları ve Firestore alt koleksiyon verileri arka planda temizlenir.
+---
 
-### 6. Crashlytics Entegrasyonu (Global Hata İzleme)
-* **Düzeltme:** `pubspec.yaml` dosyasına `firebase_crashlytics` eklendi ve [error_handler.dart](file:///c:/Users/pcpos/OneDrive/Desktop/Aiprojeler/dengim/dengim/lib/core/utils/error_handler.dart) güncellenerek tüm çökmeler ve kritik hatalar Firebase paneline bağlandı.
+## 📱 Admin Panel Mobil Uyumluluk & Canlı Veri Revizyonu
 
-### 7. Chat N+1 Sorgu Performans Çözümü
-* **Düzeltme:** Sohbet listesinde profil verileri `conversations` belgesine denormalize edildi. Profil güncellemeleri [functions/index.js](file:///c:/Users/pcpos/OneDrive/Desktop/Aiprojeler/dengim/dengim/functions/index.js) trigger'ı ile sohbet belgelerine anlık senkronize edilir.
+### 1. Sahte Veri (Mock Data) Temizliği & Canlı Firebase Bağlantısı
+- `mockData.ts` dosyasındaki statik sahte veriler pasifleştirilmiş ve boş varsayılanlara (empty defaults) çekilmiştir.
+- Admin Panelindeki kullanıcı listesi, şikayetler, fotoğraf onayları, destek biletleri, duyurular ve ayarlar doğrudan **canlı Firebase Firestore veritabanına** (`users`, `reports`, `verification_requests`, `support_tickets`, `system/config`) bağlanmıştır.
 
-### 8. İstemci Tarafında Fotoğraf Sıkıştırma (Compress & Optimize)
-* **Düzeltme:** [cloudinary_service.dart](file:///c:/Users/pcpos/OneDrive/Desktop/Aiprojeler/dengim/dengim/lib/core/services/cloudinary_service.dart) içinde fotoğraflar Cloudinary'ye yüklenmeden önce istemci tarafında JPEG %80 oranında sıkıştırılmaktadır.
-
-### 9. Local ve CI/CD Android Derleme Sorunlarının Çözülmesi
-* **Düzeltmeler:**
-  - [build.gradle.kts](file:///c:/Users/pcpos/OneDrive/Desktop/Aiprojeler/dengim/dengim/android/app/build.gradle.kts) dosyasına UTF-8 encoding kuralı eklendi.
-  - [flutter-ci.yml](file:///c:/Users/pcpos/OneDrive/Desktop/Aiprojeler/dengim/dengim/.github/workflows/flutter-ci.yml) dosyasındaki APK artifact yükleme yolları güncellendi. (Not: v1.0.4 aşamasında mobil CI tamamen kaldırılarak sadece web deploy odaklı yapıya geçilmiştir).
-
-### 10. Web ve Admin Panel Markalaşma, Happn Tarzı Yeniden Tasarım, SEO & Google Search Console
-* **Düzeltmeler:**
-  - **Happn Tarzı Yeniden Tasarım (`page.tsx`):** `dengim.app` ana sayfası Happn estetiğinde, tam ekran Hero, degrade aydınlatmalı 3D mockup, interaktif ses dalgası animasyonları, dual language (TR/EN) dil desteği ve şık çerez banner'ı ile tamamen sıfırdan yazıldı.
-  - **Yasal Metinler ve Koyu Tema:** `/privacy` ve `/terms` sayfaları modern koyu temaya geçirildi, v1.0.4 özellikleri ile senkronize edildi ve TR/EN dinamik dil butonu entegre edildi.
-  - **Favicon Onarımı (Statik Export Uyumluluğu):** Next.js statik export yapısı (`output: export`) ile uyumsuz olan dinamik `icon.tsx` silinip, yerine static HTML head etiketine `<link rel="icon" href="/favicon.ico" />` ve Apple touch icon yolları eklenerek Vercel build hataları tamamen giderildi.
-  - **E-posta Güncellemeleri:** Tüm yasal referanslar, default config alanları ve footer e-postaları yeni resmi e-posta adresi olan **`support@dengim.app`** ile değiştirildi.
-  - **Google Search Console Doğrulaması:** `dengim.app` web sitesi mülk sahipliğini doğrulamak için hem HTML dosyası `public/` klasörüne eklendi hem de meta verification kodu root layout'a entegre edildi.
-
-### 11. Sohbet İletildi / Okundu (Çift Tik) Durumlarının Çözülmesi
-* **Düzeltmeler:** FCM payload'una `messageId` eklendi. [main.dart](file:///c:/Users/pcpos/OneDrive/Desktop/Aiprojeler/dengim/dengim/lib/main.dart) içindeki `_firebaseMessagingBackgroundHandler` güncellenerek, arka planda veya kapalıyken bildirim ulaştığında Firestore üzerindeki ilgili mesaj `isDelivered: true` yapılır ve **çift gri tik** görünmesi sağlanır.
-
-### 12. Hesap Dondurma (Freeze Account) Özelliği
-* **Düzeltmeler:** [user_profile.dart](file:///c:/Users/pcpos/OneDrive/Desktop/Aiprojeler/dengim/dengim/lib/features/auth/models/user_profile.dart) modeline `isFrozen` eklendi, keşfet havuzundan filtrelendi ve [settings_screen.dart](file:///c:/Users/pcpos/OneDrive/Desktop/Aiprojeler/dengim/dengim/lib/features/profile/settings_screen.dart) Gizlilik başlığı altına "Hesabımı Dondur" switch/ayar seçeneği entegre edildi.
-
-### 13. Ses Odaları (Spaces) Heartbeat Yönetimi
-* **Düzeltmeler:** [space_provider.dart](file:///c:/Users/pcpos/OneDrive/Desktop/Aiprojeler/dengim/dengim/lib/features/spaces/providers/space_provider.dart) güncellendi. Host bir oda açtığında periyodik bir `Timer` ile her 30 saniyede bir odaya ait `updatedAt` timestamp bilgisi güncellenmektedir. Sona eren hayalet odaların tespiti sağlanmıştır.
+### 2. Mobil Alt Navigasyon (BottomNav) Rota Düzeltmeleri
+- Mobilde `BottomNav` yönlendirmeleri `/admin`, `/admin/users`, `/admin/moderation`, `/admin/reports` ve `/admin/settings` olarak düzeltilmiştir.
 
 ---
 
