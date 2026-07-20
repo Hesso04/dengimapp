@@ -219,12 +219,9 @@ class _WatchAndEarnScreenState extends State<WatchAndEarnScreen>
         centerTitle: true,
         backgroundColor: const Color(0xFF121418),
         elevation: 0,
-        leading: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: _buildCircleButton(
-            icon: Icons.arrow_back_ios_new,
-            onTap: () => Navigator.pop(context),
-          ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+          onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'İZLE & KAZAN',

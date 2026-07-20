@@ -49,7 +49,7 @@ class _CreateGroupChatScreenState extends State<CreateGroupChatScreen> {
       for (var doc in usersSnap.docs) {
         if (doc.id != currentUserId) {
           final data = doc.data();
-          users.push({
+          users.add({
             'id': doc.id,
             'name': data['name'] ?? data['fullName'] ?? 'Dengim Kullanıcısı',
             'avatar': (data['photoUrls'] as List?)?.firstOrNull ?? data['imageUrl'] ?? '',
@@ -143,7 +143,7 @@ class _CreateGroupChatScreenState extends State<CreateGroupChatScreen> {
                         'GRUP BİLGİLERİ',
                         style: GoogleFonts.manrope(
                           color: AppColors.primary,
-                          fontWeight: FontWeight.extrabold,
+                          fontWeight: FontWeight.w800,
                           fontSize: 11,
                           letterSpacing: 1.2,
                         ),
@@ -270,7 +270,7 @@ class _CreateGroupChatScreenState extends State<CreateGroupChatScreen> {
                             )
                           : Text(
                               'GRUP SOHBETİ BAŞLAT',
-                              style: GoogleFonts.manrope(fontWeight: FontWeight.extrabold, fontSize: 15),
+                              style: GoogleFonts.manrope(fontWeight: FontWeight.w800, fontSize: 15),
                             ),
                     ),
                   ),
