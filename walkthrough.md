@@ -1,6 +1,6 @@
 # 🔐 DENGİM — Güvenlik, Altyapı, Performans, Branding, Mobil Admin & Son Güncelleme Raporu
 
-Dengim projesi için planlanan **tüm mobil tasarım düzeltmeleri, Admin Panel mobil adaptasyonu, sahte veri (mock) temizliği, canlı Firebase Firestore entegrasyonu, Deep Link profil davet sayfası, Toplu İşlem (Bulk Actions) barı, Otomatik İçerik Moderasyonu (Cloud Function), PWA altyapısı ve GitHub Pages Statik Derleme Onarımları** başarıyla tamamlanmış ve uzak depoya (main branch) push edilmiştir.
+Dengim projesi için planlanan **tüm mobil tasarım düzeltmeleri, Admin Panel mobil adaptasyonu, sahte veri (mock) temizliği, canlı Firebase Firestore entegrasyonu, Deep Link profil davet sayfası, Toplu İşlem (Bulk Actions) barı, Otomatik İçerik Moderasyonu (Cloud Function), PWA altyapısı ve Next.js 16 App Router Derleme Onarımları** başarıyla tamamlanmış ve uzak depoya (main branch) push edilmiştir.
 
 ---
 
@@ -13,10 +13,11 @@ Dengim projesi için planlanan **tüm mobil tasarım düzeltmeleri, Admin Panel 
 
 ---
 
-## 🚀 Son Güncellemede Eklenen Kritik Özellikler & GitHub Pages Onarımı
+## 🚀 Son Güncellemede Eklenen Kritik Özellikler & Next.js 16 App Router Onarımı
 
-### 1. GitHub Pages Statik Derleme Onarımı (`output: export`)
-- GitHub Pages sunucunuzun (`gh-pages.yml`) Next.js `next build` sırasında dinamik rotalardan (`u/[username]`) dolayı derleme hatası fırlatması engellendi. `generateStaticParams()` ihracı ve `eslint.ignoreDuringBuilds` eklendi.
+### 1. Next.js 16 App Router & Statik Derleme Onarımı (`generateStaticParams`)
+- Next.js 16 App Router kuralları gereği `'use client'` ile `generateStaticParams()` bir arada kullanılamaz. `u/[username]/page.tsx` rotası saf **Server Component** mimarisine geçirildi, istemci bileşeni ise `UserPublicProfileClient.tsx` alt bileşenine ayrıştırıldı.
+- `next.config.ts` dosyasındaki eski `eslint` seçeneği temizlendi.
 
 ### 2. Paylaşılabilir Profil & Deep Link Desteği (`dengim.app/u/[username]`)
 - Kullanıcıların kendi profillerini veya arkadaş davet linklerini WhatsApp/Instagram üzerinden paylaştıklarında açılan şık web kartı tasarlandı.
