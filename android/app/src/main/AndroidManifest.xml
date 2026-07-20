@@ -46,10 +46,13 @@
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="ca-app-pub-6698554585648483~4550653207"/>
 
-        <!-- Firebase Push Notification Icon Config -->
+        <!-- Firebase Push Notification Icon & Channel Config -->
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_icon"
             android:resource="@drawable/ic_stat_name" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="dengim_messages_channel" />
 
         <!-- Facebook Login Meta-data & Activities -->
         <meta-data android:name="com.facebook.sdk.ApplicationId" android:value="@string/facebook_app_id"/>

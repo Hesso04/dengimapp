@@ -70,7 +70,7 @@ class _PremiumOfferScreenState extends State<PremiumOfferScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFF090A0C),
       body: Stack(
         children: [
           SafeArea(

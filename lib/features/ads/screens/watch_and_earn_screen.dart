@@ -121,9 +121,9 @@ class _WatchAndEarnScreenState extends State<WatchAndEarnScreen>
         child: Container(
           padding: const EdgeInsets.all(32),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: const Color(0xFF121418),
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
+            border: Border.all(color: Colors.white10, width: 1.0),
             boxShadow: [AppColors.neoShadowSmall],
           ),
           child: Column(
@@ -214,22 +214,25 @@ class _WatchAndEarnScreenState extends State<WatchAndEarnScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFF090A0C),
       appBar: AppBar(
         centerTitle: true,
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFF121418),
         elevation: 0,
-        leading: IconButton(
-          onPressed: () => Navigator.pop(context),
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
+        leading: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: _buildCircleButton(
+            icon: Icons.arrow_back_ios_new,
+            onTap: () => Navigator.pop(context),
+          ),
         ),
         title: Text(
           'İZLE & KAZAN',
           style: GoogleFonts.outfit(
-            fontSize: 24,
+            fontSize: 20,
             fontWeight: FontWeight.w900,
-            color: Colors.black,
-            letterSpacing: -1,
+            color: Colors.white,
+            letterSpacing: -0.5,
           ),
         ),
         bottom: PreferredSize(

@@ -8,6 +8,7 @@ import '../../../core/providers/user_provider.dart';
 import '../../../core/providers/discovery_provider.dart';
 import 'advanced_filters_modal.dart';
 import 'filter_bottom_sheet.dart';
+import '../../profile/profile_screen.dart';
 
 class DiscoverHeader extends StatelessWidget {
   final bool showSearchBar;
@@ -49,22 +50,9 @@ class DiscoverHeader extends StatelessWidget {
                   return GestureDetector(
                     onTap: () {
                       HapticFeedback.lightImpact();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            'Profilini görmek için Profil sekmesine git!',
-                            style: GoogleFonts.outfit(
-                              fontWeight: FontWeight.w500,
-                              color: Colors.white,
-                            ),
-                          ),
-                          backgroundColor: AppColors.primary,
-                          behavior: SnackBarBehavior.floating,
-                          duration: const Duration(seconds: 2),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(AppColors.neoRadiusSmall),
-                          ),
-                        ),
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const ProfileScreen()),
                       );
                     },
                     child: Container(

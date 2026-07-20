@@ -53,10 +53,10 @@ class _BlockedUsersScreenState extends State<BlockedUsersScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFF121418),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(24),
-          side: BorderSide(color: Color(0xFFEEEEEE), width: 1.0),
+          side: const BorderSide(color: Colors.white10, width: 1.0),
         ),
         title: Text(
           'ENGELİ KALDIR?',
@@ -116,14 +116,14 @@ class _BlockedUsersScreenState extends State<BlockedUsersScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.scaffold,
+      backgroundColor: const Color(0xFF090A0C),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFF121418),
         elevation: 0,
         centerTitle: true,
-        shape: Border(bottom: BorderSide(color: Color(0xFFEEEEEE), width: 1.0)),
+        shape: const Border(bottom: BorderSide(color: Colors.white10, width: 1.0)),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black, size: 20),
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -132,7 +132,7 @@ class _BlockedUsersScreenState extends State<BlockedUsersScreen> {
             fontSize: 20,
             fontWeight: FontWeight.w900,
             letterSpacing: -0.5,
-            color: Colors.black,
+            color: Colors.white,
           ),
         ),
       ),

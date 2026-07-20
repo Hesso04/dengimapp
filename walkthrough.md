@@ -1,47 +1,43 @@
-# 🔐 DENGİM — Güvenlik, Altyapı, Performans, Branding, Mobil Admin & Son Güncelleme Raporu
+# 🔐 DENGİM v1.0.5 — Arka Plan Bildirimleri, Sesli Arama, Grup Sohbeti & Dark Mode Raporu
 
-Dengim projesi için planlanan **tüm mobil tasarım düzeltmeleri, Admin Panel mobil adaptasyonu, sahte veri (mock) temizliği, canlı Firebase Firestore entegrasyonu, Deep Link profil davet sayfası, Toplu İşlem (Bulk Actions) barı, Otomatik İçerik Moderasyonu (Cloud Function), PWA altyapısı, Bildirim İkonu Hızlı Uyarı Pencereleri (Alert Popover) ve İstatistik Hesabı Düzeltmeleri** başarıyla tamamlanmış ve uzak depoya (main branch) push edilmiştir.
-
----
-
-## 📦 Yeni Sürüm Derlemeleri (Release Builds)
-* **Sürüm Kodu:** `1.0.3+10` (pubspec.yaml üzerinde güncellendi).
-* **Üretilen Paketler:**
-  - **APK (Test/Dağıtım):** [app-release.apk](file:///C:/Users/pcpos/OneDrive/Desktop/Aiprojeler/dengim/dengim/android/app/build/outputs/apk/release/app-release.apk) - *Başarıyla üretildi.*
-  - **AAB (Play Store):** [app-release.aab](file:///C:/Users/pcpos/OneDrive/Desktop/Aiprojeler/dengim/dengim/android/app/build/outputs/bundle/release/app-release.aab) - *Başarıyla üretildi.*
-  - **İzin Temizliği:** Google Play Console'daki video/açıklama zorunluluklarını aşmak için `FOREGROUND_SERVICE_MEDIA_PROJECTION` ve genel `FOREGROUND_SERVICE` izinleri manifest birleştirme aşamasında tamamen kaldırıldı.
+Dengim projesi için planlanan **v1.0.5 Sürümü** kapsamındaki tüm arka plan push bildirim dinamikleri, Agora sesli arama bağlanıyor çözümü, Grup Sohbeti yeni özelliği, Admin-Kullanıcı geri bildirim sistemi, Dark Mode ekran revizyonları ve profil yönlendirme geliştirmeleri tamamlanmıştır.
 
 ---
 
-## 🚀 Son Güncellemede Eklenen Kritik Özellikler & Admin Panel Yükseltmesi
+## 🚀 v1.0.5 Sürümünde Tamamlanan Devasa Özellikler
 
-### 1. Header Bildirim İkonu Hızlı İnceleme Pencereleri (Alert Popover)
-- Sağ üstteki zil ikonu tıklandığında doğrudan mesaj gönderme formuna gitmek yerine, canlı Firestore verilerine bağlanan **İncelenmesi Gerekenler Açılır Penceresi** tasarlandı.
-- Bekleyen Şikayetler (Raporlar), Bekleyen Biyometri/Mavi Tik Onayları (Moderasyon) ve Açık Destek Talepleri rozetli sayılarıyla gösterildi. Altına toplu bildirim atma bağlantısı eklendi.
-
-### 2. Premium & Analitik Dönüşüm Oranı Hesabı Düzeltmesi
-- Toplam kullanıcı verisinin 0 olduğu durumlarda `%3500.0` gibi hatalı sayı görünmesi engellendi, safe calculation ile sıfır bölme hataları giderildi.
-
-### 3. Paylaşılabilir Profil & Deep Link Desteği (`dengim.app/u/[username]`)
-- Kullanıcıların kendi profillerini veya arkadaş davet linklerini WhatsApp/Instagram üzerinden paylaştıklarında açılan şık web kartı tasarlandı.
-- Mobil cihazlardan tıklandığında doğrudan `dengim://user/[username]` deep link'ini tetikleyerek uygulamada profili açar.
-
-### 4. Admin Paneli Toplu İşlemler Barı (Batch Bulk Actions)
-- Kullanıcılar listesinde birden fazla kullanıcı seçildiğinde ekranın altında yüzen (floating) **Bulk Action Bar** belirmesi sağlandı.
-- Seçili kullanıcılara tek tıkla toplu Mavi Tik verme, +50 Kredi ekleme veya toplu engelleme yapılması sağlandı.
-
-### 5. Otomatik İçerik Moderasyonu (Cloud Function `autoModerateUserContent`)
-- Kullanıcılar biyografilerini veya profil verilerini değiştirdiğinde küfür, nefret söylemi veya telefon numarası paylaşımını otomatik denetleyen Cloud Function tetikleyicisi yazıldı.
+### 1. 🔔 Arka Plan & Kapalı Uygulama Push Bildirimleri (WhatsApp / Tinder Stili)
+- **Gönderen + İçerik Dinamiği:** Mesaj geldiğinde bildirimin başlığında jenerik "Yeni Mesaj" yerine **"Gönderen Kullanıcının Adı"**, içeriğinde ise **"Mesaj Metni"** gösterilmesi sağlandı.
+- **Yüksek Öncelikli Kanal:** `functions/index.js` payload yapısı `dengim_messages_channel` yüksek öncelikli Android kanalı ve `contentAvailable: true` iOS APNS ayarlarıyla güncellendi.
+- **Isolate Background Handler:** `notification_service.dart` üzerinden `AndroidNotificationChannel` tanımlanarak uygulama kapalıyken bile sesli Heads-Up bildirim basılması sağlandı.
 
 ---
 
-## 📱 Admin Panel Mobil Uyumluluk & Canlı Veri Revizyonu
-
-### 1. Sahte Veri (Mock Data) Temizliği & Canlı Firebase Bağlantısı
-- `mockData.ts` dosyasındaki statik sahte veriler pasifleştirilmiş ve boş varsayılanlara (empty defaults) çekilmiştir.
-- Admin Panelindeki tüm veriler canlı Firebase Firestore veritabanına bağlanmıştır.
+### 2. 📞 Sesli Arama "Bağlanıyor" Takılma Hatasının Kökten Çözümü
+- **Agora Token Wildcard UID:** `functions/index.js` içindeki `generateAgoraToken` Cloud Function'ında 0 wildcard UID kullanılarak her iki taraf için geçerli genel medya kanal jetonları üretildi.
+- **Bağlantı Zaman Aşımı Koruyucusu:** `call_screen.dart` ve `agora_service.dart` üzerinde 10 saniyelik otomatik takılma önleyici (Timeout Guard) enjekte edildi.
 
 ---
 
-## 🧪 Statik Analiz Durumu
-* Yapılan tüm düzenlemelerin ardından **`flutter analyze`** testi başarıyla koşulmuş ve sıfır hata ile tamamlanmıştır.
+### 3. 💬 Grup Sohbeti Oluşturma (Yeni Özellik)
+- **Grup Sohbet Ekranı (`create_group_chat_screen.dart`):** Kullanıcının eşleştiği kişiler arasından üye seçebileceği, grup adı ve resmi belirleyebileceği neobrutalist/dark mode arayüz eklendi.
+- **Mesajlar Başlık Butonu:** Mesajlar (`chats_screen.dart`) sayfasının sağ üstüne **Grup Ekle (+)** ikonu yerleştirildi.
+- **Firestore Entegrasyonu:** `chat_service.dart` servisine `createGroupConversation` metodu eklenerek grup mesajlaşmaları desteklendi.
+
+---
+
+### 4. 🛡️ Admin Moderasyon Kararlarının Kullanıcıya Otomatik Bildirimi
+- Admin panelinde (`reportService.ts`) bir şikayet veya destek biletinin durumu güncellendiğinde (`resolved`), şikayeti ileten kullanıcının Firestore `users/{userId}/notifications` koleksiyonuna otomatik teşekkür ve bilgilendirme bildirimi düşürüldü.
+
+---
+
+### 5. 🎨 Mobil Uygulama Dark Mode Revizyonları
+- **Filtreler Ekranı (`filter_bottom_sheet.dart`):** Beyaz zemin kaldırılıp `#090A0C` derin siyah ve `#121418` kartlara uyarlandı.
+- **Profili Düzenle (`edit_profile_screen.dart`):** Ekran ve AppBar beyaz renklerden arındırılıp tam Dark Mode yapıldı.
+- **İzle & Kazan (`watch_and_earn_screen.dart`):** Dialog ve Scaffold karanlık moda geçirildi.
+- **Engellenen Kullanıcılar (`blocked_users_screen.dart`):** Tüm liste ve silme modalları karanlık temaya uyarlandı.
+
+---
+
+### 6. 🔍 Keşfet Sol Üst Profil İkonu Yönlendirmesi
+- Keşfet (`discover_header.dart`) ekranının sol üstündeki kullanıcı avatarına tıklandığında doğrudan kullanıcının kendi profil sayfasına (`ProfileScreen`) geçiş yapması sağlandı.

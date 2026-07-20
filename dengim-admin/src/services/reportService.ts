@@ -4,6 +4,7 @@ import {
     getDoc,
     doc,
     updateDoc,
+    addDoc,
     query,
     orderBy,
     limit,
@@ -96,15 +97,36 @@ export const ReportService = {
     updateReportStatus: async (reportId: string, status: Report['status'], resolution?: string, collectionName: string = "reports") => {
         try {
             const reportRef = doc(db, collectionName, reportId);
+            const reportSnap = await getDoc(reportRef);
+            
             await updateDoc(reportRef, {
                 status,
                 resolution,
-                resolvedAt: new Date(),
                 updatedAt: new Date()
             });
+
+            // Raporu gönderen kullanıcıya otomatik bildirim gönder
+            if (reportSnap.exists()) {
+                const reporterId = reportSnap.data().reporterId;
+                if (reporterId && reporterId !== "SYSTEM_AI_MODERATION") {
+                    try {
+                        const notifRef = collection(db, "users", reporterId, "notifications");
+                        await addDoc(notifRef, {
+                            title: "Bildiriminiz İncelendi 🛡️",
+                            body: resolution || "Göndermiş olduğunuz şikayet/rapor yöneticilerimiz tarafından incelenmiş ve gerekli aksiyon alınmıştır. Topluluk kurallarına katkınız için teşekkür ederiz!",
+                            type: "system",
+                            createdAt: new Date(),
+                            read: false
+                        });
+                    } catch (e) {
+                        console.error("Failed to notify reporter:", e);
+                    }
+                }
+            }
+
             return true;
         } catch (error) {
-            console.error("Error updating report:", error);
+            console.error("Error updating report status:", error);
             throw error;
         }
     }

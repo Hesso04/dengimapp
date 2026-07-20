@@ -518,4 +518,50 @@ class ChatService {
       LogService.e("Chat notification delivery failed", e);
     }
   }
+
+  /// Yeni Grup Sohbeti Oluştur
+  Future<String> createGroupConversation({
+    required String groupName,
+    required List<String> memberIds,
+    String? groupAvatar,
+  }) async {
+    final user = currentUser;
+    if (user == null) throw Exception("Oturum açık değil");
+
+    final docRef = _firestore.collection('conversations').doc();
+    final now = DateTime.now();
+
+    final Map<String, dynamic> userProfiles = {};
+    for (String uid in memberIds) {
+      try {
+        final uDoc = await _firestore.collection('users').doc(uid).get();
+        if (uDoc.exists) {
+          final uData = uDoc.data()!;
+          userProfiles[uid] = {
+            'name': uData['name'] ?? uData['fullName'] ?? 'Üye',
+            'avatar': (uData['photoUrls'] as List?)?.firstOrNull ?? uData['imageUrl'] ?? '',
+          };
+        }
+      } catch (e) {
+        LogService.e("Failed to load user profile for group creation: $e");
+      }
+    }
+
+    await docRef.set({
+      'isGroup': true,
+      'groupName': groupName,
+      'groupAvatar': groupAvatar ?? 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=400',
+      'adminId': user.uid,
+      'userIds': memberIds,
+      'userProfiles': userProfiles,
+      'lastMessage': '$groupName grubu oluşturuldu.',
+      'lastMessageTime': Timestamp.fromDate(now),
+      'lastSenderId': user.uid,
+      'unreadCount': { for (var id in memberIds) id : 0 },
+      'createdAt': Timestamp.fromDate(now),
+      'updatedAt': Timestamp.fromDate(now),
+    });
+
+    return docRef.id;
+  }
 }

@@ -9,8 +9,8 @@ exports.onNotificationCreated = functions.firestore
     if (!data) return null;
 
     const userId = context.params.userId;
-    const title = data.title || "Yeni Bildirim";
-    const body = data.body || "";
+    let title = data.title || "Yeni Bildirim";
+    let body = data.body || "";
     const type = data.type || "general";
     const senderId = data.senderId || "";
     const chatId = data.chatId || "";
@@ -30,7 +30,21 @@ exports.onNotificationCreated = functions.firestore
         return null;
       }
 
-      // Build payload
+      // If it's a message/chat notification, fetch sender name dynamically for WhatsApp-style notification
+      if ((type === "chat" || type === "message" || type === "chat_message") && senderId) {
+        try {
+          const senderDoc = await admin.firestore().collection("users").doc(senderId).get();
+          if (senderDoc.exists) {
+            const senderData = senderDoc.data();
+            const senderName = senderData.name || senderData.fullName || "Bir Üye";
+            title = senderName;
+          }
+        } catch (e) {
+          console.error("Error fetching sender profile for push notify:", e);
+        }
+      }
+
+      // Build FCM payload (WhatsApp / Tinder style)
       const message = {
         token: fcmToken,
         notification: {
@@ -48,6 +62,9 @@ exports.onNotificationCreated = functions.firestore
           priority: "high",
           notification: {
             sound: "default",
+            channelId: "dengim_messages_channel",
+            priority: "max",
+            visibility: "public",
           },
         },
         apns: {
@@ -55,12 +72,13 @@ exports.onNotificationCreated = functions.firestore
             aps: {
               sound: "default",
               badge: 1,
+              contentAvailable: true,
             },
           },
         },
       };
 
-      // Send via Firebase Admin SDK (V1 API compatible)
+      // Send via Firebase Admin SDK
       const response = await admin.messaging().send(message);
       console.log("Successfully sent push notification to:", userId, "responseId:", response);
       return response;
@@ -84,7 +102,7 @@ exports.generateAgoraToken = functions.https.onCall((data, context) => {
   }
 
   const channelName = data.channelName;
-  const uid = data.uid || 0;
+  const uid = 0; // Use 0 as wildcard UID for general channel access
   const role = data.role === "publisher" ? RtcRole.PUBLISHER : RtcRole.SUBSCRIBER;
 
   if (!channelName) {
@@ -94,7 +112,7 @@ exports.generateAgoraToken = functions.https.onCall((data, context) => {
     );
   }
 
-  const expirationTimeInSeconds = 3600; // 1 saat gecerli
+  const expirationTimeInSeconds = 86400; // 24 saat gecerli
   const currentTimestamp = Math.floor(Date.now() / 1000);
   const privilegeExpiredTs = currentTimestamp + expirationTimeInSeconds;
 

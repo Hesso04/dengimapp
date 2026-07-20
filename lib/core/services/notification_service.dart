@@ -36,6 +36,21 @@ class NotificationService {
           _handleNotificationClick(response.payload);
         },
       );
+
+      // Create Android Notification Channel for High Priority Messages
+      const AndroidNotificationChannel channel = AndroidNotificationChannel(
+        'dengim_messages_channel',
+        'Mesaj ve Sohbet Bildirimleri',
+        description: 'Anlık mesajlaşma ve bildirim ulaşımları için yüksek öncelikli kanal',
+        importance: Importance.max,
+        playSound: true,
+        enableVibration: true,
+      );
+
+      final FlutterLocalNotificationsPlugin localPlugin = _localNotifications;
+      await localPlugin
+          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+          ?.createNotificationChannel(channel);
     }
 
     // 2. Request Permissions

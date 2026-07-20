@@ -102,9 +102,9 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
     return Container(
       height: MediaQuery.of(context).size.height * 0.9,
       decoration: const BoxDecoration(
-        color: Colors.white,
+        color: Color(0xFF090A0C),
         borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-        border: Border(top: BorderSide(color: Color(0xFFEEEEEE), width: 1.0)),
+        border: Border(top: BorderSide(color: Colors.white10, width: 1.0)),
       ),
       child: Stack(
         children: [
@@ -113,8 +113,8 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
               // Header
               Container(
                 padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
-                decoration: BoxDecoration(
-                  border: Border(bottom: BorderSide(color: Color(0xFFEEEEEE), width: 1.0)),
+                decoration: const BoxDecoration(
+                  border: Border(bottom: BorderSide(color: Colors.white10, width: 1.0)),
                 ),
                 child: Row(
                   children: [
@@ -129,7 +129,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                           style: GoogleFonts.outfit(
                             fontSize: 20,
                             fontWeight: FontWeight.w900,
-                            color: Colors.black,
+                            color: Colors.white,
                             letterSpacing: -0.5,
                           ),
                         ),

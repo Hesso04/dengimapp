@@ -279,9 +279,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFF090A0C),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFF121418),
         elevation: 0,
         leading: Padding(
           padding: const EdgeInsets.all(8.0),
@@ -299,7 +299,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           style: GoogleFonts.outfit(
             fontSize: 16,
             fontWeight: FontWeight.w900,
-            color: Colors.black,
+            color: Colors.white,
             letterSpacing: -0.5,
           ),
         ),

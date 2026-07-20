@@ -7,6 +7,7 @@ import 'models/chat_models.dart';
 import 'widgets/chat_widgets.dart';
 import 'services/chat_service.dart';
 import 'screens/chat_detail_screen.dart';
+import 'screens/create_group_chat_screen.dart';
 
 import 'package:provider/provider.dart';
 import '../../core/providers/chat_provider.dart';
@@ -196,6 +197,14 @@ class _ChatsScreenState extends State<ChatsScreen> {
                 ),
               ),
               const Spacer(),
+              _buildIconButton(Icons.group_add_rounded, () {
+                HapticFeedback.lightImpact();
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const CreateGroupChatScreen()),
+                );
+              }),
+              const SizedBox(width: 8),
               _buildIconButton(Icons.more_vert_rounded, () {
                 HapticFeedback.lightImpact();
               }),
