@@ -3,7 +3,9 @@
 import { useParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
+export async function generateStaticParams() {
+    return [{ username: 'user' }, { username: 'demo' }];
+}
 
 export default function UserPublicProfilePage() {
     const params = useParams();
