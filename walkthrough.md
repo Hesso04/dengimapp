@@ -1,6 +1,6 @@
 # 🔐 DENGİM — Güvenlik, Altyapı, Performans, Branding, Mobil Admin & Son Güncelleme Raporu
 
-Dengim projesi için planlanan **tüm mobil tasarım düzeltmeleri, Admin Panel mobil adaptasyonu, sahte veri (mock) temizliği, canlı Firebase Firestore entegrasyonu, Deep Link profil davet sayfası, Toplu İşlem (Bulk Actions) barı, Otomatik İçerik Moderasyonu (Cloud Function), PWA altyapısı ve Next.js 16 App Router Derleme Onarımları** başarıyla tamamlanmış ve uzak depoya (main branch) push edilmiştir.
+Dengim projesi için planlanan **tüm mobil tasarım düzeltmeleri, Admin Panel mobil adaptasyonu, sahte veri (mock) temizliği, canlı Firebase Firestore entegrasyonu, Deep Link profil davet sayfası, Toplu İşlem (Bulk Actions) barı, Otomatik İçerik Moderasyonu (Cloud Function), PWA altyapısı, Bildirim İkonu Hızlı Uyarı Pencereleri (Alert Popover) ve İstatistik Hesabı Düzeltmeleri** başarıyla tamamlanmış ve uzak depoya (main branch) push edilmiştir.
 
 ---
 
@@ -13,26 +13,25 @@ Dengim projesi için planlanan **tüm mobil tasarım düzeltmeleri, Admin Panel 
 
 ---
 
-## 🚀 Son Güncellemede Eklenen Kritik Özellikler & Next.js 16 App Router Onarımı
+## 🚀 Son Güncellemede Eklenen Kritik Özellikler & Admin Panel Yükseltmesi
 
-### 1. Next.js 16 App Router & Statik Derleme Onarımı (`generateStaticParams`)
-- Next.js 16 App Router kuralları gereği `'use client'` ile `generateStaticParams()` bir arada kullanılamaz. `u/[username]/page.tsx` rotası saf **Server Component** mimarisine geçirildi, istemci bileşeni ise `UserPublicProfileClient.tsx` alt bileşenine ayrıştırıldı.
-- `next.config.ts` dosyasındaki eski `eslint` seçeneği temizlendi.
+### 1. Header Bildirim İkonu Hızlı İnceleme Pencereleri (Alert Popover)
+- Sağ üstteki zil ikonu tıklandığında doğrudan mesaj gönderme formuna gitmek yerine, canlı Firestore verilerine bağlanan **İncelenmesi Gerekenler Açılır Penceresi** tasarlandı.
+- Bekleyen Şikayetler (Raporlar), Bekleyen Biyometri/Mavi Tik Onayları (Moderasyon) ve Açık Destek Talepleri rozetli sayılarıyla gösterildi. Altına toplu bildirim atma bağlantısı eklendi.
 
-### 2. Paylaşılabilir Profil & Deep Link Desteği (`dengim.app/u/[username]`)
+### 2. Premium & Analitik Dönüşüm Oranı Hesabı Düzeltmesi
+- Toplam kullanıcı verisinin 0 olduğu durumlarda `%3500.0` gibi hatalı sayı görünmesi engellendi, safe calculation ile sıfır bölme hataları giderildi.
+
+### 3. Paylaşılabilir Profil & Deep Link Desteği (`dengim.app/u/[username]`)
 - Kullanıcıların kendi profillerini veya arkadaş davet linklerini WhatsApp/Instagram üzerinden paylaştıklarında açılan şık web kartı tasarlandı.
 - Mobil cihazlardan tıklandığında doğrudan `dengim://user/[username]` deep link'ini tetikleyerek uygulamada profili açar.
 
-### 3. Admin Paneli Toplu İşlemler Barı (Batch Bulk Actions)
+### 4. Admin Paneli Toplu İşlemler Barı (Batch Bulk Actions)
 - Kullanıcılar listesinde birden fazla kullanıcı seçildiğinde ekranın altında yüzen (floating) **Bulk Action Bar** belirmesi sağlandı.
 - Seçili kullanıcılara tek tıkla toplu Mavi Tik verme, +50 Kredi ekleme veya toplu engelleme yapılması sağlandı.
 
-### 4. Otomatik İçerik Moderasyonu (Cloud Function `autoModerateUserContent`)
+### 5. Otomatik İçerik Moderasyonu (Cloud Function `autoModerateUserContent`)
 - Kullanıcılar biyografilerini veya profil verilerini değiştirdiğinde küfür, nefret söylemi veya telefon numarası paylaşımını otomatik denetleyen Cloud Function tetikleyicisi yazıldı.
-- İhlal durumunda kullanıcı belgesi `bioFlagged: true` olarak işaretlenir ve admin moderasyon kuyruğuna otomatik eklenir.
-
-### 5. Progressive Web App (PWA) Desteği
-- `manifest.json` ve iOS/Android tarayıcılarında "Ana Ekrana Ekle" (Add to Home Screen) standartları tamamlandı.
 
 ---
 
@@ -40,10 +39,7 @@ Dengim projesi için planlanan **tüm mobil tasarım düzeltmeleri, Admin Panel 
 
 ### 1. Sahte Veri (Mock Data) Temizliği & Canlı Firebase Bağlantısı
 - `mockData.ts` dosyasındaki statik sahte veriler pasifleştirilmiş ve boş varsayılanlara (empty defaults) çekilmiştir.
-- Admin Panelindeki kullanıcı listesi, şikayetler, fotoğraf onayları, destek biletleri, duyurular ve ayarlar doğrudan **canlı Firebase Firestore veritabanına** (`users`, `reports`, `verification_requests`, `support_tickets`, `system/config`) bağlanmıştır.
-
-### 2. Mobil Alt Navigasyon (BottomNav) Rota Düzeltmeleri
-- Mobilde `BottomNav` yönlendirmeleri `/admin`, `/admin/users`, `/admin/moderation`, `/admin/reports` ve `/admin/settings` olarak düzeltilmiştir.
+- Admin Panelindeki tüm veriler canlı Firebase Firestore veritabanına bağlanmıştır.
 
 ---
 
