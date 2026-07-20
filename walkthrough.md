@@ -50,10 +50,12 @@ Dengim projesi için planlanan **tüm kritik güvenlik, altyapı, performans, CI
 
 ### 10. Web ve Admin Panel Markalaşma, SEO & Google Search Console
 * **Düzeltmeler:**
-  - **Dinamik Favicon Entegrasyonu:** `public/favicon.ico` dosyasının **435 KB** gibi devasa bir boyutta olması nedeniyle yaşanan tarayıcı yükleme sorunları, Next.js dynamic image generation kullanan lightweight **`icon.tsx`** generator'ı (sadece 2 KB) yazılarak tamamen çözüldü.
+  - **Favicon Onarımı (Statik Export Uyumluluğu):** Next.js statik export yapısı (`output: export`) ile uyumsuz olan dinamik `icon.tsx` silinip, yerine static HTML head etiketine `<link rel="icon" href="/favicon.ico" />` ve Apple touch icon yolları eklenerek Vercel build hataları tamamen giderildi.
+  - **Login Sayfası:** Resmi logo yerleştirildi ve başlık "DENGİM Dating Admin Portal" olarak güncellendi.
+  - **Sidebar Menüsü:** Dairesel simge eklendi ve marka adı "DENGİM Dating" olarak değiştirildi. Yönlendirme `/admin` rotasına bağlandı.
   - **Site Başlığı:** [admin/layout.tsx](file:///c:/Users/pcpos/OneDrive/Desktop/Aiprojeler/dengim/dengim/dengim-admin/src/app/admin/layout.tsx) güncellenerek başlık **"DENGİM - Yönetim Paneli"** yapıldı.
   - **E-posta Güncellemeleri:** Tüm yasal referanslar, default config alanları ve footer e-postaları yeni resmi e-posta adresi olan **`support@dengim.app`** ile değiştirildi.
-  - **Google Search Console Doğrulaması:** `dengim.app` web sitesi sahipliğini doğrulamak için Google'ın verdiği HTML doğrulama dosyası ile `<meta name="google-site-verification" ... />` doğrulama etiketi `layout.tsx` şablonuna başarıyla entegre edildi.
+  - **Google Search Console Doğrulaması:** `dengim.app` web sitesi mülk sahipliğini doğrulamak için hem HTML dosyası `public/` klasörüne eklendi hem de meta verification kodu root layout'a entegre edildi.
 
 ### 11. Sohbet İletildi / Okundu (Çift Tik) Durumlarının Çözülmesi
 * **Düzeltmeler:** FCM payload'una `messageId` eklendi. [main.dart](file:///c:/Users/pcpos/OneDrive/Desktop/Aiprojeler/dengim/dengim/lib/main.dart) içindeki `_firebaseMessagingBackgroundHandler` güncellenerek, arka planda veya kapalıyken bildirim ulaştığında Firestore üzerindeki ilgili mesaj `isDelivered: true` yapılır ve **çift gri tik** görünmesi sağlanır.
