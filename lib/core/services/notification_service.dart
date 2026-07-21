@@ -171,11 +171,14 @@ class NotificationService {
 
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
-      'dengim_match_channel',
-      'Dengim Eşleşmeler',
+      'dengim_messages_channel',
+      'Mesaj ve Sohbet Bildirimleri',
+      channelDescription: 'Anlık mesajlaşma ve bildirim ulaşımları için yüksek öncelikli kanal',
       importance: Importance.max,
       priority: Priority.high,
       icon: '@drawable/ic_stat_name',
+      playSound: true,
+      enableVibration: true,
       showWhen: true,
     );
     const NotificationDetails platformChannelSpecifics =

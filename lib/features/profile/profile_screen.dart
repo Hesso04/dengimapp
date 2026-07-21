@@ -712,30 +712,58 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildPremiumBadge(String tier) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final isPlatinum = tier == 'platinum';
+    final isPlatinum = tier.toLowerCase() == 'platinum';
+
+    final gradientColors = isPlatinum
+        ? [const Color(0xFFE5E4E2), const Color(0xFFB4B4B4), const Color(0xFF708090)]
+        : [const Color(0xFFFFD700), const Color(0xFFFFA500)];
+
+    final badgeLabel = isPlatinum ? 'PLATINUM' : 'GOLD';
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: isPlatinum ? Colors.white : AppColors.primary,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: isDark ? Colors.white10 : const Color(0xFFEEEEEE), width: 1.0),
-        boxShadow: isDark ? [] : [AppColors.neoShadowSmall],
+        color: isDark ? const Color(0xFF121418) : Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: isPlatinum ? const Color(0xFFE5E4E2) : const Color(0xFFFFD700),
+          width: 1.2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: (isPlatinum ? const Color(0xFFE5E4E2) : const Color(0xFFFFD700))
+                .withValues(alpha: isDark ? 0.25 : 0.3),
+            blurRadius: 8,
+            spreadRadius: 1,
+          ),
+        ],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            isPlatinum ? Icons.workspace_premium_rounded : Icons.star_rounded,
-            color: isDark ? Colors.white : Colors.black,
-            size: 14,
+          ShaderMask(
+            shaderCallback: (bounds) => LinearGradient(
+              colors: gradientColors,
+            ).createShader(bounds),
+            child: Icon(
+              isPlatinum ? Icons.workspace_premium_rounded : Icons.star_rounded,
+              size: 14,
+              color: Colors.white,
+            ),
           ),
           const SizedBox(width: 4),
-          Text(
-            tier.toUpperCase(),
-            style: GoogleFonts.outfit(
-              fontSize: 10,
-              fontWeight: FontWeight.w900,
-              color: isDark ? Colors.white : Colors.black,
+          ShaderMask(
+            shaderCallback: (bounds) => LinearGradient(
+              colors: gradientColors,
+            ).createShader(bounds),
+            child: Text(
+              badgeLabel,
+              style: GoogleFonts.outfit(
+                fontSize: 10,
+                fontWeight: FontWeight.w900,
+                color: Colors.white,
+                letterSpacing: 0.5,
+              ),
             ),
           ),
         ],

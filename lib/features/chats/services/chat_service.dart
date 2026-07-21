@@ -574,4 +574,28 @@ class ChatService {
 
     return docRef.id;
   }
+
+  /// Tüm sohbetleri okundu olarak işaretle
+  Future<void> markAllConversationsAsRead() async {
+    final user = currentUser;
+    if (user == null) return;
+
+    try {
+      final conversations = await _firestore
+          .collection('conversations')
+          .where('userIds', arrayContains: user.uid)
+          .get();
+
+      final batch = _firestore.batch();
+      for (var doc in conversations.docs) {
+        batch.set(doc.reference, {
+          'unreadCount': { user.uid: 0 },
+          'unreadCounts': { user.uid: 0 },
+        }, SetOptions(merge: true));
+      }
+      await batch.commit();
+    } catch (e) {
+      LogService.e("markAllConversationsAsRead error", e);
+    }
+  }
 }

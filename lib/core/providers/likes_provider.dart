@@ -9,6 +9,7 @@ import '../utils/log_service.dart';
 class LikesProvider extends ChangeNotifier {
   List<UserProfile> _matches = [];
   List<UserProfile> _likedMeUsers = [];
+  Set<String> _superLikerIds = {};
   bool _isLoading = false;
   final DiscoveryService _discoveryService = DiscoveryService();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -17,6 +18,7 @@ class LikesProvider extends ChangeNotifier {
 
   List<UserProfile> get matches => _matches;
   List<UserProfile> get likedMeUsers => _likedMeUsers;
+  Set<String> get superLikerIds => _superLikerIds;
   bool get isLoading => _isLoading;
   int get pendingLikesCount => _likedMeUsers.length;
 
@@ -25,16 +27,38 @@ class LikesProvider extends ChangeNotifier {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
 
-    // Likes stream
+    // Likes stream (In-memory sorting without Firestore composite index constraint)
     _likesSubscription?.cancel();
     _likesSubscription = _firestore
         .collection('users')
         .doc(uid)
         .collection('likes')
-        .orderBy('timestamp', descending: true)
         .snapshots()
         .listen((snapshot) async {
-      await _fetchLikedMeProfiles(snapshot.docs);
+      final sortedDocs = snapshot.docs.toList()
+        ..sort((a, b) {
+          final dataA = a.data();
+          final dataB = b.data();
+          final typeA = dataA['type'] as String? ?? 'like';
+          final typeB = dataB['type'] as String? ?? 'like';
+
+          final isSuperA = typeA == 'super_like';
+          final isSuperB = typeB == 'super_like';
+
+          // 1. Super Likes always come first at the very top!
+          if (isSuperA && !isSuperB) return -1;
+          if (!isSuperA && isSuperB) return 1;
+
+          // 2. Secondary sort: timestamp descending
+          final tA = dataA['timestamp'] as Timestamp?;
+          final tB = dataB['timestamp'] as Timestamp?;
+          if (tA == null && tB == null) return 0;
+          if (tA == null) return -1;
+          if (tB == null) return 1;
+          return tB.compareTo(tA);
+        });
+
+      await _fetchLikedMeProfiles(sortedDocs);
     }, onError: (e) {
       LogService.e("Likes stream error", e);
     });
@@ -64,9 +88,12 @@ class LikesProvider extends ChangeNotifier {
   Future<void> _fetchLikedMeProfiles(List<QueryDocumentSnapshot> likeDocs) async {
     if (likeDocs.isEmpty) {
       _likedMeUsers = [];
+      _superLikerIds = {};
       notifyListeners();
       return;
     }
+
+    final Set<String> currentSuperLikerIds = {};
 
     final likerIds = likeDocs
         .where((doc) {
@@ -76,10 +103,18 @@ class LikesProvider extends ChangeNotifier {
         .map((doc) {
           final data = doc.data() as Map<String, dynamic>;
           final fromId = data['fromUserId'] as String?;
-          return (fromId != null && fromId.isNotEmpty) ? fromId : doc.id;
+          final targetId = (fromId != null && fromId.isNotEmpty) ? fromId : doc.id;
+          
+          if (data['type'] == 'super_like') {
+            currentSuperLikerIds.add(targetId);
+          }
+          
+          return targetId;
         })
         .where((id) => id.isNotEmpty)
         .toList();
+
+    _superLikerIds = currentSuperLikerIds;
 
     if (likerIds.isEmpty) {
       _likedMeUsers = [];
@@ -87,18 +122,28 @@ class LikesProvider extends ChangeNotifier {
       return;
     }
 
-    // Profilleri getir
-    final List<UserProfile> profiles = [];
+    // Profilleri getir ve Map'e at
+    final Map<String, UserProfile> profileMap = {};
     for (var i = 0; i < likerIds.length; i += 10) {
       final chunk = likerIds.skip(i).take(10).toList();
       final snapshot = await _firestore
           .collection('users')
           .where(FieldPath.documentId, whereIn: chunk)
           .get();
-      profiles.addAll(snapshot.docs.map((doc) => UserProfile.fromMap(doc.data())));
+      for (var doc in snapshot.docs) {
+        profileMap[doc.id] = UserProfile.fromMap(doc.data());
+      }
     }
 
-    _likedMeUsers = profiles;
+    // LikerIds sırasını birebir koru (Süper beğeniler en üstte kalsın!)
+    final List<UserProfile> orderedProfiles = [];
+    for (final id in likerIds) {
+      if (profileMap.containsKey(id)) {
+        orderedProfiles.add(profileMap[id]!);
+      }
+    }
+
+    _likedMeUsers = orderedProfiles;
     notifyListeners();
   }
 

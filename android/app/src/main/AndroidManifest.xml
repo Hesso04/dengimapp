@@ -9,6 +9,8 @@
     <!-- Android 13+ için Medya İzinleri -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
     <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.VIBRATE"/>
     
     <!-- Üçüncü parti kütüphanelerin getirdiği gereksiz Ön Plan Hizmeti izinlerini zorla kaldır -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" tools:node="remove" />

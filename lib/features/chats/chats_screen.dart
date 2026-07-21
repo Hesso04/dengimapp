@@ -8,6 +8,7 @@ import 'widgets/chat_widgets.dart';
 import 'services/chat_service.dart';
 import 'screens/chat_detail_screen.dart';
 import 'screens/create_group_chat_screen.dart';
+import '../profile/blocked_users_screen.dart';
 
 import 'package:provider/provider.dart';
 import '../../core/providers/chat_provider.dart';
@@ -204,10 +205,67 @@ class _ChatsScreenState extends State<ChatsScreen> {
                   MaterialPageRoute(builder: (context) => const CreateGroupChatScreen()),
                 );
               }),
-              const SizedBox(width: 8),
-              _buildIconButton(Icons.more_vert_rounded, () {
-                HapticFeedback.lightImpact();
-              }),
+              PopupMenuButton<String>(
+                onSelected: (value) async {
+                  HapticFeedback.lightImpact();
+                  if (value == 'mark_read') {
+                    await ChatService().markAllConversationsAsRead();
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Tüm sohbetler okundu olarak işaretlendi.')),
+                      );
+                    }
+                  } else if (value == 'create_group') {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const CreateGroupChatScreen()),
+                    );
+                  } else if (value == 'blocked_users') {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const BlockedUsersScreen()),
+                    );
+                  }
+                },
+                color: isDark ? const Color(0xFF1F1F23) : Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(color: isDark ? const Color(0xFF262629) : const Color(0xFFEEEEEE)),
+                ),
+                icon: _buildIconButton(Icons.more_vert_rounded, () {}),
+                itemBuilder: (context) => [
+                  PopupMenuItem(
+                    value: 'mark_read',
+                    child: Row(
+                      children: [
+                        Icon(Icons.done_all_rounded, color: isDark ? Colors.white : Colors.black, size: 20),
+                        const SizedBox(width: 10),
+                        Text('Tümünü Okundu İşaretle', style: GoogleFonts.outfit(color: isDark ? Colors.white : Colors.black, fontSize: 13, fontWeight: FontWeight.w600)),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'create_group',
+                    child: Row(
+                      children: [
+                        Icon(Icons.group_add_rounded, color: AppColors.primary, size: 20),
+                        const SizedBox(width: 10),
+                        Text('Yeni Grup Sohbeti', style: GoogleFonts.outfit(color: isDark ? Colors.white : Colors.black, fontSize: 13, fontWeight: FontWeight.w600)),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'blocked_users',
+                    child: Row(
+                      children: [
+                        Icon(Icons.block_rounded, color: Colors.redAccent, size: 20),
+                        const SizedBox(width: 10),
+                        Text('Engellenen Kullanıcılar', style: GoogleFonts.outfit(color: isDark ? Colors.white : Colors.black, fontSize: 13, fontWeight: FontWeight.w600)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
           const SizedBox(height: 16),

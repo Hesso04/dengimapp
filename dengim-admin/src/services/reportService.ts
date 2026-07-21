@@ -9,6 +9,7 @@ import {
     orderBy,
     limit,
     where,
+    serverTimestamp,
     Timestamp as FirestoreTimestamp
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -102,7 +103,7 @@ export const ReportService = {
             await updateDoc(reportRef, {
                 status,
                 resolution,
-                updatedAt: new Date()
+                updatedAt: serverTimestamp()
             });
 
             // Raporu gönderen kullanıcıya otomatik bildirim gönder
@@ -115,8 +116,10 @@ export const ReportService = {
                             title: "Bildiriminiz İncelendi 🛡️",
                             body: resolution || "Göndermiş olduğunuz şikayet/rapor yöneticilerimiz tarafından incelenmiş ve gerekli aksiyon alınmıştır. Topluluk kurallarına katkınız için teşekkür ederiz!",
                             type: "system",
-                            createdAt: new Date(),
-                            read: false
+                            createdAt: serverTimestamp(),
+                            isRead: false,
+                            read: false,
+                            isNotified: false
                         });
                     } catch (e) {
                         console.error("Failed to notify reporter:", e);

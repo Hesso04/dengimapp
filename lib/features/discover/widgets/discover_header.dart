@@ -10,6 +10,9 @@ import 'advanced_filters_modal.dart';
 import 'filter_bottom_sheet.dart';
 import '../../profile/profile_screen.dart';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../notifications/notifications_screen.dart';
+
 class DiscoverHeader extends StatelessWidget {
   final bool showSearchBar;
   final VoidCallback onSearchToggle;
@@ -92,7 +95,7 @@ class DiscoverHeader extends StatelessWidget {
                 ),
               ),
 
-              // Sağ: İkonlar — border yok, soft fill
+              // Sağ: İkonlar (Arama, Bildirimler, Filtre)
               Row(
                 children: [
                   _buildHeaderIcon(
@@ -100,7 +103,56 @@ class DiscoverHeader extends StatelessWidget {
                     showSearchBar ? Icons.close_rounded : Icons.search_rounded,
                     onTap: onSearchToggle,
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 8),
+                  // Bildirim Merkezi Çan İkonu
+                  Consumer<UserProvider>(
+                    builder: (context, userProvider, _) {
+                      final uid = userProvider.currentUser?.uid;
+                      if (uid == null) {
+                        return _buildHeaderIcon(
+                          context,
+                          Icons.notifications_rounded,
+                          onTap: () => _openNotifications(context),
+                        );
+                      }
+
+                      return StreamBuilder<QuerySnapshot>(
+                        stream: FirebaseFirestore.instance
+                            .collection('users')
+                            .doc(uid)
+                            .collection('notifications')
+                            .where('isRead', isEqualTo: false)
+                            .snapshots(),
+                        builder: (context, snapshot) {
+                          final hasUnread = snapshot.hasData && snapshot.data!.docs.isNotEmpty;
+
+                          return Stack(
+                            children: [
+                              _buildHeaderIcon(
+                                context,
+                                Icons.notifications_rounded,
+                                onTap: () => _openNotifications(context),
+                              ),
+                              if (hasUnread)
+                                Positioned(
+                                  top: 4,
+                                  right: 4,
+                                  child: Container(
+                                    width: 9,
+                                    height: 9,
+                                    decoration: const BoxDecoration(
+                                      color: AppColors.primary,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          );
+                        },
+                      );
+                    },
+                  ),
+                  const SizedBox(width: 8),
                   _buildHeaderIcon(
                     context,
                     Icons.tune_rounded,
@@ -162,6 +214,14 @@ class DiscoverHeader extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  void _openNotifications(BuildContext context) {
+    HapticFeedback.lightImpact();
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const NotificationsScreen()),
     );
   }
 

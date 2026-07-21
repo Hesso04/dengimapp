@@ -54,6 +54,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _showPhoneLoginForm() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -66,9 +67,9 @@ class _LoginScreenState extends State<LoginScreen> {
           top: 32,
         ),
         decoration: BoxDecoration(
-          color: AppColors.scaffold,
+          color: isDark ? const Color(0xFF090A0C) : Colors.white,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-          border: const Border(top: BorderSide(color: Color(0xFFEEEEEE), width: 1.0)),
+          border: Border(top: BorderSide(color: isDark ? const Color(0xFF262629) : const Color(0xFFEEEEEE), width: 1.0)),
         ),
         child: _PhoneLoginForm(
           authService: _authService,
@@ -79,6 +80,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _showEmailLinkLoginForm() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -91,9 +93,9 @@ class _LoginScreenState extends State<LoginScreen> {
           top: 32,
         ),
         decoration: BoxDecoration(
-          color: AppColors.scaffold,
+          color: isDark ? const Color(0xFF090A0C) : Colors.white,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-          border: const Border(top: BorderSide(color: Color(0xFFEEEEEE), width: 1.0)),
+          border: Border(top: BorderSide(color: isDark ? const Color(0xFF262629) : const Color(0xFFEEEEEE), width: 1.0)),
         ),
         child: _EmailLinkLoginForm(
           authService: _authService,
@@ -156,6 +158,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _showEmailLoginForm() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -168,9 +171,9 @@ class _LoginScreenState extends State<LoginScreen> {
           top: 32,
         ),
         decoration: BoxDecoration(
-          color: AppColors.scaffold,
+          color: isDark ? const Color(0xFF090A0C) : Colors.white,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-          border: const Border(top: BorderSide(color: Color(0xFFEEEEEE), width: 1.0)),
+          border: Border(top: BorderSide(color: isDark ? const Color(0xFF262629) : const Color(0xFFEEEEEE), width: 1.0)),
         ),
         child: _EmailLoginForm(
           authService: _authService,
@@ -480,6 +483,9 @@ class _EmailLoginFormState extends State<_EmailLoginForm> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black;
+
     return SingleChildScrollView(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -490,7 +496,7 @@ class _EmailLoginFormState extends State<_EmailLoginForm> {
             style: GoogleFonts.outfit(
               fontSize: 28,
               fontWeight: FontWeight.w900,
-              color: Colors.black,
+              color: textColor,
               letterSpacing: -1,
             ),
           ),
@@ -504,22 +510,26 @@ class _EmailLoginFormState extends State<_EmailLoginForm> {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: AppColors.red.withValues(alpha: 0.3), width: 1.0),
               ),
-              child: Text(_error!, style: const TextStyle(color: Colors.black, fontSize: 14, fontWeight: FontWeight.w900)),
+              child: Text(_error!, style: TextStyle(color: textColor, fontSize: 14, fontWeight: FontWeight.w900)),
             ),
           TextField(
             controller: _emailController,
-            decoration: const InputDecoration(
+            style: TextStyle(color: textColor),
+            decoration: InputDecoration(
               hintText: 'E-posta',
-              prefixIcon: Icon(Icons.email_outlined, color: Colors.black),
+              hintStyle: TextStyle(color: isDark ? Colors.white54 : Colors.black54),
+              prefixIcon: Icon(Icons.email_outlined, color: textColor),
             ),
           ),
           const SizedBox(height: 20),
           TextField(
             controller: _passwordController,
             obscureText: true,
-            decoration: const InputDecoration(
+            style: TextStyle(color: textColor),
+            decoration: InputDecoration(
               hintText: 'Şifre',
-              prefixIcon: Icon(Icons.lock_outline, color: Colors.black),
+              hintStyle: TextStyle(color: isDark ? Colors.white54 : Colors.black54),
+              prefixIcon: Icon(Icons.lock_outline, color: textColor),
             ),
           ),
           const SizedBox(height: 32),
@@ -677,6 +687,8 @@ class _PhoneLoginFormState extends State<_PhoneLoginForm> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black;
     final showOtpField = _verificationId != null;
 
     return SingleChildScrollView(
@@ -689,7 +701,7 @@ class _PhoneLoginFormState extends State<_PhoneLoginForm> {
             style: GoogleFonts.outfit(
               fontSize: 28,
               fontWeight: FontWeight.w900,
-              color: Colors.black,
+              color: textColor,
               letterSpacing: -1,
             ),
           ),
@@ -703,17 +715,18 @@ class _PhoneLoginFormState extends State<_PhoneLoginForm> {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: AppColors.red.withValues(alpha: 0.3), width: 1.0),
               ),
-              child: Text(_error!, style: const TextStyle(color: Colors.black, fontSize: 14, fontWeight: FontWeight.w900)),
+              child: Text(_error!, style: TextStyle(color: textColor, fontSize: 14, fontWeight: FontWeight.w900)),
             ),
           
           if (!showOtpField) ...[
             TextField(
               controller: _phoneController,
               keyboardType: TextInputType.phone,
-              style: GoogleFonts.outfit(color: Colors.black, fontWeight: FontWeight.w600),
-              decoration: const InputDecoration(
+              style: GoogleFonts.outfit(color: textColor, fontWeight: FontWeight.w600),
+              decoration: InputDecoration(
                 hintText: 'Telefon Numarası (Örn: +905551234567)',
-                prefixIcon: Icon(Icons.phone_outlined, color: Colors.black),
+                hintStyle: TextStyle(color: isDark ? Colors.white54 : Colors.black54),
+                prefixIcon: Icon(Icons.phone_outlined, color: textColor),
               ),
             ),
             const SizedBox(height: 32),
@@ -736,10 +749,11 @@ class _PhoneLoginFormState extends State<_PhoneLoginForm> {
             TextField(
               controller: _codeController,
               keyboardType: TextInputType.number,
-              style: GoogleFonts.outfit(color: Colors.black, fontWeight: FontWeight.w600),
-              decoration: const InputDecoration(
+              style: GoogleFonts.outfit(color: textColor, fontWeight: FontWeight.w600),
+              decoration: InputDecoration(
                 hintText: '6 Haneli Doğrulama Kodu',
-                prefixIcon: Icon(Icons.security, color: Colors.black),
+                hintStyle: TextStyle(color: isDark ? Colors.white54 : Colors.black54),
+                prefixIcon: Icon(Icons.security, color: textColor),
               ),
             ),
             const SizedBox(height: 32),
@@ -882,6 +896,11 @@ class _EmailLinkLoginFormState extends State<_EmailLinkLoginForm> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black;
+    final cardBg = isDark ? const Color(0xFF121418) : Colors.white;
+    final borderColor = isDark ? const Color(0xFF262629) : const Color(0xFFEEEEEE);
+
     return SingleChildScrollView(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -892,7 +911,7 @@ class _EmailLinkLoginFormState extends State<_EmailLinkLoginForm> {
             style: GoogleFonts.outfit(
               fontSize: 28,
               fontWeight: FontWeight.w900,
-              color: Colors.black,
+              color: textColor,
               letterSpacing: -1,
             ),
           ),
@@ -906,17 +925,18 @@ class _EmailLinkLoginFormState extends State<_EmailLinkLoginForm> {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: AppColors.red.withValues(alpha: 0.3), width: 1.0),
               ),
-              child: Text(_error!, style: const TextStyle(color: Colors.black, fontSize: 14, fontWeight: FontWeight.w900)),
+              child: Text(_error!, style: TextStyle(color: textColor, fontSize: 14, fontWeight: FontWeight.w900)),
             ),
           
           if (!_linkSent) ...[
             TextField(
               controller: _emailController,
               keyboardType: TextInputType.emailAddress,
-              style: GoogleFonts.outfit(color: Colors.black, fontWeight: FontWeight.w600),
-              decoration: const InputDecoration(
+              style: GoogleFonts.outfit(color: textColor, fontWeight: FontWeight.w600),
+              decoration: InputDecoration(
                 hintText: 'E-posta Adresi',
-                prefixIcon: Icon(Icons.email_outlined, color: Colors.black),
+                hintStyle: TextStyle(color: isDark ? Colors.white54 : Colors.black54),
+                prefixIcon: Icon(Icons.email_outlined, color: textColor),
               ),
             ),
             const SizedBox(height: 32),
@@ -939,24 +959,24 @@ class _EmailLinkLoginFormState extends State<_EmailLinkLoginForm> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: cardBg,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFEEEEEE), width: 1.0),
-                boxShadow: [AppColors.neoShadowSmall],
+                border: Border.all(color: borderColor, width: 1.0),
+                boxShadow: isDark ? null : [AppColors.neoShadowSmall],
               ),
               child: Column(
                 children: [
-                  const Icon(Icons.mark_email_read_outlined, size: 48, color: Colors.black),
+                  Icon(Icons.mark_email_read_outlined, size: 48, color: textColor),
                   const SizedBox(height: 16),
                   Text(
                     'Bağlantı Gönderildi!',
-                    style: GoogleFonts.outfit(fontWeight: FontWeight.w900, fontSize: 18, color: Colors.black),
+                    style: GoogleFonts.outfit(fontWeight: FontWeight.w900, fontSize: 18, color: textColor),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     '${_emailController.text} adresine gönderilen linke tıklayabilir veya o linki kopyalayıp aşağıdaki kutuya yapıştırarak giriş yapabilirsiniz.',
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.outfit(fontWeight: FontWeight.w700, fontSize: 13, color: Colors.black54, height: 1.4),
+                    style: GoogleFonts.outfit(fontWeight: FontWeight.w700, fontSize: 13, color: isDark ? Colors.white70 : Colors.black54, height: 1.4),
                   ),
                 ],
               ),
@@ -964,10 +984,11 @@ class _EmailLinkLoginFormState extends State<_EmailLinkLoginForm> {
             const SizedBox(height: 24),
             TextField(
               controller: _linkController,
-              style: GoogleFonts.outfit(color: Colors.black, fontSize: 13, fontWeight: FontWeight.w600),
-              decoration: const InputDecoration(
-                hintText: 'Giriş linkini buraya yapıştırın...',
-                prefixIcon: Icon(Icons.link_outlined, color: Colors.black),
+              style: GoogleFonts.outfit(color: textColor, fontWeight: FontWeight.w600),
+              decoration: InputDecoration(
+                hintText: 'E-Posta Linkini Yapıştırın',
+                hintStyle: TextStyle(color: isDark ? Colors.white54 : Colors.black54),
+                prefixIcon: Icon(Icons.link, color: textColor),
               ),
             ),
             const SizedBox(height: 32),

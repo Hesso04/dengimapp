@@ -686,6 +686,7 @@ class _UnlockedLikeCard extends StatelessWidget {
     final borderColor = isDark ? Colors.white10 : const Color(0xFFEEEEEE);
     final textColor = isDark ? Colors.white : Colors.black;
     final subColor = isDark ? Colors.white.withValues(alpha: 0.7) : Colors.black.withValues(alpha: 0.5);
+    final isSuperLike = context.watch<LikesProvider>().superLikerIds.contains(user.uid);
 
     return GestureDetector(
       onTap: () => _showProfileDetail(context),
@@ -693,7 +694,7 @@ class _UnlockedLikeCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: cardBg,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: borderColor, width: 1.0),
+          border: Border.all(color: isSuperLike ? Colors.amber : borderColor, width: isSuperLike ? 1.5 : 1.0),
           boxShadow: [AppColors.neoShadowSmall],
         ),
         child: ClipRRect(
@@ -707,6 +708,38 @@ class _UnlockedLikeCard extends StatelessWidget {
                 fit: BoxFit.cover,
                 placeholder: (context, url) => Container(color: isDark ? Colors.black26 : Colors.white),
               ),
+
+              if (isSuperLike)
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.amber,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.white, width: 1.0),
+                      boxShadow: const [
+                        BoxShadow(color: Colors.amberAccent, blurRadius: 6, spreadRadius: 1)
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.star_rounded, color: Colors.white, size: 12),
+                        const SizedBox(width: 3),
+                        Text(
+                          "SÜPER",
+                          style: GoogleFonts.outfit(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               
               // Info Area
               Positioned(

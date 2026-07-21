@@ -107,19 +107,32 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
       );
       
       if (mounted) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.check_circle, color: Colors.white, size: 20),
+                const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 18),
                 const SizedBox(width: 8),
-                const Text('Yenilendi! 🔄'),
+                Text(
+                  'Yenilendi',
+                  style: GoogleFonts.outfit(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? Colors.white : Colors.black,
+                  ),
+                ),
               ],
             ),
-            backgroundColor: AppColors.success,
+            backgroundColor: isDark ? const Color(0xFF121418) : Colors.white,
             duration: const Duration(milliseconds: 1200),
             behavior: SnackBarBehavior.floating,
-            margin: const EdgeInsets.only(bottom: 120, left: 20, right: 20),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(color: isDark ? const Color(0xFF262629) : const Color(0xFFEEEEEE), width: 1.0),
+            ),
+            margin: const EdgeInsets.only(bottom: 24, left: 40, right: 40),
           ),
         );
       }
@@ -484,6 +497,97 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     }
   }
 
+  Widget _buildNonPremiumBanner(BuildContext context, bool isDark) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 6, 16, 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: isDark
+              ? [const Color(0xFF1E1B2E), const Color(0xFF121418)]
+              : [const Color(0xFFFFF7E6), Colors.white],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFFFFD700).withValues(alpha: isDark ? 0.35 : 0.6),
+          width: 1.2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFFFD700).withValues(alpha: isDark ? 0.08 : 0.12),
+            blurRadius: 10,
+            spreadRadius: 1,
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(7),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+              ),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.star_rounded, color: Colors.white, size: 16),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  "Gold & Platinum Üyelik",
+                  style: GoogleFonts.outfit(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: isDark ? Colors.white : Colors.black,
+                  ),
+                ),
+                Text(
+                  "Sınırsız beğeni ve Seni Beğenenleri gör!",
+                  style: GoogleFonts.outfit(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: isDark ? Colors.white70 : Colors.black54,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const PremiumOfferScreen()),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFFFD700),
+              foregroundColor: Colors.black,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              visualDensity: VisualDensity.compact,
+            ),
+            child: Text(
+              "Yükselt",
+              style: GoogleFonts.outfit(
+                fontSize: 11,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _onSearchChanged(String value) {
     setState(() => _searchQuery = value);
     // Debounce: Kısa arama sorgularında bekle
@@ -555,6 +659,8 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                               _onSearchChanged('');
                             },
                           ),
+                          if (!(context.watch<UserProvider>().currentUser?.isPremium ?? false))
+                            _buildNonPremiumBanner(context, isDark),
                         ],
                       ),
                     ),
@@ -565,7 +671,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                           delegate: SliverChildBuilderDelegate(
                             (context, index) => const Padding(
                               padding: EdgeInsets.only(bottom: 16),
-                              child: ShimmerCard(height: 560), // Match the typical card height
+                              child: ShimmerCard(height: 350), // Match the compact card height
                             ),
                             childCount: 2, // Show 2 skeleton cards
                           ),

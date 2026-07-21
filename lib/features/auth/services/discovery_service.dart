@@ -525,8 +525,6 @@ class DiscoveryService {
           .collection('users')
           .doc(user.uid)
           .collection('likes')
-          .orderBy('timestamp', descending: true)
-          .limit(50)
           .get();
 
       if (likesSnapshot.docs.isEmpty) {
@@ -534,11 +532,33 @@ class DiscoveryService {
         return [];
       }
 
+      final sortedDocs = likesSnapshot.docs.toList()
+        ..sort((a, b) {
+          final dataA = a.data();
+          final dataB = b.data();
+          final typeA = dataA['type'] as String? ?? 'like';
+          final typeB = dataB['type'] as String? ?? 'like';
+
+          final isSuperA = typeA == 'super_like';
+          final isSuperB = typeB == 'super_like';
+
+          if (isSuperA && !isSuperB) return -1;
+          if (!isSuperA && isSuperB) return 1;
+
+          final tA = dataA['timestamp'] as Timestamp?;
+          final tB = dataB['timestamp'] as Timestamp?;
+          if (tA == null && tB == null) return 0;
+          if (tA == null) return -1;
+          if (tB == null) return 1;
+          return tB.compareTo(tA);
+        });
+
       // Eşleşmiş kullanıcıları filtrele ve sadece beğenen UID'leri al
-      final likerUids = likesSnapshot.docs
+      final likerUids = sortedDocs
           .where((doc) => doc.data()['matched'] != true)
           .map((doc) => (doc.data()['fromUserId'] as String?) ?? doc.id)
           .where((id) => id.isNotEmpty)
+          .take(50)
           .toList();
 
       LogService.i("Found ${likerUids.length} active users who liked me");
@@ -546,17 +566,26 @@ class DiscoveryService {
       if (likerUids.isEmpty) return [];
 
       // Profilleri getir (10'arlık chunk'lar halinde)
-      final List<UserProfile> likers = [];
+      final Map<String, UserProfile> profileMap = {};
       for (var i = 0; i < likerUids.length; i += 10) {
         final chunk = likerUids.skip(i).take(10).toList();
         final usersSnapshot = await _firestore
             .collection('users')
             .where(FieldPath.documentId, whereIn: chunk)
             .get();
-        likers.addAll(usersSnapshot.docs.map((doc) => UserProfile.fromMap(doc.data())));
+        for (var doc in usersSnapshot.docs) {
+          profileMap[doc.id] = UserProfile.fromMap(doc.data());
+        }
       }
 
-      return likers;
+      final List<UserProfile> orderedLikers = [];
+      for (final id in likerUids) {
+        if (profileMap.containsKey(id)) {
+          orderedLikers.add(profileMap[id]!);
+        }
+      }
+
+      return orderedLikers;
     } catch (e) {
       LogService.e("Get Liked Me Users Error", e);
       return [];
@@ -670,22 +699,11 @@ class DiscoveryService {
           .collection('visitors')
           .doc(myUid);
 
-      // Sadece 24 saatte bir güncelle (spam önlemek için)
-      final doc = await visitRef.get();
-      if (doc.exists) {
-        final data = doc.data();
-        if (data != null && data['timestamp'] != null) {
-          final lastVisit = (data['timestamp'] as Timestamp).toDate();
-          if (DateTime.now().difference(lastVisit) < const Duration(hours: 24)) {
-            return;
-          }
-        }
-      }
-
       await visitRef.set({
         'fromUserId': myUid,
+        'visitorId': myUid,
         'timestamp': FieldValue.serverTimestamp(),
-      });
+      }, SetOptions(merge: true));
       
       LogService.d("Tracked visit from $myUid to $targetUserId");
     } catch (e) {
@@ -703,22 +721,45 @@ class DiscoveryService {
           .collection('users')
           .doc(uid)
           .collection('visitors')
-          .orderBy('timestamp', descending: true)
-          .limit(50)
           .get();
 
       if (snapshot.docs.isEmpty) return [];
 
-      final visitorIds = snapshot.docs.map((doc) => doc.id).toList();
-      
-      final List<UserProfile> visitors = [];
+      final sortedDocs = snapshot.docs.toList()
+        ..sort((a, b) {
+          final tA = (a.data())['timestamp'] as Timestamp?;
+          final tB = (b.data())['timestamp'] as Timestamp?;
+          if (tA == null && tB == null) return 0;
+          if (tA == null) return -1;
+          if (tB == null) return 1;
+          return tB.compareTo(tA);
+        });
+
+      final visitorIds = sortedDocs
+          .map((doc) => (doc.data()['fromUserId'] as String?) ?? (doc.data()['visitorId'] as String?) ?? doc.id)
+          .where((id) => id.isNotEmpty)
+          .take(50)
+          .toList();
+
+      if (visitorIds.isEmpty) return [];
+
+      final Map<String, UserProfile> profileMap = {};
       for (var i = 0; i < visitorIds.length; i += 10) {
         final chunk = visitorIds.skip(i).take(10).toList();
         final usersSnapshot = await _firestore
             .collection('users')
             .where(FieldPath.documentId, whereIn: chunk)
             .get();
-        visitors.addAll(usersSnapshot.docs.map((doc) => UserProfile.fromMap(doc.data())));
+        for (var doc in usersSnapshot.docs) {
+          profileMap[doc.id] = UserProfile.fromMap(doc.data());
+        }
+      }
+
+      final List<UserProfile> visitors = [];
+      for (final id in visitorIds) {
+        if (profileMap.containsKey(id)) {
+          visitors.add(profileMap[id]!);
+        }
       }
 
       return visitors;

@@ -82,16 +82,16 @@ class _DiscoverUserCardState extends State<DiscoverUserCard> {
       child: GestureDetector(
         onTap: widget.onTap,
         child: Container(
-            height: 560,
+            height: 350,
             width: double.infinity,
             decoration: BoxDecoration(
               color: theme.cardTheme.color ?? theme.colorScheme.surface,
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(20),
               border: Border.all(color: borderColor, width: 1.0),
               boxShadow: isDark ? null : [AppColors.neoShadowLarge],
             ),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(16),
               child: Stack(
                 fit: StackFit.expand,
                 children: _buildStackChildren(showLike, showNope),
@@ -112,7 +112,7 @@ class _DiscoverUserCardState extends State<DiscoverUserCard> {
     final elementColor = isDark ? Colors.white : Colors.black;
     
     final children = <Widget>[
-      // Multi-photo PageView
+      // Multi-photo PageView (High-res images)
       PageView.builder(
         itemCount: photoUrls.length,
         onPageChanged: (index) {
@@ -122,11 +122,10 @@ class _DiscoverUserCardState extends State<DiscoverUserCard> {
           return CachedNetworkImage(
             imageUrl: photoUrls[index],
             fit: BoxFit.cover,
-            memCacheWidth: 400,
             placeholder: (context, url) => Container(color: Colors.black12),
             errorWidget: (context, url, error) => Container(
               color: isDark ? const Color(0xFF1B1B1D) : Colors.white,
-              child: const Icon(Icons.person, size: 80, color: Colors.black12),
+              child: const Icon(Icons.person, size: 60, color: Colors.black12),
             ),
           );
         },
@@ -212,16 +211,16 @@ class _DiscoverUserCardState extends State<DiscoverUserCard> {
         ),
       // User Info
       Positioned(
-        bottom: 12,
-        left: 12,
-        right: 12,
+        bottom: 10,
+        left: 10,
+        right: 10,
         child: Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1F1F23) : Colors.white,
-            borderRadius: BorderRadius.circular(16),
+            color: isDark ? const Color(0xFF121418) : Colors.white,
+            borderRadius: BorderRadius.circular(14),
             border: Border.all(color: borderColor, width: 1.0),
-            boxShadow: isDark ? null : [AppColors.neoShadow],
+            boxShadow: isDark ? null : [AppColors.neoShadowSmall],
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -233,48 +232,48 @@ class _DiscoverUserCardState extends State<DiscoverUserCard> {
                     child: Text(
                       '${user.name.toTitleCase()}, ${user.age}',
                       style: GoogleFonts.outfit(
-                        fontSize: 22,
+                        fontSize: 17,
                         fontWeight: FontWeight.w900,
                         color: elementColor,
-                        letterSpacing: -0.5,
+                        letterSpacing: -0.3,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   if (user.isVerified) ...[
-                    const SizedBox(width: 8),
-                    const Icon(Icons.verified, color: Colors.blue, size: 22),
+                    const SizedBox(width: 6),
+                    const Icon(Icons.verified, color: Colors.blue, size: 18),
                   ],
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 4),
               Row(
                 children: [
                   if (user.relationshipGoal != null) ...[
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
-                        color: AppColors.primary, // Black
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: borderColor, width: 1.0),
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: borderColor, width: 0.5),
                       ),
                       child: Text(
                         _getGoalLabel(user.relationshipGoal).toUpperCase(),
                         style: GoogleFonts.outfit(
-                          fontSize: 10,
-                          color: Colors.white, // White text on black chip
+                          fontSize: 9,
+                          color: Colors.white,
                           fontWeight: FontWeight.w900,
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 6),
                   ],
                   Expanded(
                     child: Text(
                       (user.job != null && user.job!.isNotEmpty ? user.job! : '').toUpperCase(),
                       style: GoogleFonts.outfit(
-                        fontSize: 11,
+                        fontSize: 10,
                         fontWeight: FontWeight.w800,
                         color: elementColor.withValues(alpha: 0.6),
                       ),
@@ -284,15 +283,15 @@ class _DiscoverUserCardState extends State<DiscoverUserCard> {
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 4),
               Row(
                 children: [
-                  Icon(Icons.location_on, color: AppColors.primary, size: 15),
-                  const SizedBox(width: 4),
+                  Icon(Icons.location_on, color: AppColors.primary, size: 13),
+                  const SizedBox(width: 3),
                   Text(
                     '${user.country.isNotEmpty ? "${user.country.toUpperCase()} • " : ""}${_distance?.toStringAsFixed(1) ?? "3"} KM UZAKTA',
                     style: GoogleFonts.outfit(
-                      fontSize: 11,
+                      fontSize: 10,
                       fontWeight: FontWeight.w900,
                       color: elementColor,
                       letterSpacing: 0.2,
@@ -300,7 +299,7 @@ class _DiscoverUserCardState extends State<DiscoverUserCard> {
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 10),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
@@ -308,22 +307,22 @@ class _DiscoverUserCardState extends State<DiscoverUserCard> {
                     onTap: widget.onDislike,
                     icon: Icons.close_rounded,
                     color: Colors.redAccent,
-                    iconSize: 22,
-                    size: 48,
+                    iconSize: 18,
+                    size: 38,
                   ),
                   _buildMiniCircleButton(
                     onTap: widget.onSuperLike,
                     icon: Icons.star_rounded,
                     color: Colors.amber,
-                    iconSize: 24,
-                    size: 52,
+                    iconSize: 20,
+                    size: 42,
                   ),
                   _buildMiniCircleButton(
                     onTap: widget.onLike,
                     icon: Icons.favorite_rounded,
                     color: AppColors.primary,
-                    iconSize: 24,
-                    size: 52,
+                    iconSize: 20,
+                    size: 42,
                   ),
                 ],
               ),

@@ -103,7 +103,7 @@ exports.generateAgoraToken = functions.https.onCall((data, context) => {
   }
 
   const channelName = data.channelName;
-  const uid = 0; // Use 0 as wildcard UID for general channel access
+  const uid = data.uid !== undefined && data.uid !== null ? Number(data.uid) : 0;
   const role = data.role === "publisher" ? RtcRole.PUBLISHER : RtcRole.SUBSCRIBER;
 
   if (!channelName) {

@@ -408,6 +408,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 }
 
   Widget _buildSectionHeader(String title) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Text(
@@ -415,7 +416,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         style: GoogleFonts.outfit(
           fontSize: 12,
           fontWeight: FontWeight.w900,
-          color: Colors.black,
+          color: isDark ? Colors.white : Colors.black,
           letterSpacing: 1.0,
         ),
       ),
@@ -423,22 +424,28 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Widget _buildCircleIcon(IconData icon, {VoidCallback? onTap}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: 40, height: 40,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isDark ? const Color(0xFF121418) : Colors.white,
           shape: BoxShape.circle,
-          border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-          boxShadow: [AppColors.neoShadowSmall],
+          border: Border.all(color: isDark ? const Color(0xFF262629) : const Color(0xFFEEEEEE), width: 1.0),
+          boxShadow: isDark ? null : [AppColors.neoShadowSmall],
         ),
-        child: Icon(icon, color: Colors.black, size: 18),
+        child: Icon(icon, color: isDark ? Colors.white : Colors.black, size: 18),
       ),
     );
   }
 
   Widget _buildPhotosGrid() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBg = isDark ? const Color(0xFF121418) : Colors.white;
+    final borderColor = isDark ? const Color(0xFF262629) : const Color(0xFFEEEEEE);
+    final textColor = isDark ? Colors.white : Colors.black;
+
     return SizedBox(
       height: 140,
       child: ListView.builder(
@@ -454,19 +461,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 height: 140,
                 margin: const EdgeInsets.only(right: 16, bottom: 8),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: cardBg,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-                  boxShadow: [AppColors.neoShadowSmall],
+                  border: Border.all(color: borderColor, width: 1.0),
+                  boxShadow: isDark ? null : [AppColors.neoShadowSmall],
                 ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.add_photo_alternate_outlined, color: Colors.black, size: 32),
+                    Icon(Icons.add_photo_alternate_outlined, color: textColor, size: 32),
                     const SizedBox(height: 8),
                     Text(
                       'EKLE',
-                      style: GoogleFonts.outfit(color: Colors.black, fontSize: 12, fontWeight: FontWeight.w900),
+                      style: GoogleFonts.outfit(color: textColor, fontSize: 12, fontWeight: FontWeight.w900),
                     ),
                   ],
                 ),
@@ -482,10 +489,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 height: 140,
                 margin: const EdgeInsets.only(right: 16, bottom: 8),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: cardBg,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-                  boxShadow: [AppColors.neoShadowSmall],
+                  border: Border.all(color: borderColor, width: 1.0),
+                  boxShadow: isDark ? null : [AppColors.neoShadowSmall],
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(14),
@@ -508,7 +515,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       decoration: BoxDecoration(
                         color: AppColors.primary,
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
+                        border: Border.all(color: borderColor, width: 1.0),
                       ),
                       child: Text(
                         'ANA',
@@ -532,9 +539,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     decoration: BoxDecoration(
                       color: AppColors.red,
                       shape: BoxShape.circle,
-                      border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
+                      border: Border.all(color: borderColor, width: 1.0),
                     ),
-                    child: const Icon(Icons.close, color: Colors.black, size: 12),
+                    child: const Icon(Icons.close, color: Colors.white, size: 12),
                   ),
                 ),
               ),
@@ -546,16 +553,21 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Widget _buildVideoPicker() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBg = isDark ? const Color(0xFF121418) : Colors.white;
+    final borderColor = isDark ? const Color(0xFF262629) : const Color(0xFFEEEEEE);
+    final textColor = isDark ? Colors.white : Colors.black;
+
     return GestureDetector(
       onTap: _pickAndUploadVideo,
       child: Container(
         width: double.infinity,
         height: 120,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: cardBg,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-          boxShadow: [AppColors.neoShadowSmall],
+          border: Border.all(color: borderColor, width: 1.0),
+          boxShadow: isDark ? null : [AppColors.neoShadowSmall],
         ),
         child: _videoUrl != null
             ? Stack(
@@ -569,7 +581,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         Text(
                           "VİDEO YÜKLENDİ",
                           style: GoogleFonts.outfit(
-                            color: Colors.black,
+                            color: textColor,
                             fontWeight: FontWeight.w900,
                             fontSize: 14,
                           ),
@@ -592,9 +604,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         decoration: BoxDecoration(
                           color: AppColors.red,
                           shape: BoxShape.circle,
-                          border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
+                          border: Border.all(color: borderColor, width: 1.0),
                         ),
-                        child: const Icon(Icons.close, color: Colors.black, size: 18),
+                        child: const Icon(Icons.close, color: Colors.white, size: 18),
                       ),
                     ),
                   ),
@@ -603,12 +615,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             : Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.video_call_outlined, color: Colors.black26, size: 32),
+                  Icon(Icons.video_call_outlined, color: isDark ? Colors.white54 : Colors.black26, size: 32),
                   const SizedBox(height: 8),
                   Text(
                     "VİDEO PROFİL EKLE (MAX 30SN)",
                     style: GoogleFonts.outfit(
-                      color: Colors.black38,
+                      color: isDark ? Colors.white70 : Colors.black38,
                       fontSize: 12,
                       fontWeight: FontWeight.w900,
                     ),
@@ -620,14 +632,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Widget _buildVoicePicker() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBg = isDark ? const Color(0xFF121418) : Colors.white;
+    final borderColor = isDark ? const Color(0xFF262629) : const Color(0xFFEEEEEE);
+    final textColor = isDark ? Colors.white : Colors.black;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardBg,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-        boxShadow: [AppColors.neoShadowSmall],
+        border: Border.all(color: borderColor, width: 1.0),
+        boxShadow: isDark ? null : [AppColors.neoShadowSmall],
       ),
       child: _profileVoiceUrl != null
           ? Row(
@@ -640,7 +657,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     Text(
                       "SES KAYDI YÜKLENDİ",
                       style: GoogleFonts.outfit(
-                        color: Colors.black,
+                        color: textColor,
                         fontWeight: FontWeight.w900,
                         fontSize: 14,
                       ),
@@ -659,9 +676,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     decoration: BoxDecoration(
                       color: AppColors.red,
                       shape: BoxShape.circle,
-                      border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
+                      border: Border.all(color: borderColor, width: 1.0),
                     ),
-                    child: const Icon(Icons.close, color: Colors.black, size: 18),
+                    child: const Icon(Icons.close, color: Colors.white, size: 18),
                   ),
                 ),
               ],
@@ -678,7 +695,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           decoration: BoxDecoration(
                             color: AppColors.red,
                             shape: BoxShape.circle,
-                            border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
+                            border: Border.all(color: borderColor, width: 1.0),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -699,11 +716,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           child: Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: cardBg,
                               shape: BoxShape.circle,
-                              border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
+                              border: Border.all(color: borderColor, width: 1.0),
                             ),
-                            child: const Icon(Icons.close, color: Colors.black, size: 18),
+                            child: Icon(Icons.close, color: textColor, size: 18),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -714,8 +731,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             decoration: BoxDecoration(
                               color: AppColors.primary,
                               shape: BoxShape.circle,
-                              border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-                              boxShadow: [AppColors.neoShadowSmall],
+                              border: Border.all(color: borderColor, width: 1.0),
+                              boxShadow: isDark ? null : [AppColors.neoShadowSmall],
                             ),
                             child: const Icon(Icons.check, color: Colors.white, size: 18),
                           ),
@@ -729,12 +746,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.mic_none, color: Colors.black26, size: 28),
+                      Icon(Icons.mic_none, color: isDark ? Colors.white54 : Colors.black26, size: 28),
                       const SizedBox(width: 8),
                       Text(
                         "SES KAYDET",
                         style: GoogleFonts.outfit(
-                          color: Colors.black38,
+                          color: isDark ? Colors.white70 : Colors.black38,
                           fontSize: 14,
                           fontWeight: FontWeight.w900,
                         ),
@@ -753,27 +770,32 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     TextInputType keyboardType = TextInputType.text,
     String? hint,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBg = isDark ? const Color(0xFF121418) : Colors.white;
+    final borderColor = isDark ? const Color(0xFF262629) : const Color(0xFFEEEEEE);
+    final textColor = isDark ? Colors.white : Colors.black;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardBg,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-        boxShadow: [AppColors.neoShadowSmall],
+        border: Border.all(color: borderColor, width: 1.0),
+        boxShadow: isDark ? null : [AppColors.neoShadowSmall],
       ),
       child: TextField(
         controller: controller,
         maxLines: maxLines,
         keyboardType: keyboardType,
         textInputAction: maxLines > 1 ? TextInputAction.newline : TextInputAction.next,
-        style: GoogleFonts.outfit(color: Colors.black, fontWeight: FontWeight.bold),
+        style: GoogleFonts.outfit(color: textColor, fontWeight: FontWeight.bold),
         onChanged: (_) => _hasChanges = true,
         decoration: InputDecoration(
           labelText: label.toUpperCase(),
           hintText: hint?.toUpperCase(),
-          hintStyle: GoogleFonts.outfit(color: Colors.black.withValues(alpha: 0.2), fontSize: 12, fontWeight: FontWeight.w900),
-          labelStyle: GoogleFonts.outfit(color: Colors.black.withValues(alpha: 0.4), fontSize: 12, fontWeight: FontWeight.w900),
-          prefixIcon: Icon(icon, color: Colors.black, size: 20),
+          hintStyle: GoogleFonts.outfit(color: isDark ? Colors.white38 : Colors.black26, fontSize: 12, fontWeight: FontWeight.w900),
+          labelStyle: GoogleFonts.outfit(color: isDark ? Colors.white70 : Colors.black45, fontSize: 12, fontWeight: FontWeight.w900),
+          prefixIcon: Icon(icon, color: textColor, size: 20),
           filled: true,
           fillColor: Colors.transparent,
           border: InputBorder.none,
@@ -784,6 +806,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Widget _buildInterestsGrid() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBg = isDark ? const Color(0xFF121418) : Colors.white;
+    final borderColor = isDark ? const Color(0xFF262629) : const Color(0xFFEEEEEE);
+    final textColor = isDark ? Colors.white : Colors.black;
+
     return Wrap(
       spacing: 12,
       runSpacing: 12,
@@ -795,15 +822,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             duration: const Duration(milliseconds: 200),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
-              color: isSelected ? AppColors.primary : Colors.white,
+              color: isSelected ? AppColors.primary : cardBg,
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-              boxShadow: isSelected ? null : [AppColors.neoShadowSmall],
+              border: Border.all(color: borderColor, width: 1.0),
+              boxShadow: isSelected ? null : (isDark ? null : [AppColors.neoShadowSmall]),
             ),
             child: Text(
               interest.toUpperCase(),
               style: GoogleFonts.outfit(
-                color: isSelected ? Colors.white : Colors.black,
+                color: isSelected ? Colors.white : textColor,
                 fontWeight: FontWeight.w900,
                 fontSize: 12,
               ),
@@ -815,6 +842,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Widget _buildRelationshipGoalSelector() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBg = isDark ? const Color(0xFF121418) : Colors.white;
+    final borderColor = isDark ? const Color(0xFF262629) : const Color(0xFFEEEEEE);
+    final textColor = isDark ? Colors.white : Colors.black;
+
     return Column(
       children: _relationshipGoals.map((goal) {
         final isSelected = _selectedRelationshipGoal == goal['id'];
@@ -829,10 +861,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             margin: const EdgeInsets.only(bottom: 16),
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: isSelected ? AppColors.primary : Colors.white,
+              color: isSelected ? AppColors.primary : cardBg,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-              boxShadow: isSelected ? null : [AppColors.neoShadowSmall],
+              border: Border.all(color: borderColor, width: 1.0),
+              boxShadow: isSelected ? null : (isDark ? null : [AppColors.neoShadowSmall]),
             ),
             child: Row(
               children: [
@@ -843,7 +875,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       Text(
                         goal['label']!.toUpperCase(),
                         style: GoogleFonts.outfit(
-                          color: isSelected ? Colors.white : Colors.black,
+                          color: isSelected ? Colors.white : textColor,
                           fontSize: 16,
                           fontWeight: FontWeight.w900,
                         ),
@@ -852,7 +884,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       Text(
                         goal['desc']!.toUpperCase(),
                         style: GoogleFonts.outfit(
-                          color: isSelected ? Colors.white70 : Colors.black.withValues(alpha: 0.5),
+                          color: isSelected ? Colors.white70 : (isDark ? Colors.white54 : Colors.black45),
                           fontSize: 11,
                           fontWeight: FontWeight.w800,
                         ),
@@ -871,25 +903,30 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   void _showDiscardDialog() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBg = isDark ? const Color(0xFF121418) : Colors.white;
+    final borderColor = isDark ? const Color(0xFF262629) : const Color(0xFFEEEEEE);
+    final textColor = isDark ? Colors.white : Colors.black;
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
+        backgroundColor: cardBg,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
-          side: BorderSide(color: Color(0xFFEEEEEE), width: 1.0),
+          side: BorderSide(color: borderColor, width: 1.0),
         ),
         title: Text(
           "DEĞİŞİKLİKLER KAYBOLACAK",
-          style: GoogleFonts.outfit(fontWeight: FontWeight.w900, color: Colors.black),
+          style: GoogleFonts.outfit(fontWeight: FontWeight.w900, color: textColor),
         ),
         content: Text(
           "YAPTIĞINIZ DEĞİŞİKLİKLER KAYDEDİLMEDİ. ÇIKMAK İSTEDİĞİNİZE EMİN MİSİNİZ?",
-          style: GoogleFonts.outfit(fontWeight: FontWeight.w700, color: Colors.black54),
+          style: GoogleFonts.outfit(fontWeight: FontWeight.w700, color: isDark ? Colors.white70 : Colors.black54),
         ),
         actions: [
           TextButton(
-            child: Text("İPTAL", style: GoogleFonts.outfit(fontWeight: FontWeight.w900, color: Colors.black38)),
+            child: Text("İPTAL", style: GoogleFonts.outfit(fontWeight: FontWeight.w900, color: isDark ? Colors.white54 : Colors.black38)),
             onPressed: () => Navigator.pop(context),
           ),
           Container(
@@ -899,7 +936,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 backgroundColor: AppColors.red,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
-                  side: BorderSide(color: Color(0xFFEEEEEE), width: 1.0),
+                  side: BorderSide(color: borderColor, width: 1.0),
                 ),
                 elevation: 0,
               ),
@@ -907,7 +944,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 Navigator.pop(context); // Close dialog
                 Navigator.pop(context); // Close edit screen
               },
-              child: Text("ÇIK", style: GoogleFonts.outfit(fontWeight: FontWeight.w900, color: Colors.black)),
+              child: Text("ÇIK", style: GoogleFonts.outfit(fontWeight: FontWeight.w900, color: Colors.white)),
             ),
           ),
         ],

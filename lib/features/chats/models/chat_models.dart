@@ -13,6 +13,9 @@ class ChatConversation {
   final Map<String, dynamic> unreadCounts; // { 'uid': count }
   
   // UI için yüklenecek alanlar (Service katmanında doldurulacak)
+  final bool isGroup;
+  final String groupName;
+  final String groupAvatar;
   final String otherUserId;
   final String otherUserName;
   final String otherUserAvatar;
@@ -24,23 +27,30 @@ class ChatConversation {
     required this.lastMessage,
     required this.lastMessageTime,
     required this.unreadCounts,
+    this.isGroup = false,
+    this.groupName = '',
+    this.groupAvatar = '',
     this.otherUserId = '',
     this.otherUserName = '',
     this.otherUserAvatar = '',
     this.otherUserOnline = false,
   });
 
-  // Firestore'dan veriyi alırken sadece ham veriyi alıyoruz
+  // Firestore'dan veriyi alırken ham veriyi alıyoruz
   factory ChatConversation.fromFirestore(DocumentSnapshot doc, String currentUserId) {
     final data = doc.data() as Map<String, dynamic>;
     final List<String> userIds = List<String>.from(data['userIds'] ?? []);
+    final bool isGroup = (data['isGroup'] == true) || (data['type'] == 'group');
+    final String gName = data['groupName'] ?? data['title'] ?? 'Grup Sohbeti';
+    final String gAvatar = data['groupAvatar'] ?? '';
+
     final String otherId = userIds.firstWhere((id) => id != currentUserId, orElse: () => '');
     
     final userProfiles = data['userProfiles'] as Map<String, dynamic>?;
-    String otherName = '';
-    String otherAvatar = '';
+    String otherName = isGroup ? gName : '';
+    String otherAvatar = isGroup ? gAvatar : '';
     
-    if (userProfiles != null && userProfiles.containsKey(otherId)) {
+    if (!isGroup && userProfiles != null && userProfiles.containsKey(otherId)) {
       final profile = userProfiles[otherId] as Map<String, dynamic>;
       otherName = profile['name'] ?? '';
       otherAvatar = profile['avatar'] ?? '';
@@ -52,16 +62,19 @@ class ChatConversation {
       lastMessage: data['lastMessage'] ?? '',
       lastMessageTime: (data['lastMessageTime'] as Timestamp? ?? Timestamp.now()).toDate(),
       unreadCounts: Map<String, dynamic>.from(data['unreadCounts'] ?? {}),
+      isGroup: isGroup,
+      groupName: gName,
+      groupAvatar: gAvatar,
       otherUserId: otherId,
-      otherUserName: otherName,
-      otherUserAvatar: otherAvatar,
+      otherUserName: isGroup ? gName : otherName,
+      otherUserAvatar: isGroup ? gAvatar : otherAvatar,
     );
   }
 
   // UI Uyumluluk Getter'ları (Eski kodların çalışması için)
-  String get userName => otherUserName;
-  String get userAvatar => otherUserAvatar;
-  bool get isOnline => otherUserOnline;
+  String get userName => isGroup ? groupName : otherUserName;
+  String get userAvatar => isGroup ? groupAvatar : otherUserAvatar;
+  bool get isOnline => isGroup ? true : otherUserOnline;
   bool get isTyping => false; // Şimdilik hep false
 
   int get unreadCount {
@@ -82,9 +95,12 @@ class ChatConversation {
       lastMessage: lastMessage,
       lastMessageTime: lastMessageTime,
       unreadCounts: unreadCounts,
+      isGroup: isGroup,
+      groupName: groupName,
+      groupAvatar: groupAvatar,
       otherUserId: otherUserId,
-      otherUserName: name ?? otherUserName,
-      otherUserAvatar: avatar ?? otherUserAvatar,
+      otherUserName: isGroup ? groupName : (name ?? otherUserName),
+      otherUserAvatar: isGroup ? groupAvatar : (avatar ?? otherUserAvatar),
       otherUserOnline: isOnline ?? otherUserOnline,
     );
   }

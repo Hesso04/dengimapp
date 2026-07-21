@@ -75,26 +75,37 @@ class _VisitorsScreenState extends State<VisitorsScreen> {
           ),
         ),
       ),
-      body: _isLoading
-          ? Center(child: CircularProgressIndicator(color: elementColor, strokeWidth: 4))
-          : _visitors.isEmpty
-              ? _buildEmptyState(isDark, elementColor, borderColor)
-              : GridView.builder(
-                  padding: const EdgeInsets.all(16),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    childAspectRatio: 0.75,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
+      body: RefreshIndicator(
+        color: AppColors.primary,
+        onRefresh: _loadVisitors,
+        child: _isLoading
+            ? Center(child: CircularProgressIndicator(color: elementColor, strokeWidth: 4))
+            : _visitors.isEmpty
+                ? SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    child: SizedBox(
+                      height: MediaQuery.of(context).size.height * 0.7,
+                      child: _buildEmptyState(isDark, elementColor, borderColor),
+                    ),
+                  )
+                : GridView.builder(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(16),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      childAspectRatio: 0.75,
+                      crossAxisSpacing: 16,
+                      mainAxisSpacing: 16,
+                    ),
+                    itemCount: _visitors.length,
+                    itemBuilder: (context, index) {
+                      return _VisitorCard(
+                        user: _visitors[index],
+                        isPremium: isPremium,
+                      );
+                    },
                   ),
-                  itemCount: _visitors.length,
-                  itemBuilder: (context, index) {
-                    return _VisitorCard(
-                      user: _visitors[index],
-                      isPremium: isPremium,
-                    );
-                  },
-                ),
+      ),
     );
   }
 
