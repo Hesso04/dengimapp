@@ -1,0 +1,22 @@
+{
+  "name": "Dengim - Ses Odaklı Tanışma Uygulaması",
+  "short_name": "DENGİM",
+  "description": "Ruh Eşini Sesiyle Bul. Türkiye'nin ilk ses odaklı eşleşme platformu.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#FF4B55",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
