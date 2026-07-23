@@ -29,7 +29,7 @@ export default function UsersPage() {
     const fetchUsers = async () => {
         setLoading(true);
         try {
-            const result = await UserService.getUsers(null, 50); // İlk 50 kullanıcıyı çek
+            const result = await UserService.getUsers(null, 100); // 100 kullanıcı
             setUsers(result.users);
             setLastDoc(result.lastDoc);
         } catch (error) {
@@ -51,39 +51,52 @@ export default function UsersPage() {
             setUsers(prev => prev.map(u => u.id === editingUser.id ? editingUser : u));
             setShowUserModal(false);
             setEditingUser(null);
-            alert('Kullanıcı başarıyla güncellendi.');
+            alert('Kullanıcı bilgileri başarıyla güncellendi.');
         } catch (error) {
             alert('Güncelleme hatası!');
         }
     };
 
-    // Filtreleme (Client-side şimdilik)
+    const handleGrantVIP = async (userId: string, tier: 'gold' | 'platinum') => {
+        try {
+            await UserService.grantPremium(userId, tier);
+            setUsers(prev => prev.map(u => u.id === userId ? { ...u, isPremium: true, premiumTier: tier } as User : u));
+            alert(`Kullanıcıya ${tier.toUpperCase()} VIP üyeliği tanımlandı.`);
+        } catch (e) {
+            alert("VIP tanımlama hatası.");
+        }
+    };
+
+    const handleAddCredits = async (userId: string, amount: number) => {
+        try {
+            await UserService.addCredits(userId, amount);
+            alert(`Kullanıcı hesabına +${amount} Kredi yüklendi.`);
+        } catch (e) {
+            alert("Kredi yükleme hatası.");
+        }
+    };
+
+    // Filtreleme
     const filteredUsers = users.filter(user => {
         const matchesSearch = (user.name?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
             (user.email?.toLowerCase() || '').includes(searchQuery.toLowerCase());
-        const matchesStatus = statusFilter === 'all' || user.status === statusFilter;
+        const matchesStatus = statusFilter === 'all' ||
+            (statusFilter === 'active' && user.status === 'active') ||
+            (statusFilter === 'verified' && user.isVerified) ||
+            (statusFilter === 'banned' && user.status === 'banned');
         return matchesSearch && matchesStatus;
     });
 
-    const toggleUserSelection = (userId: string) => {
-        setSelectedUsers(prev =>
-            prev.includes(userId)
-                ? prev.filter(id => id !== userId)
-                : [...prev, userId]
-        );
-    };
-
     const handleAction = async (userId: string, action: 'ban' | 'verify' | 'suspend') => {
-        if (!confirm('Bu işlemi yapmak istediğinize emin misiniz?')) return;
+        if (!confirm('Bu işlemi onaylıyor musunuz?')) return;
         try {
             await UserService.updateUserStatus(userId, action);
-            // Listeyi güncelle
             setUsers(prev => prev.map(u => {
                 if (u.id === userId) {
                     return {
                         ...u,
-                        status: action === 'ban' ? 'banned' : (action === 'verify' ? 'verified' : 'banned'),
-                        isVerified: action === 'verify',
+                        status: action === 'ban' ? 'banned' : (action === 'verify' ? 'verified' : 'active'),
+                        isVerified: action === 'verify' ? true : u.isVerified,
                     } as User;
                 }
                 return u;
@@ -93,382 +106,230 @@ export default function UsersPage() {
         }
     };
 
-    const handleBulkAction = async (action: 'ban' | 'verify' | 'add_credits') => {
-        if (selectedUsers.length === 0) return;
-        const msg = action === 'ban' ? 'Seçili kullanıcıları engellemek istediğinize emin misiniz?' :
-                    action === 'verify' ? 'Seçili kullanıcılara Mavi Tik onayını tanımlamak ister misiniz?' :
-                    'Seçili kullanıcıların bakiyesine +50 Kredi eklemek ister misiniz?';
-        if (!confirm(msg)) return;
-
-        try {
-            for (const uid of selectedUsers) {
-                await UserService.updateUserStatus(uid, action);
-            }
-            alert(`İşlem ${selectedUsers.length} kullanıcı için başarıyla tamamlandı.`);
-            setSelectedUsers([]);
-            fetchUsers();
-        } catch (e) {
-            alert('Toplu işlem sırasında hata oluştu.');
-        }
-    };
-
-    // Pending verifications (gerçek veriden türetiliyor)
-    const pendingVerifications = users.filter(u => !u.isVerified && u.photos && u.photos.length > 0).slice(0, 5);
+    const pendingVerifications = users.filter(u => !u.isVerified && u.photos && u.photos.length > 0).slice(0, 6);
 
     return (
-        <div className="flex min-h-screen bg-background-dark">
+        <div className="flex min-h-screen bg-background-dark text-white">
             <Sidebar />
-            <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+            <div className="flex-1 flex flex-col min-w-0">
                 <Header />
                 <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6 custom-scrollbar">
+
                     {/* Page Header */}
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
                         <div className="flex items-center gap-3">
-                            <div className="h-12 w-12 rounded-xl bg-primary/20 flex items-center justify-center">
+                            <div className="h-12 w-12 rounded-xl bg-primary/20 flex items-center justify-center border border-primary/30">
                                 <span className="material-symbols-outlined text-primary text-2xl">admin_panel_settings</span>
                             </div>
                             <div>
-                                <h2 className="text-xl font-bold text-white">Kullanıcı Yönetimi</h2>
-                                <p className="text-sm text-slate-400">
-                                    {loading ? 'Yükleniyor...' : `${users.length} kullanıcı gösteriliyor`}
+                                <h2 className="text-xl font-bold text-white">Kullanıcı Yönetim Merkezi</h2>
+                                <p className="text-sm text-zinc-400">
+                                    {loading ? 'Yükleniyor...' : `${filteredUsers.length} kullanıcı listeleniyor`}
                                 </p>
                             </div>
                         </div>
                         <div className="flex gap-2">
-                            <Button variant="outline" size="sm" onClick={fetchUsers}>
-                                <span className="material-symbols-outlined text-sm">refresh</span>
+                            <Button variant="outline" size="sm" onClick={fetchUsers} className="border-zinc-800 bg-zinc-900 text-zinc-200">
+                                <span className="material-symbols-outlined text-sm mr-1">refresh</span>
                                 Yenile
                             </Button>
                         </div>
                     </div>
 
-                    {/* Search and Filters */}
-                    <div className="mb-6">
-                        <div className="flex flex-col md:flex-row gap-4 mb-4">
-                            <div className="flex-1">
-                                <div className="flex items-center h-14 bg-white/5 rounded-xl border border-white/10 px-4 gap-3">
-                                    <span className="material-symbols-outlined text-primary">search</span>
-                                    <input
-                                        type="text"
-                                        placeholder="Kullanıcı adı veya e-posta ile ara..."
-                                        className="flex-1 bg-transparent border-none text-white placeholder:text-white/30 focus:outline-none"
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                    />
-                                </div>
-                            </div>
+                    {/* Search & High Contrast Filter Bar */}
+                    <div className="mb-6 space-y-4">
+                        <div className="flex items-center h-12 bg-zinc-900 rounded-xl border border-zinc-800 px-4 gap-3">
+                            <span className="material-symbols-outlined text-primary">search</span>
+                            <input
+                                type="text"
+                                placeholder="Kullanıcı adı veya e-posta ile ara..."
+                                className="flex-1 bg-transparent border-none text-white placeholder:text-zinc-500 focus:outline-none text-sm"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
                         </div>
 
-                        <div className="flex gap-2 overflow-x-auto scrollbar-hide py-2">
-                            {['all', 'active', 'verified', 'banned'].map((status) => (
+                        <div className="flex gap-2 overflow-x-auto py-1">
+                            {[
+                                { id: 'all', label: 'Tüm Kullanıcılar' },
+                                { id: 'active', label: 'Aktif Üyeler' },
+                                { id: 'verified', label: 'Doğrulanmış (Mavi Tik)' },
+                                { id: 'banned', label: 'Engellenmiş (Yasaklı)' },
+                            ].map((tab) => (
                                 <button
-                                    key={status}
-                                    onClick={() => setStatusFilter(status)}
+                                    key={tab.id}
+                                    onClick={() => setStatusFilter(tab.id)}
                                     className={cn(
-                                        'flex h-10 shrink-0 items-center justify-center rounded-full px-6 font-semibold text-sm transition-all',
-                                        statusFilter === status
-                                            ? 'bg-primary text-black'
-                                            : 'bg-white/5 border border-white/10 text-white hover:bg-white/10'
+                                        'px-4 py-2 rounded-xl text-xs font-bold transition-all border whitespace-nowrap',
+                                        statusFilter === tab.id
+                                            ? 'bg-primary text-black border-primary font-extrabold shadow-md'
+                                            : 'bg-zinc-900 text-zinc-300 border-zinc-800 hover:bg-zinc-800'
                                     )}
                                 >
-                                    {status === 'all' ? 'Tümü' : status === 'active' ? 'Aktif' : status === 'verified' ? 'Doğrulanmış' : 'Yasaklı'}
+                                    {tab.label}
                                 </button>
                             ))}
                         </div>
                     </div>
 
-                    {/* Content */}
+                    {/* Pending Verifications Strip */}
+                    {pendingVerifications.length > 0 && (
+                        <div className="mb-8">
+                            <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
+                                <span className="material-symbols-outlined text-amber-400 text-base">verified</span>
+                                Mavi Tik Bekleyenler
+                            </h3>
+                            <div className="flex overflow-x-auto gap-4 pb-2 scrollbar-hide">
+                                {pendingVerifications.map((user) => (
+                                    <div
+                                        key={user.id}
+                                        className="flex flex-col justify-between min-w-[150px] bg-zinc-900 p-3 rounded-2xl border border-zinc-800 shadow-lg"
+                                    >
+                                        <div
+                                            className="w-full aspect-[3/4] bg-cover bg-center rounded-xl relative bg-zinc-950 border border-zinc-800"
+                                            style={{ backgroundImage: user.photos && user.photos.length > 0 ? `url(${user.photos[0]})` : undefined }}
+                                        >
+                                            {!user.photos || user.photos.length === 0 && (
+                                                <div className="flex items-center justify-center h-full text-zinc-600">
+                                                    <span className="material-symbols-outlined text-3xl">person</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="mt-2">
+                                            <p className="font-bold text-xs text-white truncate">{user.name}</p>
+                                            <p className="text-[10px] text-zinc-400 truncate">{user.email || 'E-posta yok'}</p>
+                                            <button
+                                                onClick={() => handleAction(user.id, 'verify')}
+                                                className="mt-2 w-full py-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold hover:bg-emerald-500/30 transition-all flex items-center justify-center gap-1"
+                                            >
+                                                <span className="material-symbols-outlined text-xs">check_circle</span>
+                                                Onayla
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Users List Grid / Table */}
                     {loading ? (
                         <div className="flex justify-center py-20">
                             <div className="h-10 w-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
                         </div>
-                    ) : (
-                        <>
-                            {/* Pending Verifications Strip */}
-                            {pendingVerifications.length > 0 && (
-                                <div className="mb-8">
-                                    <h3 className="text-lg font-bold text-white mb-4">Hızlı Onay (Son Kayıtlar)</h3>
-                                    <div className="flex overflow-x-auto gap-4 scrollbar-hide pb-2">
-                                        {pendingVerifications.map((user) => (
-                                            <div
-                                                key={user.id}
-                                                className="flex flex-col gap-3 min-w-[160px] bg-surface-dark p-3 rounded-xl border border-white/10 shadow-lg"
-                                            >
-                                                <div
-                                                    className="w-full aspect-[3/4] bg-cover bg-center rounded-lg relative bg-white/5"
-                                                    style={{ backgroundImage: user.photos[0] ? `url(${user.photos[0]})` : undefined }}
-                                                >
-                                                    {!user.photos[0] && (
-                                                        <div className="absolute inset-0 flex items-center justify-center text-white/20">
-                                                            <span className="material-symbols-outlined text-4xl">person</span>
-                                                        </div>
+                    ) : filteredUsers.length > 0 ? (
+                        <div className="bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden shadow-xl">
+                            <div className="divide-y divide-zinc-800">
+                                {filteredUsers.map((user) => (
+                                    <div key={user.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-zinc-800/50 transition-colors">
+                                        <div className="flex items-center gap-3">
+                                            <Avatar src={user.photos && user.photos.length > 0 ? user.photos[0] : ''} name={user.name} size="md" />
+                                            <div>
+                                                <div className="flex items-center gap-2">
+                                                    <p className="font-bold text-white text-sm">{user.name}</p>
+                                                    {user.isVerified && (
+                                                        <span className="material-symbols-outlined text-sky-400 text-sm" title="Mavi Tik">verified</span>
+                                                    )}
+                                                    {user.isPremium && (
+                                                        <TierBadge tier={user.premiumTier || 'gold'} />
                                                     )}
                                                 </div>
-                                                <div className="px-1">
-                                                    <p className="font-bold text-sm text-white truncate">{user.name}</p>
-                                                    <p className="text-xs text-white/50">{formatRelativeTime(user.createdAt)}</p>
-                                                </div>
-                                                <Button size="sm" className="w-full" onClick={() => handleAction(user.id, 'verify')}>
-                                                    Doğrula
-                                                </Button>
+                                                <p className="text-xs text-zinc-400">{user.email || 'E-posta tanımlanmamış'}</p>
+                                                <p className="text-[11px] text-zinc-500 mt-0.5">
+                                                    Kayıt: {formatRelativeTime(user.createdAt)} • Son Aktif: {formatRelativeTime(user.lastActive)}
+                                                </p>
                                             </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
+                                        </div>
 
-                            {/* User List */}
-                            <h3 className="text-lg font-bold text-white mb-4">Kullanıcı Listesi</h3>
-                            <div className="space-y-3">
-                                {filteredUsers.map((user) => (
-                                    <UserCard
-                                        key={user.id}
-                                        user={user}
-                                        selected={selectedUsers.includes(user.id)}
-                                        onSelect={() => toggleUserSelection(user.id)}
-                                        onAction={handleAction}
-                                        onEdit={() => handleEdit(user)}
-                                        onView={() => handleEdit(user)}
-                                    />
-                                ))}
-
-                                {filteredUsers.length === 0 && (
-                                    <div className="text-center py-12">
-                                        <span className="material-symbols-outlined text-6xl text-white/20 mb-4">search_off</span>
-                                        <p className="text-white/50">Kullanıcı bulunamadı</p>
-                                    </div>
-                                )}
-                            </div>
-                        </>
-                    )}
-                </main>
-                <BottomNav />
-
-                {/* Floating Bulk Action Bar */}
-                {selectedUsers.length > 0 && (
-                    <div className="fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 z-40 bg-zinc-950/90 backdrop-blur-xl border border-primary/30 px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-4 animate-slide-up">
-                        <span className="text-xs font-bold text-white whitespace-nowrap">
-                            <span className="text-primary font-extrabold">{selectedUsers.length}</span> kullanıcı seçildi
-                        </span>
-                        <div className="h-4 w-px bg-white/10" />
-                        <div className="flex items-center gap-2">
-                            <Button size="sm" variant="ghost" onClick={() => handleBulkAction('verify')} className="text-xs text-emerald-400 hover:text-emerald-300">
-                                Mavi Tik Ver
-                            </Button>
-                            <Button size="sm" variant="ghost" onClick={() => handleBulkAction('add_credits')} className="text-xs text-amber-400 hover:text-amber-300">
-                                +50 Kredi
-                            </Button>
-                            <Button size="sm" variant="ghost" onClick={() => handleBulkAction('ban')} className="text-xs text-rose-500 hover:text-rose-400">
-                                Engelle
-                            </Button>
-                            <button onClick={() => setSelectedUsers([])} className="text-zinc-500 hover:text-white text-xs ml-2">
-                                İptal
-                            </button>
-                        </div>
-                    </div>
-                )}
-
-                {/* Edit Modal */}
-                {showUserModal && editingUser && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-                        <div className="bg-surface-dark w-full max-w-lg rounded-3xl border border-white/10 overflow-hidden shadow-2xl flex flex-col">
-                            <div className="p-6 border-b border-white/5 flex items-center justify-between">
-                                <h3 className="text-xl font-bold text-white">Kullanıcı Düzenle</h3>
-                                <button onClick={() => setShowUserModal(false)} className="text-white/50 hover:text-white">
-                                    <span className="material-symbols-outlined">close</span>
-                                </button>
-                            </div>
-
-                            <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
-                                {/* Photos Gallery */}
-                                {editingUser.photos && editingUser.photos.length > 0 && (
-                                    <div>
-                                        <label className="text-xs font-bold text-white/40 mb-3 block uppercase tracking-wider">Fotoğraflar</label>
-                                        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-                                            {editingUser.photos.map((photo, i) => (
-                                                <div key={i} className="relative group shrink-0">
-                                                    <img
-                                                        src={photo}
-                                                        className="h-40 w-32 object-cover rounded-2xl border border-white/10 shadow-lg"
-                                                        alt={`User photo ${i + 1}`}
-                                                    />
-                                                </div>
-                                            ))}
+                                        {/* Action Bar */}
+                                        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                                            <button
+                                                onClick={() => handleGrantVIP(user.id, 'gold')}
+                                                className="px-2.5 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20 text-xs font-bold transition-all"
+                                                title="Gold VIP Üyelik Ver"
+                                            >
+                                                👑 VIP Ver
+                                            </button>
+                                            <button
+                                                onClick={() => handleAddCredits(user.id, 100)}
+                                                className="px-2.5 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/30 text-blue-400 hover:bg-blue-500/20 text-xs font-bold transition-all"
+                                                title="+100 Kredi Yükle"
+                                            >
+                                                💎 +100 Kredi
+                                            </button>
+                                            <button
+                                                onClick={() => handleEdit(user)}
+                                                className="p-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200"
+                                                title="Düzenle"
+                                            >
+                                                <span className="material-symbols-outlined text-base">edit</span>
+                                            </button>
+                                            <button
+                                                onClick={() => handleAction(user.id, user.status === 'banned' ? 'suspend' : 'ban')}
+                                                className={cn(
+                                                    "p-1.5 rounded-lg border transition-all",
+                                                    user.status === 'banned'
+                                                        ? "bg-emerald-500/20 border-emerald-500/30 text-emerald-400"
+                                                        : "bg-rose-500/20 border-rose-500/30 text-rose-400"
+                                                )}
+                                                title={user.status === 'banned' ? "Yasağı Kaldır" : "Engelle (Ban)"}
+                                            >
+                                                <span className="material-symbols-outlined text-base">
+                                                    {user.status === 'banned' ? 'lock_open' : 'block'}
+                                                </span>
+                                            </button>
                                         </div>
                                     </div>
-                                )}
+                                ))}
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="py-20 text-center bg-zinc-900 rounded-2xl border border-zinc-800 text-zinc-500">
+                            Aranan kriterlere uygun kullanıcı bulunamadı.
+                        </div>
+                    )}
 
-                                {/* Stats Grid */}
-                                <div className="grid grid-cols-5 gap-3">
-                                    <div className="bg-white/5 rounded-2xl p-3 border border-white/5 text-center flex flex-col justify-center">
-                                        <p className="text-[9px] font-bold text-white/30 uppercase tracking-wider mb-1 line-clamp-1">Eşleşme</p>
-                                        <p className="text-lg font-bold text-white leading-none">{editingUser.matchCount || 0}</p>
-                                    </div>
-                                    <div className="bg-white/5 rounded-2xl p-3 border border-white/5 text-center flex flex-col justify-center">
-                                        <p className="text-[9px] font-bold text-white/30 uppercase tracking-wider mb-1 line-clamp-1">Mesaj</p>
-                                        <p className="text-lg font-bold text-white leading-none">{editingUser.messageCount || 0}</p>
-                                    </div>
-                                    <div className="bg-white/5 rounded-2xl p-3 border border-primary/20 bg-primary/5 text-center flex flex-col justify-center">
-                                        <p className="text-[9px] font-bold text-primary/60 uppercase tracking-wider mb-1 line-clamp-1">Takipçi</p>
-                                        <p className="text-lg font-bold text-white leading-none">{editingUser.followersCount || 0}</p>
-                                    </div>
-                                    <div className="bg-white/5 rounded-2xl p-3 border border-white/5 text-center flex flex-col justify-center">
-                                        <p className="text-[9px] font-bold text-white/30 uppercase tracking-wider mb-1 line-clamp-1">Takip</p>
-                                        <p className="text-lg font-bold text-white leading-none">{editingUser.followingCount || 0}</p>
-                                    </div>
-                                    <div className="bg-white/5 rounded-2xl p-3 border border-rose-500/20 bg-rose-500/5 text-center flex flex-col justify-center">
-                                        <p className="text-[9px] font-bold text-rose-500/60 uppercase tracking-wider mb-1 line-clamp-1">Rapor</p>
-                                        <p className="text-lg font-bold text-rose-500 leading-none">{editingUser.reportCount || 0}</p>
-                                    </div>
+                    {/* Edit User Modal */}
+                    {showUserModal && editingUser && (
+                        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+                            <div className="bg-zinc-900 border border-zinc-800 rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
+                                <div className="flex justify-between items-center border-b border-zinc-800 pb-3">
+                                    <h3 className="text-base font-bold text-white">Kullanıcı Profilini Düzenle</h3>
+                                    <button onClick={() => setShowUserModal(false)} className="text-zinc-400 hover:text-white">
+                                        <span className="material-symbols-outlined">close</span>
+                                    </button>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-3">
                                     <div>
-                                        <label className="text-xs font-bold text-white/40 mb-2 block uppercase tracking-wider">Ad Soyad</label>
+                                        <label className="text-xs text-zinc-400 block mb-1">Ad Soyad</label>
                                         <input
-                                            type="text"
-                                            value={editingUser.name}
+                                            value={editingUser.name || ''}
                                             onChange={(e) => setEditingUser({ ...editingUser, name: e.target.value })}
-                                            className="w-full h-12 bg-white/5 border border-white/10 rounded-xl px-4 text-white outline-none focus:border-primary transition-colors"
+                                            className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-sm text-white focus:border-primary outline-none"
                                         />
                                     </div>
                                     <div>
-                                        <label className="text-xs font-bold text-white/40 mb-2 block uppercase tracking-wider">İlişki Hedefi</label>
-                                        <select
-                                            value={editingUser.relationshipGoal || ''}
-                                            onChange={(e) => setEditingUser({ ...editingUser, relationshipGoal: e.target.value })}
-                                            className="w-full h-12 bg-white/5 border border-white/10 rounded-xl px-4 text-white outline-none focus:border-primary appearance-none [&>option]:bg-surface-dark transition-colors"
-                                        >
-                                            <option value="">Belirtilmemiş</option>
-                                            <option value="serious">Ciddi Bir İlişki</option>
-                                            <option value="casual">Kısa Süreli Eğlence</option>
-                                            <option value="chat">Sadece Sohbet</option>
-                                            <option value="unsure">Henüz Kararsızım</option>
-                                        </select>
+                                        <label className="text-xs text-zinc-400 block mb-1">Biyografi</label>
+                                        <textarea
+                                            value={editingUser.bio || ''}
+                                            onChange={(e) => setEditingUser({ ...editingUser, bio: e.target.value })}
+                                            className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-sm text-white focus:border-primary outline-none"
+                                            rows={3}
+                                        />
                                     </div>
                                 </div>
 
-                                <div>
-                                    <label className="text-xs font-bold text-white/40 mb-2 block uppercase tracking-wider">Biyografi</label>
-                                    <textarea
-                                        value={editingUser.bio}
-                                        onChange={(e) => setEditingUser({ ...editingUser, bio: e.target.value })}
-                                        rows={4}
-                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-primary resize-none transition-colors"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="text-xs font-bold text-white/40 mb-2 block uppercase tracking-wider">Hesap Durumu</label>
-                                    <select
-                                        value={editingUser.status}
-                                        onChange={(e) => setEditingUser({ ...editingUser, status: e.target.value as any })}
-                                        className="w-full h-12 bg-white/5 border border-white/10 rounded-xl px-4 text-white outline-none focus:border-primary appearance-none [&>option]:bg-surface-dark transition-colors"
-                                    >
-                                        <option value="active">Aktif</option>
-                                        <option value="verified">Doğrulanmış</option>
-                                        <option value="pending">Beklemede</option>
-                                        <option value="banned">Yasaklı</option>
-                                    </select>
-                                </div>
-
-                                <div className="flex gap-3 pt-4 border-t border-white/5 mt-auto">
-                                    <Button variant="outline" className="flex-1 h-12 rounded-xl" onClick={() => setShowUserModal(false)}>İptal</Button>
-                                    <Button className="flex-1 h-12 rounded-xl" onClick={handleUpdateUser}>Kaydet</Button>
+                                <div className="flex justify-end gap-2 pt-3">
+                                    <Button variant="secondary" onClick={() => setShowUserModal(false)} className="bg-zinc-800 text-zinc-300">İptal</Button>
+                                    <Button onClick={handleUpdateUser} className="bg-primary text-black font-bold">Kaydet</Button>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-}
+                    )}
 
-function UserCard({ user, selected, onSelect, onAction, onEdit, onView }: {
-    user: User;
-    selected: boolean;
-    onSelect: () => void;
-    onAction: (id: string, action: 'ban' | 'verify' | 'suspend') => void;
-    onEdit: () => void;
-    onView: () => void;
-}) {
-    return (
-        <div className={cn(
-            'bg-surface-dark rounded-2xl p-4 border transition-all duration-300',
-            selected ? 'border-primary bg-primary/5 shadow-lg shadow-primary/10' : 'border-white/5 hover:border-white/20'
-        )}>
-            <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-4">
-                    <div className="relative" onClick={onSelect}>
-                        <div className={cn(
-                            "absolute -top-1 -left-1 w-5 h-5 rounded-md border-2 border-surface-dark flex items-center justify-center transition-colors z-10",
-                            selected ? "bg-primary border-primary" : "bg-white/10"
-                        )}>
-                            {selected && <span className="material-symbols-outlined text-[14px] text-black font-bold">check</span>}
-                        </div>
-                        <Avatar
-                            src={user.photos[0]}
-                            name={user.name}
-                            size="lg"
-                            verified={user.isVerified}
-                            premium={user.isPremium}
-                        />
-                    </div>
-                    <div className="cursor-pointer group" onClick={onView}>
-                        <h4 className="font-bold text-white flex items-center gap-2 group-hover:text-primary transition-colors">
-                            {user.name}
-                            {user.isVerified && (
-                                <span className="material-symbols-outlined text-blue-400 text-[18px]">verified</span>
-                            )}
-                        </h4>
-                        <div className="flex flex-col gap-0.5 mt-0.5">
-                            <p className="text-white/40 text-[11px] font-medium">
-                                ID: {user.id.substring(0, 8)}... | {user.location?.city || 'Bilinmiyor'}
-                            </p>
-                            <p className="text-white/30 text-[10px] flex items-center gap-1">
-                                <span className="material-symbols-outlined text-[12px]">calendar_today</span>
-                                Kayıt: {formatRelativeTime(user.createdAt)}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-                <div className="flex flex-col items-end gap-2">
-                    {user.isPremium && <TierBadge tier={user.premiumTier || 'basic'} />}
-                    <StatusBadge status={user.status} />
-                </div>
-            </div>
-
-            {/* Actions */}
-            <div className="grid grid-cols-4 gap-2 border-t border-white/5 pt-4">
-                <button
-                    onClick={onView}
-                    className="flex flex-col items-center gap-1.5 py-2 text-white/40 hover:text-white transition-all hover:bg-white/5 rounded-xl"
-                >
-                    <span className="material-symbols-outlined text-xl">visibility</span>
-                    <span className="text-[10px] font-bold uppercase tracking-tight">Gör</span>
-                </button>
-                <button
-                    onClick={onEdit}
-                    className="flex flex-col items-center gap-1.5 py-2 text-white/40 hover:text-white transition-all hover:bg-white/5 rounded-xl"
-                >
-                    <span className="material-symbols-outlined text-xl">edit</span>
-                    <span className="text-[10px] font-bold uppercase tracking-tight">Düzenle</span>
-                </button>
-                <button
-                    onClick={() => onAction(user.id, 'verify')}
-                    className="flex flex-col items-center gap-1.5 py-2 text-primary/60 hover:text-primary transition-all hover:bg-primary/5 rounded-xl"
-                >
-                    <span className="material-symbols-outlined text-xl">verified_user</span>
-                    <span className="text-[10px] font-bold uppercase tracking-tight">Doğrula</span>
-                </button>
-                <button
-                    onClick={() => onAction(user.id, 'ban')}
-                    className="flex flex-col items-center gap-1.5 py-2 text-rose-500/60 hover:text-rose-500 transition-all hover:bg-rose-500/5 rounded-xl"
-                >
-                    <span className="material-symbols-outlined text-xl">block</span>
-                    <span className="text-[10px] font-bold uppercase tracking-tight">Yasakla</span>
-                </button>
+                </main>
+                <BottomNav />
             </div>
         </div>
     );

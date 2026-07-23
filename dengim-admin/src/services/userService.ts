@@ -181,9 +181,41 @@ export const UserService = {
                 updatedAt: new Date()
             });
             return true;
-        } catch (e) {
-            console.error("Update User Status Error:", e);
-            throw e;
+        } catch (error) {
+            console.error("Update User Status Error:", error);
+            throw error;
+        }
+    },
+
+    // Kullanıcıya VIP (Gold/Platinum) Üyelik Ver
+    grantPremium: async (userId: string, tier: 'gold' | 'platinum') => {
+        try {
+            const userRef = doc(db, USERS_COLLECTION, userId);
+            await updateDoc(userRef, {
+                isPremium: true,
+                premiumTier: tier,
+                premiumExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // +30 gün
+            });
+            return true;
+        } catch (error) {
+            console.error("Grant Premium error:", error);
+            return false;
+        }
+    },
+
+    // Kullanıcıya Kredi Yükle
+    addCredits: async (userId: string, amount: number) => {
+        try {
+            const userRef = doc(db, USERS_COLLECTION, userId);
+            const userDoc = await getDoc(userRef);
+            const currentCredits = userDoc.exists() ? (userDoc.data().credits || 0) : 0;
+            await updateDoc(userRef, {
+                credits: currentCredits + amount
+            });
+            return true;
+        } catch (error) {
+            console.error("Add Credits error:", error);
+            return false;
         }
     },
 

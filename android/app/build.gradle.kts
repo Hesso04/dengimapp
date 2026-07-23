@@ -34,8 +34,8 @@ android {
                 keyAlias = keystoreProperties["keyAlias"] as String
                 keyPassword = keystoreProperties["keyPassword"] as String
                 val keyPath = keystoreProperties["storeFile"] as String
-                val keystoreFile = file(keyPath)
-                storeFile = if (keystoreFile.exists()) keystoreFile else file("app/$keyPath")
+                val keystoreFile = rootProject.file("app/$keyPath")
+                storeFile = if (keystoreFile.exists()) keystoreFile else rootProject.file(keyPath)
                 storePassword = keystoreProperties["storePassword"] as String
             } else {
                 val debugConfig = getByName("debug")
