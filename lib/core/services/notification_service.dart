@@ -45,6 +45,7 @@ class NotificationService {
         importance: Importance.max,
         playSound: true,
         enableVibration: true,
+        showBadge: true,
       );
 
       final FlutterLocalNotificationsPlugin localPlugin = _localNotifications;
@@ -110,6 +111,12 @@ class NotificationService {
       FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
         _handleNotificationClick(jsonEncode(message.data));
       });
+
+      // Check if app was opened from a terminated state via notification
+      final initialMessage = await _fcm.getInitialMessage();
+      if (initialMessage != null) {
+        _handleNotificationClick(jsonEncode(initialMessage.data));
+      }
 
       // 5. Firestore Push-like Listener (DEMO MODE)
       _startFirestoreListener();
@@ -180,6 +187,9 @@ class NotificationService {
       playSound: true,
       enableVibration: true,
       showWhen: true,
+      fullScreenIntent: true,
+      visibility: NotificationVisibility.public,
+      category: AndroidNotificationCategory.message,
     );
     const NotificationDetails platformChannelSpecifics =
         NotificationDetails(android: androidPlatformChannelSpecifics);

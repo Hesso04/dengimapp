@@ -20,8 +20,83 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
   final ImagePicker _picker = ImagePicker();
   final ProfileService _profileService = ProfileService();
   final PageController _pageController = PageController();
+  
   int _currentPage = 0;
   final int _totalPages = 5;
+  bool _isTransitioning = false;
+  bool _isLoading = false;
+
+  // Controllers
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _countryController = TextEditingController(text: 'Türkiye 🇹🇷');
+  final TextEditingController _bioController = TextEditingController();
+  final TextEditingController _jobController = TextEditingController();
+  final TextEditingController _educationController = TextEditingController();
+  final TextEditingController _dayController = TextEditingController();
+  final TextEditingController _monthController = TextEditingController();
+  final TextEditingController _yearController = TextEditingController();
+
+  // FocusNodes for birth date auto-advance
+  final FocusNode _dayFocusNode = FocusNode();
+  final FocusNode _monthFocusNode = FocusNode();
+  final FocusNode _yearFocusNode = FocusNode();
+
+  String? _selectedGender;
+  String? _selectedRelationshipGoal;
+  final List<String> _selectedInterests = [];
+  final List<XFile?> _profilePhotos = [null, null, null, null, null, null]; 
+  final Map<int, Uint8List> _photoBytes = {}; 
+
+  final List<Map<String, String>> _relationshipGoals = [
+    {'id': 'serious', 'label': 'Ciddi İlişki 💍', 'desc': 'Uzun vadeli ve samimi bir partnerlik'},
+    {'id': 'casual', 'label': 'Eğlence 🥂', 'desc': 'Rahat, keyifli ve sosyal anlar'},
+    {'id': 'chat', 'label': 'Sohbet & Kahve ☕', 'desc': 'Yeni insanlarla tanışıp dertleşmek'},
+    {'id': 'unsure', 'label': 'Aşışına Bıraktım 🌿', 'desc': 'Zamanın ne getireceğini görelim'},
+  ];
+  
+  final List<Map<String, dynamic>> _interests = [
+    {'name': 'Seyahat', 'icon': Icons.flight_takeoff_rounded},
+    {'name': 'Müzik', 'icon': Icons.music_note_rounded},
+    {'name': 'Tenis', 'icon': Icons.sports_tennis_rounded},
+    {'name': 'Yemek', 'icon': Icons.restaurant_rounded},
+    {'name': 'Sinema', 'icon': Icons.movie_creation_rounded},
+    {'name': 'Spor', 'icon': Icons.fitness_center_rounded},
+    {'name': 'Fotoğrafçılık', 'icon': Icons.camera_alt_rounded},
+    {'name': 'Yoga', 'icon': Icons.self_improvement_rounded},
+    {'name': 'Kahve', 'icon': Icons.coffee_rounded},
+    {'name': 'Oyun', 'icon': Icons.sports_esports_rounded},
+    {'name': 'Doğa', 'icon': Icons.park_rounded},
+    {'name': 'Teknoloji', 'icon': Icons.laptop_mac_rounded},
+    {'name': 'Dans', 'icon': Icons.nightlife_rounded},
+    {'name': 'Hayvanlar', 'icon': Icons.pets_rounded},
+    {'name': 'Sanat', 'icon': Icons.palette_rounded},
+    {'name': 'Kitap', 'icon': Icons.menu_book_rounded},
+    {'name': 'Yazılım', 'icon': Icons.code_rounded},
+    {'name': 'Kripto', 'icon': Icons.currency_bitcoin_rounded},
+    {'name': 'Futbol', 'icon': Icons.sports_soccer_rounded},
+    {'name': 'Basketbol', 'icon': Icons.sports_basketball_rounded},
+    {'name': 'Podcast', 'icon': Icons.podcasts_rounded},
+    {'name': 'Girişimcilik', 'icon': Icons.rocket_launch_rounded},
+  ];
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _countryController.dispose();
+    _bioController.dispose();
+    _jobController.dispose();
+    _educationController.dispose();
+    _dayController.dispose();
+    _monthController.dispose();
+    _yearController.dispose();
+
+    _dayFocusNode.dispose();
+    _monthFocusNode.dispose();
+    _yearFocusNode.dispose();
+
+    _pageController.dispose();
+    super.dispose();
+  }
 
   Future<void> _fetchAndSaveLocation() async {
     try {
@@ -44,35 +119,10 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
       );
       await _profileService.updateLocation(position.latitude, position.longitude);
     } catch (e) {
-      debugPrint("Failed to fetch location during registration: $e");
+      debugPrint("Location update failed during registration: $e");
     }
   }
-  
-  // Controllers
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _countryController = TextEditingController();
-  final TextEditingController _bioController = TextEditingController();
-  final TextEditingController _jobController = TextEditingController();
-  final TextEditingController _educationController = TextEditingController();
-  final TextEditingController _dayController = TextEditingController();
-  final TextEditingController _monthController = TextEditingController();
-  final TextEditingController _yearController = TextEditingController();
-  
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _countryController.dispose();
-    _bioController.dispose();
-    _jobController.dispose();
-    _educationController.dispose();
-    _dayController.dispose();
-    _monthController.dispose();
-    _yearController.dispose();
-    _pageController.dispose();
-    super.dispose();
-  }
 
-  // ... (State logic kept from previous version)
   Future<void> _pickImage(int index) async {
     try {
       final XFile? image = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 75);
@@ -82,6 +132,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
           _profilePhotos[index] = image;
           _photoBytes[index] = bytes;
         });
+        HapticFeedback.lightImpact();
       }
     } catch (e) {
       if (mounted) {
@@ -98,75 +149,62 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
     final year = int.tryParse(_yearController.text);
     if (day == null || month == null || year == null) return null;
     if (day < 1 || day > 31 || month < 1 || month > 12) return null;
-    if (year < 1924 || year > DateTime.now().year) return null;
+    if (year < 1924 || year > (DateTime.now().year - 18)) return null;
     try { return DateTime(year, month, day); } catch (e) { return null; }
   }
 
+  void _nextPage() {
+    FocusScope.of(context).unfocus();
+    if (_isTransitioning || _isLoading) return;
 
-  String? _selectedGender;
-  String? _selectedRelationshipGoal;
-  final List<String> _selectedInterests = [];
-  final List<XFile?> _profilePhotos = [null, null, null, null, null, null]; 
-  final Map<int, Uint8List> _photoBytes = {}; 
+    if (_currentPage == 0) {
+      if (_nameController.text.trim().isEmpty) {
+        _showSnackBar('Lütfen adınızı giriniz.');
+        return;
+      }
+      if (_getBirthDateFromFields() == null) {
+        _showSnackBar('Lütfen geçerli bir doğum tarihi giriniz (En az 18 yaş).');
+        return;
+      }
+    }
 
-  final List<Map<String, String>> _relationshipGoals = [
-    {'id': 'serious', 'label': 'Ciddi İlişki 💍', 'desc': 'Uzun vadeli partner'},
-    {'id': 'casual', 'label': 'Eğlence 🥂', 'desc': 'Kısa vadeli takılmaca'},
-    {'id': 'chat', 'label': 'Sohbet ☕', 'desc': 'Yeni arkadaşlar'},
-    {'id': 'unsure', 'label': 'Belirsiz 🤷‍♂️', 'desc': 'Henüz karar vermedim'},
-  ];
-  
-  final List<Map<String, dynamic>> _interests = [
-    {'name': 'Seyahat', 'icon': Icons.flight},
-    {'name': 'Finans', 'icon': Icons.payments},
-    {'name': 'Müzik', 'icon': Icons.piano},
-    {'name': 'Tenis', 'icon': Icons.sports_tennis},
-    {'name': 'Mimari', 'icon': Icons.architecture},
-    {'name': 'Yemek', 'icon': Icons.restaurant},
-    {'name': 'Sanat', 'icon': Icons.theater_comedy},
-    {'name': 'Deniz', 'icon': Icons.sailing},
-    {'name': 'Sinema', 'icon': Icons.movie},
-    {'name': 'Spor', 'icon': Icons.fitness_center},
-    {'name': 'Fotoğrafçılık', 'icon': Icons.camera_alt},
-    {'name': 'Yoga', 'icon': Icons.self_improvement},
-    {'name': 'Okuma', 'icon': Icons.menu_book},
-    {'name': 'Oyun', 'icon': Icons.sports_esports},
-    {'name': 'Dans', 'icon': Icons.nightlife},
-    {'name': 'Doğa', 'icon': Icons.park},
-    {'name': 'Kahve', 'icon': Icons.coffee},
-    {'name': 'Teknoloji', 'icon': Icons.computer},
-    {'name': 'Moda', 'icon': Icons.checkroom},
-    {'name': 'Hayvanlar', 'icon': Icons.pets},
-    {'name': 'Bisiklet', 'icon': Icons.directions_bike},
-    {'name': 'Koşu', 'icon': Icons.directions_run},
-    {'name': 'Yüzme', 'icon': Icons.pool},
-    {'name': 'Kitap', 'icon': Icons.auto_stories},
-    {'name': 'Dil Öğrenme', 'icon': Icons.translate},
-    {'name': 'Girişimcilik', 'icon': Icons.rocket_launch},
-    {'name': 'Podcast', 'icon': Icons.podcasts},
-    {'name': 'Meditasyon', 'icon': Icons.spa},
-    {'name': 'Futbol', 'icon': Icons.sports_soccer},
-    {'name': 'Basketbol', 'icon': Icons.sports_basketball},
-    {'name': 'Araba', 'icon': Icons.directions_car},
-    {'name': 'Kripto', 'icon': Icons.currency_bitcoin},
-    {'name': 'Astronomi', 'icon': Icons.auto_awesome},
-    {'name': 'Yazılım', 'icon': Icons.code},
-    {'name': 'Gönüllülük', 'icon': Icons.volunteer_activism},
-  ];
+    if (_currentPage < _totalPages - 1) {
+      setState(() => _isTransitioning = true);
+      HapticFeedback.selectionClick();
+      _pageController.nextPage(duration: const Duration(milliseconds: 350), curve: Curves.easeInOut)
+          .then((_) {
+            if (mounted) setState(() => _isTransitioning = false);
+          });
+    } else {
+      _submitProfile();
+    }
+  }
 
-  bool _isLoading = false;
+  void _prevPage() {
+    FocusScope.of(context).unfocus();
+    if (_isTransitioning || _isLoading) return;
+    if (_currentPage > 0) {
+      setState(() => _isTransitioning = true);
+      HapticFeedback.selectionClick();
+      _pageController.previousPage(duration: const Duration(milliseconds: 350), curve: Curves.easeInOut)
+          .then((_) {
+            if (mounted) setState(() => _isTransitioning = false);
+          });
+    }
+  }
+
+  void _showSnackBar(String text) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(text),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
 
   void _submitProfile() async {
-    if (_nameController.text.trim().isEmpty) {
-      _showPage(0);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Lütfen isminizi giriniz')));
-      return;
-    }
-    if (_getBirthDateFromFields() == null) {
-      _showPage(0);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Lütfen doğum tarihinizi giriniz')));
-      return;
-    }
+    FocusScope.of(context).unfocus();
 
     setState(() => _isLoading = true);
     HapticFeedback.mediumImpact();
@@ -179,14 +217,11 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
       
       for (int i = 0; i < _profilePhotos.length; i++) {
         if (_photoBytes.containsKey(i)) {
-          // Set a 8-second timeout for each individual image upload to prevent a single hanging request
-          // from blocking the entire profile creation flow.
           uploadFutures.add(
             _profileService.uploadProfilePhotoBytes(_photoBytes[i]!, uid)
               .timeout(
                 const Duration(seconds: 8),
                 onTimeout: () {
-                  debugPrint("Photo upload timed out at index $i, using placeholder");
                   return 'https://ui-avatars.com/api/?name=${_nameController.text.isNotEmpty ? _nameController.text[0] : "D"}&background=random&color=fff&size=128&font-size=0.4';
                 },
               ),
@@ -199,8 +234,8 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
 
       await _profileService.createProfile(
         name: _nameController.text.trim(),
-        birthDate: _getBirthDateFromFields(),
-        gender: _selectedGender ?? 'Diğer',
+        birthDate: _getBirthDateFromFields() ?? DateTime(2000, 1, 1),
+        gender: _selectedGender ?? 'Belirtilmemiş',
         country: _countryController.text.trim(),
         interests: _selectedInterests,
         relationshipGoal: _selectedRelationshipGoal,
@@ -219,7 +254,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
         );
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Profil oluşturulamadı: $e')));
+      if (mounted) _showSnackBar('Profil oluşturulamadı: $e');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -234,7 +269,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
         name: name,
         birthDate: _getBirthDateFromFields() ?? DateTime(2000, 1, 1),
         gender: _selectedGender ?? 'Belirtilmemiş',
-        country: _countryController.text.trim().isNotEmpty ? _countryController.text.trim() : 'Dünya',
+        country: _countryController.text.trim().isNotEmpty ? _countryController.text.trim() : 'Türkiye 🇹🇷',
         interests: _selectedInterests,
         relationshipGoal: _selectedRelationshipGoal,
         photoUrls: ['https://ui-avatars.com/api/?name=${name[0]}&background=random&color=fff&size=128&font-size=0.4'],
@@ -251,165 +286,163 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
         );
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+      if (mounted) _showSnackBar('Hata: $e');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  bool _isTransitioning = false;
-
-  void _nextPage() {
-    if (_isTransitioning || _isLoading) return;
-    if (_currentPage < _totalPages - 1) {
-      setState(() => _isTransitioning = true);
-      _pageController.nextPage(duration: const Duration(milliseconds: 400), curve: Curves.easeInOut)
-          .then((_) {
-            if (mounted) setState(() => _isTransitioning = false);
-          });
-    } else {
-      _submitProfile();
-    }
-  }
-
-  void _prevPage() {
-    if (_isTransitioning || _isLoading) return;
-    if (_currentPage > 0) {
-      setState(() => _isTransitioning = true);
-      _pageController.previousPage(duration: const Duration(milliseconds: 400), curve: Curves.easeInOut)
-          .then((_) {
-            if (mounted) setState(() => _isTransitioning = false);
-          });
-    }
-  }
-
-  void _showPage(int index) {
-    if (_isLoading) return;
-    setState(() => _isTransitioning = true);
-    _pageController.animateToPage(index, duration: const Duration(milliseconds: 400), curve: Curves.easeInOut)
-        .then((_) {
-          if (mounted) setState(() => _isTransitioning = false);
-        });
+  void _showSkipDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text('Daha sonra tamamla?', style: GoogleFonts.outfit(fontWeight: FontWeight.w800)),
+        content: Text('Eksiksiz profiller 5 kat daha fazla görünürlük ve eşleşme alır. Yine de geçmek istiyor musun?', style: GoogleFonts.outfit(fontSize: 14)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Devam Et', style: GoogleFonts.outfit(color: AppColors.primary, fontWeight: FontWeight.w700)),
+          ),
+          ElevatedButton(
+            onPressed: () { Navigator.pop(ctx); _submitProfileMinimal(); },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.grey.shade300,
+              foregroundColor: Colors.black87,
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: Text('Hızlı Başlat', style: GoogleFonts.outfit(fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    final bgColor = isDark ? AppColors.scaffoldDark : AppColors.scaffold;
+    final cardBgColor = isDark ? const Color(0xFF1E1E24) : Colors.white;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subtitleColor = isDark ? Colors.white70 : AppColors.textSecondary;
+    final borderColor = isDark ? Colors.white.withValues(alpha: 0.12) : const Color(0xFFEEEEEE);
+
     return Scaffold(
-      backgroundColor: AppColors.scaffold,
+      backgroundColor: bgColor,
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: bgColor,
         elevation: 0,
         centerTitle: true,
-        toolbarHeight: 80,
-        shape: Border(bottom: BorderSide(color: Color(0xFFEEEEEE), width: 1.0)),
+        toolbarHeight: 70,
         leading: _currentPage > 0 
           ? IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black, size: 20),
+              icon: Icon(Icons.arrow_back_ios_new_rounded, color: textColor, size: 20),
               onPressed: _prevPage,
             )
           : TextButton(
-              onPressed: _isLoading ? null : () => _showSkipDialog(),
-              child: Text('SONRA', style: GoogleFonts.outfit(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w900)),
+              onPressed: _isLoading ? null : _showSkipDialog,
+              child: Text(
+                'SONRA',
+                style: GoogleFonts.outfit(color: subtitleColor, fontSize: 12, fontWeight: FontWeight.w700),
+              ),
             ),
         title: Column(
           children: [
             Text(
-              'PROFİLİNİ OLUŞTUR',
-              style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: -0.5, color: Colors.black),
+              'PROFILINI OLUŞTUR',
+              style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.w800, letterSpacing: 0.5, color: textColor),
             ),
             const SizedBox(height: 8),
-            _buildStepProgress(),
+            _buildStepProgress(isDark),
           ],
         ),
       ),
       body: _isLoading 
-          ? const Center(child: CircularProgressIndicator(color: Colors.black))
+          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
           : Column(
               children: [
                 Expanded(
                   child: PageView(
                     controller: _pageController,
-                    onPageChanged: (page) => setState(() => _currentPage = page),
-                    physics: const NeverScrollableScrollPhysics(),
+                    onPageChanged: (page) {
+                      FocusScope.of(context).unfocus();
+                      setState(() => _currentPage = page);
+                    },
+                    physics: const BouncingScrollPhysics(),
                     children: [
-                      _buildPage0(), // Identity
-                      _buildPage1(), // Bio/Job
-                      _buildPage2(), // Photos
-                      _buildPage3(), // Identity/Goals
-                      _buildPage4(), // Interests
+                      _buildPage0(isDark, cardBgColor, textColor, subtitleColor, borderColor), // Kimlik
+                      _buildPage1(isDark, cardBgColor, textColor, subtitleColor, borderColor), // Meslek/Bio
+                      _buildPage2(isDark, cardBgColor, textColor, subtitleColor, borderColor), // Fotoğraflar
+                      _buildPage3(isDark, cardBgColor, textColor, subtitleColor, borderColor), // Cinsiyet & Hedef
+                      _buildPage4(isDark, cardBgColor, textColor, subtitleColor, borderColor), // İlgi Alanları
                     ],
                   ),
                 ),
-                _buildBottomNavigation(),
+                _buildBottomNavigation(isDark, cardBgColor, textColor, borderColor),
               ],
             ),
     );
   }
 
-  Widget _buildStepProgress() {
+  Widget _buildStepProgress(bool isDark) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: List.generate(_totalPages, (index) {
         final isActive = index <= _currentPage;
-        return Container(
-          width: 24,
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          width: isActive ? 24 : 12,
           height: 6,
-          margin: const EdgeInsets.symmetric(horizontal: 2),
+          margin: const EdgeInsets.symmetric(horizontal: 3),
           decoration: BoxDecoration(
-            color: isActive ? AppColors.primary : Colors.black.withValues(alpha: 0.05),
+            color: isActive ? AppColors.primary : (isDark ? Colors.white24 : Colors.black12),
             borderRadius: BorderRadius.circular(3),
-            border: Border.all(color: Colors.black, width: 1),
           ),
         );
       }),
     );
   }
 
-  Widget _buildBottomNavigation() {
+  Widget _buildBottomNavigation(bool isDark, Color cardBgColor, Color textColor, Color borderColor) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
+      padding: EdgeInsets.fromLTRB(24, 16, 24, MediaQuery.of(context).padding.bottom + 16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Color(0xFFEEEEEE), width: 1.0)),
+        color: cardBgColor,
+        border: Border(top: BorderSide(color: borderColor, width: 1.0)),
       ),
       child: Row(
         children: [
           if (_currentPage > 0)
             Expanded(
-              child: GestureDetector(
-                onTap: _prevPage,
-                child: Container(
-                  height: 60,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(AppColors.neoRadius),
-                    border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-                    boxShadow: [AppColors.neoShadowSmall],
-                  ),
-                  child: Center(
-                    child: Text('GERİ', style: GoogleFonts.outfit(fontWeight: FontWeight.w900, color: Colors.black)),
-                  ),
+              child: OutlinedButton(
+                onPressed: _prevPage,
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 54),
+                  side: BorderSide(color: borderColor),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 ),
+                child: Text('GERİ', style: GoogleFonts.outfit(fontWeight: FontWeight.w700, color: textColor)),
               ),
             ),
           if (_currentPage > 0) const SizedBox(width: 16),
           Expanded(
             flex: 2,
-            child: GestureDetector(
-              onTap: _nextPage,
-              child: Container(
-                height: 60,
-                decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: BorderRadius.circular(AppColors.neoRadius),
-                  boxShadow: [AppColors.neoShadowSmall],
-                ),
-                child: Center(
-                  child: Text(
-                    _currentPage == _totalPages - 1 ? 'TAMAMLA' : 'İLERLE',
-                    style: GoogleFonts.outfit(fontWeight: FontWeight.w900, color: Colors.white),
-                  ),
-                ),
+            child: ElevatedButton(
+              onPressed: _nextPage,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                minimumSize: const Size(double.infinity, 54),
+                elevation: 0,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              ),
+              child: Text(
+                _currentPage == _totalPages - 1 ? 'TAMAMLA VE BAŞLA' : 'DEVAM ET',
+                style: GoogleFonts.outfit(fontWeight: FontWeight.w700, fontSize: 15),
               ),
             ),
           ),
@@ -418,198 +451,304 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
     );
   }
 
-  // --- Page Builders ---
-
-  Widget _buildPage0() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(vertical: 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-           _buildStepTitle('KİMLİK', 'Seni tanımakla başlayalım.'),
-           _buildModernInput(
-             controller: _nameController,
-             label: 'AD SOYAD',
-             placeholder: 'ARDA YILMAZ',
-             validator: (v) => v!.isEmpty ? 'Gerekli' : null,
-           ),
-           const SizedBox(height: 24),
-           _buildSectionHeader('DOĞUM TARİHİ'),
-           _buildBirthDateInputs(),
-           const SizedBox(height: 24),
-           _buildSectionHeader('ÜLKE'),
-           _buildCountryDropdown(),
-        ],
+  // --- SAMİMİ İPUCU KARTI (TIP BANNER) WIDGET ---
+  Widget _buildTipCard({
+    required IconData icon,
+    required String title,
+    required String message,
+    required bool isDark,
+  }) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(24, 0, 24, 20),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: isDark ? 0.15 : 0.08),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: AppColors.primary.withValues(alpha: 0.3),
+          width: 1,
+        ),
       ),
-    );
-  }
-
-  Widget _buildPage1() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(vertical: 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-           _buildStepTitle('MODUNU BELİRLE', 'Kendinden kısaca bahset.'),
-           _buildModernInput(
-             controller: _jobController,
-             label: 'MESLEK',
-             placeholder: 'FİNANS DİREKTÖRÜ',
-           ),
-           _buildModernInput(
-             controller: _educationController,
-             label: 'EĞİTİM',
-             placeholder: 'İSTANBUL ÜNİVERSİTESİ',
-           ),
-           _buildModernInput(
-             controller: _bioController,
-             label: 'HAKKINDA',
-             placeholder: 'KENDİNDEN BAHSET...',
-             maxLines: 5,
-           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPage2() {
-    return Column(
-      children: [
-        Expanded(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(vertical: 24),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.2),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: AppColors.primary, size: 22),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildStepTitle('FOTOĞRAFLAR', 'En güzel karelerini yükle.'),
-                _buildPhotoHeader(),
+                Text(
+                  title,
+                  style: GoogleFonts.outfit(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  message,
+                  style: GoogleFonts.outfit(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                    color: isDark ? Colors.white70 : AppColors.textSecondary,
+                    height: 1.3,
+                  ),
+                ),
               ],
             ),
           ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPage3() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(vertical: 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-           _buildStepTitle('NİYETİN NEDİR?', 'Cinsiyetin ve ne aradığın önemli.'),
-           _buildSectionHeader('CİNSİYET'),
-           Padding(
-             padding: const EdgeInsets.symmetric(horizontal: 24),
-             child: Column(
-               children: [
-                 Row(
-                   children: [
-                     _buildGenderChip('Erkek', Icons.male),
-                     const SizedBox(width: 12),
-                     _buildGenderChip('Kadın', Icons.female),
-                   ],
-                 ),
-                 const SizedBox(height: 12),
-                 _buildGenderChip('Belirtmek İstemiyorum', Icons.person_outline),
-               ],
-             ),
-           ),
-           const SizedBox(height: 32),
-           _buildSectionHeader('İLİŞKİ HEDEFİ'),
-           _buildRelationshipGoalSelector(),
         ],
       ),
     );
   }
 
-  Widget _buildPage4() {
+  // --- PAGE 0: KİMLİK & DOĞUM TARİHİ ---
+  Widget _buildPage0(bool isDark, Color cardBgColor, Color textColor, Color subtitleColor, Color borderColor) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(vertical: 24),
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.symmetric(vertical: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-           _buildStepTitle('İLGİ ALANLARI', 'En fazla 8 ilgi alanı seçebilirsin.'),
-           _buildInterestsGrid(),
-           const SizedBox(height: 40),
-           Padding(
-             padding: const EdgeInsets.symmetric(horizontal: 40),
-             child: Text(
-               'HARİKA! HER ŞEY HAZIR GÖRÜNÜYOR. TAMAMLA BUTONUNA BASARAK ARAMIZA KATILABİLİRSİN.',
-               textAlign: TextAlign.center,
-               style: GoogleFonts.outfit(color: AppColors.textSecondary, fontWeight: FontWeight.w700, fontSize: 13),
-             ),
-           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStepTitle(String title, String subtitle) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: GoogleFonts.outfit(fontSize: 32, fontWeight: FontWeight.w900, color: Colors.black, letterSpacing: -1)),
-          const SizedBox(height: 8),
-          Text(subtitle.toUpperCase(), style: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.textSecondary)),
+          _buildStepHeader('Seni Tanıyalım 👋', 'Topluluğumuza adını ve yaşını sunarak başlayalım.'),
+          _buildTipCard(
+            icon: Icons.face_rounded,
+            title: 'Neden Doğum Tarihi?',
+            message: 'Yaşın profilinde görünecektir. Sana en uygun yaş aralığındaki kişileri eşleştirmek için kullanırız.',
+            isDark: isDark,
+          ),
+          _buildModernInput(
+            controller: _nameController,
+            label: 'AD VE SOYAD',
+            placeholder: 'Örn: Caner Yılmaz',
+            isDark: isDark,
+            cardBgColor: cardBgColor,
+            textColor: textColor,
+            borderColor: borderColor,
+          ),
           const SizedBox(height: 16),
-          Container(width: 60, height: 6, decoration: BoxDecoration(color: AppColors.primary, border: Border.all(color: Colors.black, width: 2))),
+          _buildSectionHeader('DOĞUM TARİHİ', textColor),
+          _buildBirthDateInputs(isDark, cardBgColor, textColor, borderColor),
+          const SizedBox(height: 20),
+          _buildSectionHeader('BULUNDUĞUN ÜLKE', textColor),
+          _buildCountryDropdown(isDark, cardBgColor, textColor, borderColor),
+          const SizedBox(height: 24),
         ],
       ),
     );
   }
 
-  // --- Helper Widgets (Borrowed from existing or slightly tweaked) ---
+  // --- PAGE 1: MESLEK, EĞİTİM & HAKKINDA ---
+  Widget _buildPage1(bool isDark, Color cardBgColor, Color textColor, Color subtitleColor, Color borderColor) {
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildStepHeader('Tarzını Yansıt ✍️', 'Kendinden kısaca bahsederek sohbet başlatmayı kolaylaştır.'),
+          _buildTipCard(
+            icon: Icons.lightbulb_outline_rounded,
+            title: 'Harika Bir İpucu',
+            message: 'İlgi çekici ve samimi bir biyografi sohbet açılışlarını %80 oranında kolaylaştırır!',
+            isDark: isDark,
+          ),
+          _buildModernInput(
+            controller: _jobController,
+            label: 'MESLEK VEYA UĞRAŞ',
+            placeholder: 'Örn: Yazılım Geliştirici, Mimar, Öğrenci...',
+            isDark: isDark,
+            cardBgColor: cardBgColor,
+            textColor: textColor,
+            borderColor: borderColor,
+          ),
+          _buildModernInput(
+            controller: _educationController,
+            label: 'EĞİTİM',
+            placeholder: 'Örn: Boğaziçi Üniversitesi',
+            isDark: isDark,
+            cardBgColor: cardBgColor,
+            textColor: textColor,
+            borderColor: borderColor,
+          ),
+          _buildModernInput(
+            controller: _bioController,
+            label: 'HAKKINDA BİRKAÇ CÜMLE',
+            placeholder: 'Nelerden hoşlanırsın, boş zamanlarında ne yaparsın?...',
+            maxLines: 4,
+            isDark: isDark,
+            cardBgColor: cardBgColor,
+            textColor: textColor,
+            borderColor: borderColor,
+          ),
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
 
-  void _showSkipDialog() {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24), side: const BorderSide(color: Color(0xFFEEEEEE), width: 1.0)),
-        title: Text('SONRA TAMAMLA?', style: GoogleFonts.outfit(color: Colors.black, fontWeight: FontWeight.w900)),
-        content: Text('PROFİLİNİ DAHA SONRA TAMAMLAYABİLİRSİN. ANCAK TAMAMLANMAMIŞ PROFİLLER DAHA AZ GÖRÜNÜRLÜK ALIR.', style: GoogleFonts.outfit(color: Colors.black, fontWeight: FontWeight.w700)),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('KAPAT', style: GoogleFonts.outfit(color: AppColors.textSecondary, fontWeight: FontWeight.w900))),
-          ElevatedButton(
-            onPressed: () { Navigator.pop(ctx); _submitProfileMinimal(); },
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.black, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: const BorderSide(color: Color(0xFFEEEEEE), width: 1.0)), elevation: 0),
-            child: Text('DEVAM ET', style: GoogleFonts.outfit(fontWeight: FontWeight.w900)),
+  // --- PAGE 2: FOTOĞRAFLAR ---
+  Widget _buildPage2(bool isDark, Color cardBgColor, Color textColor, Color subtitleColor, Color borderColor) {
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: Column(
+        children: [
+          _buildStepHeader('En Güzel Karelerin 📸', 'Fotoğrafların senin en büyük vitrinindir.'),
+          _buildTipCard(
+            icon: Icons.photo_camera_back_rounded,
+            title: 'Vitrinini Parlat',
+            message: 'Gülümseyen ve yüzünün net göründüğü fotoğraflar 5 kat daha fazla etkileşim getirir!',
+            isDark: isDark,
+          ),
+          _buildPhotoPickerGrid(isDark, cardBgColor, textColor, borderColor),
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
+
+  // --- PAGE 3: CİNSİYET & İLİŞKİ HEDEFİ ---
+  Widget _buildPage3(bool isDark, Color cardBgColor, Color textColor, Color subtitleColor, Color borderColor) {
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildStepHeader('Niyet ve Tercihler 🎯', 'Sana en doğru eşleşmeleri getirmemiz için hedefini seç.'),
+          _buildTipCard(
+            icon: Icons.favorite_border_rounded,
+            title: 'Açık İletişim',
+            message: 'Ne aradığını belirtmek beklentileri doğru yönetir ve doğru insanları karşına çıkarır.',
+            isDark: isDark,
+          ),
+          _buildSectionHeader('CİNSİYETİN', textColor),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Row(
+              children: [
+                _buildGenderChip('Erkek', Icons.male_rounded, isDark, cardBgColor, textColor, borderColor),
+                const SizedBox(width: 12),
+                _buildGenderChip('Kadın', Icons.female_rounded, isDark, cardBgColor, textColor, borderColor),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+          _buildSectionHeader('İLİŞKİ HEDEFİN', textColor),
+          _buildRelationshipGoalSelector(isDark, cardBgColor, textColor, borderColor),
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
+
+  // --- PAGE 4: İLİŞKİ HEDEFİ & İLGİ ALANLARI ---
+  Widget _buildPage4(bool isDark, Color cardBgColor, Color textColor, Color subtitleColor, Color borderColor) {
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildStepHeader('İlgi Alanların ✨', 'Ortak tutkular harika sohbetlerin başlangıcıdır.'),
+          _buildTipCard(
+            icon: Icons.stars_rounded,
+            title: 'Ortak Noktalar',
+            message: 'En az 3 ilgi alanı seç. Eşleştiğin kişilerle ortak ilgi alanların sohbetinde vurgulanacaktır!',
+            isDark: isDark,
+          ),
+          _buildInterestsGrid(isDark, cardBgColor, textColor, borderColor),
+          const SizedBox(height: 28),
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32),
+              child: Text(
+                '🎉 Harika! Tüm bilgiler tamamlandı. Aşağıdaki butona basarak Dengim dünyasına ilk adımını atabilirsin.',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.outfit(color: AppColors.primary, fontWeight: FontWeight.w600, fontSize: 13, height: 1.4),
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStepHeader(String title, String subtitle) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: GoogleFonts.outfit(fontSize: 26, fontWeight: FontWeight.w800, letterSpacing: -0.5),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            subtitle,
+            style: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.w400, color: AppColors.textSecondary),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSectionHeader(String title) {
+  Widget _buildSectionHeader(String title, Color textColor) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
-      child: Text(title, style: GoogleFonts.outfit(fontSize: 13, fontWeight: FontWeight.w900, letterSpacing: 1.0, color: Colors.black)),
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 12),
+      child: Text(
+        title,
+        style: GoogleFonts.outfit(fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 1.0, color: textColor),
+      ),
     );
   }
 
-  Widget _buildModernInput({required TextEditingController controller, required String label, required String placeholder, int maxLines = 1, String? Function(String?)? validator}) {
+  Widget _buildModernInput({
+    required TextEditingController controller,
+    required String label,
+    required String placeholder,
+    int maxLines = 1,
+    required bool isDark,
+    required Color cardBgColor,
+    required Color textColor,
+    required Color borderColor,
+  }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(padding: const EdgeInsets.only(left: 4, bottom: 8), child: Text(label, style: GoogleFonts.outfit(fontSize: 12, fontWeight: FontWeight.w900, color: Colors.black))),
+          Padding(
+            padding: const EdgeInsets.only(left: 4, bottom: 6),
+            child: Text(
+              label,
+              style: GoogleFonts.outfit(fontSize: 12, fontWeight: FontWeight.w700, color: textColor),
+            ),
+          ),
           TextFormField(
             controller: controller,
             maxLines: maxLines,
-            validator: validator,
-            style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.black),
+            style: GoogleFonts.outfit(fontSize: 15, fontWeight: FontWeight.w500, color: textColor),
             decoration: InputDecoration(
               hintText: placeholder,
-              hintStyle: GoogleFonts.outfit(color: Colors.black.withValues(alpha: 0.2)),
+              hintStyle: GoogleFonts.outfit(color: isDark ? Colors.white30 : Colors.black38, fontSize: 14),
               filled: true,
-              fillColor: Colors.white,
-              contentPadding: const EdgeInsets.all(20),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFEEEEEE), width: 1.0)),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFEEEEEE), width: 1.0)),
-              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.primary, width: 4)),
+              fillColor: cardBgColor,
+              contentPadding: const EdgeInsets.all(16),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: borderColor)),
+              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: borderColor)),
+              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.primary, width: 2)),
             ),
           ),
         ],
@@ -617,136 +756,292 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
     );
   }
 
-  Widget _buildBirthDateInputs() {
+  // --- DOĞUM TARİHİ INPUTLARI & AUTO-FOCUS ---
+  Widget _buildBirthDateInputs(bool isDark, Color cardBgColor, Color textColor, Color borderColor) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Row(
         children: [
-          _buildDatePartInput(_dayController, 'GÜN', '01', 2),
+          _buildDatePartInput(_dayController, _dayFocusNode, _monthFocusNode, 'GÜN', '15', 2, isDark, cardBgColor, textColor, borderColor),
           const SizedBox(width: 12),
-          _buildDatePartInput(_monthController, 'AY', '01', 2),
+          _buildDatePartInput(_monthController, _monthFocusNode, _yearFocusNode, 'AY', '06', 2, isDark, cardBgColor, textColor, borderColor),
           const SizedBox(width: 12),
-          _buildDatePartInput(_yearController, 'YIL', '2000', 4, flex: 2),
+          _buildDatePartInput(_yearController, _yearFocusNode, null, 'YIL', '1998', 4, isDark, cardBgColor, textColor, borderColor, flex: 2),
         ],
       ),
     );
   }
 
-  Widget _buildDatePartInput(TextEditingController controller, String label, String hint, int length, {int flex = 1}) {
-    return Expanded(flex: flex, child: TextFormField(
-      controller: controller,
-      keyboardType: TextInputType.number,
-      inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(length)],
-      style: GoogleFonts.outfit(color: Colors.black, fontWeight: FontWeight.w800),
-      decoration: InputDecoration(
-        labelText: label, hintText: hint, filled: true, fillColor: Colors.white,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFEEEEEE), width: 1.0)),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFEEEEEE), width: 1.0)),
-        labelStyle: GoogleFonts.outfit(color: Colors.black.withValues(alpha: 0.5), fontWeight: FontWeight.w900, fontSize: 11),
+  Widget _buildDatePartInput(
+    TextEditingController controller,
+    FocusNode currentFocus,
+    FocusNode? nextFocus,
+    String label,
+    String hint,
+    int length,
+    bool isDark,
+    Color cardBgColor,
+    Color textColor,
+    Color borderColor, {
+    int flex = 1,
+  }) {
+    return Expanded(
+      flex: flex,
+      child: TextFormField(
+        controller: controller,
+        focusNode: currentFocus,
+        keyboardType: TextInputType.number,
+        inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(length)],
+        style: GoogleFonts.outfit(color: textColor, fontWeight: FontWeight.w700, fontSize: 16),
+        textAlign: TextAlign.center,
+        decoration: InputDecoration(
+          labelText: label,
+          hintText: hint,
+          filled: true,
+          fillColor: cardBgColor,
+          labelStyle: GoogleFonts.outfit(color: isDark ? Colors.white60 : Colors.black54, fontWeight: FontWeight.w600, fontSize: 11),
+          hintStyle: GoogleFonts.outfit(color: isDark ? Colors.white24 : Colors.black26),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: borderColor)),
+          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: borderColor)),
+          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.primary, width: 2)),
+        ),
+        onChanged: (val) {
+          if (val.length == length && nextFocus != null) {
+            FocusScope.of(context).requestFocus(nextFocus);
+          }
+          setState(() {});
+        },
       ),
-      onChanged: (_) => setState(() {}),
-    ));
+    );
   }
 
-  Widget _buildCountryDropdown() {
+  Widget _buildCountryDropdown(bool isDark, Color cardBgColor, Color textColor, Color borderColor) {
     final countries = [
       'Türkiye 🇹🇷', 'Almanya 🇩🇪', 'Fransa 🇫🇷', 'İngiltere 🇬🇧', 'ABD 🇺🇸',
       'Hollanda 🇳🇱', 'Avusturya 🇦🇹', 'Belçika 🇧🇪', 'İsviçre 🇨🇭', 'İsveç 🇸🇪',
-      'Norveç 🇳🇴', 'Danimarka 🇩🇰', 'İtalya 🇮🇹', 'İspanya 🇪🇸', 'Portekiz 🇵🇹',
-      'Kanada 🇨🇦', 'Avustralya 🇦🇺', 'Japonya 🇯🇵', 'Güney Kore 🇰🇷', 'Brezilya 🇧🇷',
-      'Rusya 🇷🇺', 'Azerbaycan 🇦🇿', 'KKTC 🇹🇷', 'Yunanistan 🇬🇷', 'Polonya 🇵🇱',
-      'Çekya 🇨🇿', 'Finlandiya 🇫🇮', 'İrlanda 🇮🇪', 'BAE 🇦🇪', 'Diğer 🌍',
+      'İtalya 🇮🇹', 'İspanya 🇪🇸', 'Kanada 🇨🇦', 'Azerbaycan 🇦🇿', 'KKTC 🇹🇷', 'Diğer 🌍',
     ];
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: DropdownButtonFormField<String>(
-        initialValue: _countryController.text.isEmpty ? null : _countryController.text,
-        style: GoogleFonts.outfit(color: Colors.black, fontWeight: FontWeight.w800),
+        initialValue: countries.contains(_countryController.text) ? _countryController.text : 'Türkiye 🇹🇷',
+        style: GoogleFonts.outfit(color: textColor, fontWeight: FontWeight.w600, fontSize: 15),
         decoration: InputDecoration(
-          filled: true, fillColor: Colors.white,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFEEEEEE), width: 1.0)),
-          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFEEEEEE), width: 1.0)),
+          filled: true,
+          fillColor: cardBgColor,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: borderColor)),
+          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: borderColor)),
         ),
-        dropdownColor: Colors.white,
+        dropdownColor: cardBgColor,
         isExpanded: true,
-        menuMaxHeight: 400,
-        items: countries.map((c) => DropdownMenuItem(value: c, child: Text(c.toUpperCase()))).toList(),
-        onChanged: (v) => setState(() => _countryController.text = v ?? ''),
+        menuMaxHeight: 350,
+        items: countries.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+        onChanged: (v) {
+          if (v != null) {
+            setState(() => _countryController.text = v);
+          }
+        },
       ),
     );
   }
 
-  Widget _buildPhotoHeader() {
+  // --- FOTOĞRAF IZGARASI ---
+  Widget _buildPhotoPickerGrid(bool isDark, Color cardBgColor, Color textColor, Color borderColor) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 24),
+      padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
         children: [
+          // Ana Fotoğraf (Büyük)
           GestureDetector(
             onTap: () => _pickImage(0),
-            child: Stack(
-              children: [
-                Container(
-                  width: 180, height: 180,
-                  decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white, border: Border.all(color: Colors.black, width: 5), boxShadow: const [BoxShadow(color: Colors.black, offset: Offset(8, 8))]),
-                  child: _photoBytes.containsKey(0) ? ClipOval(child: Image.memory(_photoBytes[0]!, fit: BoxFit.cover)) : const Icon(Icons.person, size: 90, color: Colors.black12),
-                ),
-                Positioned(bottom: 12, right: 12, child: Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: AppColors.primary, shape: BoxShape.circle, border: Border.all(color: Colors.black, width: 3)), child: const Icon(Icons.photo_camera_rounded, size: 24, color: Colors.black))),
-              ],
+            child: Container(
+              height: 220,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: cardBgColor,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: _photoBytes.containsKey(0) ? AppColors.primary : borderColor, width: 2),
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4)),
+                ],
+              ),
+              child: _photoBytes.containsKey(0)
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(22),
+                      child: Image.memory(_photoBytes[0]!, fit: BoxFit.cover),
+                    )
+                  : Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.15),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.add_a_photo_rounded, size: 36, color: AppColors.primary),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Ana Profil Fotoğrafı Ekle',
+                          style: GoogleFonts.outfit(fontSize: 15, fontWeight: FontWeight.w700, color: textColor),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Dokunarak galeriden seç',
+                          style: GoogleFonts.outfit(fontSize: 12, color: AppColors.textSecondary),
+                        ),
+                      ],
+                    ),
             ),
           ),
-          const SizedBox(height: 48),
-          SizedBox(
-            height: 110,
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 24), scrollDirection: Axis.horizontal, itemCount: 5,
-              itemBuilder: (context, index) {
-                final realIndex = index + 1;
-                return GestureDetector(
-                  onTap: () => _pickImage(realIndex),
-                  child: Container(
-                    width: 90, margin: const EdgeInsets.only(right: 16),
-                    decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), color: Colors.white, border: Border.all(color: _photoBytes.containsKey(realIndex) ? AppColors.primary : Colors.black, width: 3), boxShadow: _photoBytes.containsKey(realIndex) ? null : const [BoxShadow(color: Colors.black, offset: Offset(3, 3))]),
-                    child: _photoBytes.containsKey(realIndex) ? ClipRRect(borderRadius: BorderRadius.circular(17), child: Image.memory(_photoBytes[realIndex]!, fit: BoxFit.cover)) : const Icon(Icons.add_rounded, color: Colors.black26, size: 40),
-                  ),
-                );
-              },
+          const SizedBox(height: 16),
+          // Diğer 5 Küçük Fotoğraf Karesi
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 5,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+              childAspectRatio: 0.8,
             ),
+            itemCount: 5,
+            itemBuilder: (context, index) {
+              final realIndex = index + 1;
+              final hasImage = _photoBytes.containsKey(realIndex);
+              return GestureDetector(
+                onTap: () => _pickImage(realIndex),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: cardBgColor,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: hasImage ? AppColors.primary : borderColor, width: 1.5),
+                  ),
+                  child: hasImage
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(14),
+                          child: Image.memory(_photoBytes[realIndex]!, fit: BoxFit.cover),
+                        )
+                      : const Icon(Icons.add_rounded, color: AppColors.primary, size: 28),
+                ),
+              );
+            },
           ),
         ],
       ),
     );
   }
 
-  Widget _buildGenderChip(String label, IconData icon) {
+  // --- CİNSİYET SEÇİMİ CHIP ---
+  Widget _buildGenderChip(String label, IconData icon, bool isDark, Color cardBgColor, Color textColor, Color borderColor) {
     final isSelected = _selectedGender == label;
-    return Expanded(child: GestureDetector(
-      onTap: () => setState(() => _selectedGender = label),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 24),
-        decoration: BoxDecoration(color: isSelected ? AppColors.primary : Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: Color(0xFFEEEEEE), width: 1.0), boxShadow: [AppColors.neoShadowSmall]),
-        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(icon, color: isSelected ? Colors.white : Colors.black, size: 28), const SizedBox(width: 12), Text(label.toUpperCase(), style: GoogleFonts.outfit(fontWeight: FontWeight.w900, fontSize: 18, color: isSelected ? Colors.white : Colors.black))]),
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          setState(() => _selectedGender = label);
+          HapticFeedback.lightImpact();
+          // Cinsiyet seçildiği an otomatik sonraki adıma kaydırma!
+          Future.delayed(const Duration(milliseconds: 300), () {
+            if (mounted && _currentPage == 3 && _selectedRelationshipGoal != null) {
+              _nextPage();
+            }
+          });
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          decoration: BoxDecoration(
+            color: isSelected ? AppColors.primary : cardBgColor,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: isSelected ? AppColors.primary : borderColor, width: 1.5),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(color: AppColors.primary.withValues(alpha: 0.3), blurRadius: 12, offset: const Offset(0, 4)),
+                  ]
+                : [],
+          ),
+          child: Column(
+            children: [
+              Icon(icon, color: isSelected ? Colors.white : textColor, size: 28),
+              const SizedBox(height: 8),
+              Text(
+                label,
+                style: GoogleFonts.outfit(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 15,
+                  color: isSelected ? Colors.white : textColor,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
-    ));
+    );
   }
 
-  Widget _buildInterestsGrid() {
+  // --- İLİŞKİ HEDEFİ SEÇİCİ & AUTO-ADVANCE ---
+  Widget _buildRelationshipGoalSelector(bool isDark, Color cardBgColor, Color textColor, Color borderColor) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Wrap(
-        spacing: 12, runSpacing: 12,
-        children: _interests.map((interest) {
-          final isSelected = _selectedInterests.contains(interest['name']);
+      child: Column(
+        children: _relationshipGoals.map((goal) {
+          final isSelected = _selectedRelationshipGoal == goal['id'];
           return GestureDetector(
             onTap: () {
-              setState(() {
-                if (isSelected) { _selectedInterests.remove(interest['name']); }
-                else if (_selectedInterests.length < 8) { _selectedInterests.add(interest['name']); }
+              setState(() => _selectedRelationshipGoal = goal['id']);
+              HapticFeedback.lightImpact();
+              // Hedef seçildiğinde 350ms sonra otomatik sonraki adıma geç!
+              Future.delayed(const Duration(milliseconds: 350), () {
+                if (mounted && _currentPage == 3 && _selectedGender != null) {
+                  _nextPage();
+                }
               });
             },
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-              decoration: BoxDecoration(color: isSelected ? AppColors.primary : Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Color(0xFFEEEEEE), width: 1.0), boxShadow: [AppColors.neoShadowSmall]),
-              child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(interest['icon'] as IconData, size: 20, color: isSelected ? Colors.white : Colors.black), const SizedBox(width: 10), Text((interest['name'] as String).toUpperCase(), style: GoogleFonts.outfit(fontWeight: FontWeight.w900, fontSize: 14, color: isSelected ? Colors.white : Colors.black))]),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: isSelected ? AppColors.primary : cardBgColor,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: isSelected ? AppColors.primary : borderColor, width: 1.5),
+                boxShadow: isSelected
+                    ? [
+                        BoxShadow(color: AppColors.primary.withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 4)),
+                      ]
+                    : [],
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          goal['label']!,
+                          style: GoogleFonts.outfit(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 16,
+                            color: isSelected ? Colors.white : textColor,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          goal['desc']!,
+                          style: GoogleFonts.outfit(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w400,
+                            color: isSelected ? Colors.white70 : AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (isSelected)
+                    const Icon(Icons.check_circle_rounded, color: Colors.white, size: 24),
+                ],
+              ),
             ),
           );
         }).toList(),
@@ -754,18 +1049,55 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
     );
   }
 
-  Widget _buildRelationshipGoalSelector() {
+  // --- İLGİ ALANLARI GRID ---
+  Widget _buildInterestsGrid(bool isDark, Color cardBgColor, Color textColor, Color borderColor) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Column(
-        children: _relationshipGoals.map((goal) {
-          final isSelected = _selectedRelationshipGoal == goal['id'];
+      child: Wrap(
+        spacing: 10,
+        runSpacing: 10,
+        children: _interests.map((interest) {
+          final isSelected = _selectedInterests.contains(interest['name']);
           return GestureDetector(
-            onTap: () => setState(() => _selectedRelationshipGoal = goal['id']),
-            child: Container(
-              margin: const EdgeInsets.only(bottom: 16), padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(color: isSelected ? AppColors.primary : Colors.white, borderRadius: BorderRadius.circular(24), border: Border.all(color: Color(0xFFEEEEEE), width: 1.0), boxShadow: [AppColors.neoShadowSmall]),
-              child: Row(children: [Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(goal['label']!.toUpperCase(), style: GoogleFonts.outfit(fontWeight: FontWeight.w900, fontSize: 18, color: isSelected ? Colors.white : Colors.black)), Text(goal['desc']!.toUpperCase(), style: GoogleFonts.outfit(fontSize: 12, fontWeight: FontWeight.w700, color: isSelected ? Colors.white70 : Colors.black54))])), if (isSelected) const Icon(Icons.check_circle_rounded, color: Colors.white, size: 28)]),
+            onTap: () {
+              setState(() {
+                if (isSelected) {
+                  _selectedInterests.remove(interest['name']);
+                } else if (_selectedInterests.length < 8) {
+                  _selectedInterests.add(interest['name']);
+                } else {
+                  _showSnackBar('En fazla 8 ilgi alanı seçebilirsin.');
+                }
+              });
+              HapticFeedback.selectionClick();
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: isSelected ? AppColors.primary : cardBgColor,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: isSelected ? AppColors.primary : borderColor, width: 1.5),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    interest['icon'] as IconData,
+                    size: 18,
+                    color: isSelected ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    interest['name'] as String,
+                    style: GoogleFonts.outfit(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                      color: isSelected ? Colors.white : textColor,
+                    ),
+                  ),
+                ],
+              ),
             ),
           );
         }).toList(),

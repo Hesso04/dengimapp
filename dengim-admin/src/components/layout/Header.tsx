@@ -10,6 +10,7 @@ const pageTitles: Record<string, string> = {
     '/admin': 'Dashboard',
     '/admin/users': 'Kullanıcı Yönetimi',
     '/admin/moderation': 'Moderasyon',
+    '/admin/media': 'Medya Tarayıcı & Sunucu Doluluk',
     '/admin/reports': 'Raporlar & Şikayetler',
     '/admin/premium': 'Premium Yönetimi',
     '/admin/analytics': 'Analitik & Raporlama',

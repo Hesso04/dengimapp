@@ -182,5 +182,51 @@ export const AnalyticsService = {
         } catch (e) {
             return { male: 0, female: 0, other: 0 };
         }
+    },
+
+    // Anlık Çevrimiçi Kullanıcı İstatistikleri (Son 5 dakika içinde aktif olanlar)
+    getOnlineUserStats: async () => {
+        try {
+            const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+            const usersColl = collection(db, "users");
+            
+            const onlineQuery = query(
+                usersColl,
+                where("lastActive", ">=", FirestoreTimestamp.fromDate(fiveMinutesAgo))
+            );
+            const onlineSnap = await getCountFromServer(onlineQuery);
+
+            const recentQuery = query(
+                usersColl,
+                orderBy("lastActive", "desc"),
+                limit(6)
+            );
+            const recentSnap = await getDocs(recentQuery);
+            const recentlyActive = recentSnap.docs.map(docSnap => {
+                const data = docSnap.data();
+                return {
+                    id: docSnap.id,
+                    name: data.name || "Kullanıcı",
+                    email: data.email || "",
+                    photos: data.photos || [],
+                    lastActive: data.lastActive ? data.lastActive.toDate() : new Date(),
+                    createdAt: data.createdAt ? data.createdAt.toDate() : new Date(),
+                    status: data.status || 'active',
+                    isPremium: !!data.isPremium,
+                } as any;
+            });
+
+            return {
+                onlineNow: onlineSnap.data().count,
+                recentlyActive
+            };
+        } catch (e) {
+            console.error("GetOnlineUserStats error:", e);
+            return {
+                onlineNow: 0,
+                recentlyActive: []
+            };
+        }
     }
 };
+

@@ -185,13 +185,20 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final scaffoldBg = isDark ? AppColors.scaffoldDark : AppColors.scaffold;
+    final textColor = isDark ? Colors.white : Colors.black;
+    final subtextColor = isDark ? Colors.white70 : Colors.black;
+    final cardBg = isDark ? const Color(0xFF1C1C1E) : Colors.white;
+    final borderColor = isDark ? const Color(0xFF262629) : const Color(0xFFEEEEEE);
+
     return Scaffold(
-      backgroundColor: AppColors.scaffold, // Changed to pure/premium white background
+      backgroundColor: scaffoldBg,
       body: Stack(
         children: [
           // Dotted Background
           CustomPaint(
-            painter: DottedPainter(),
+            painter: _DottedPainterDM(isDark: isDark),
             size: Size.infinite,
           ),
           
@@ -212,15 +219,15 @@ class _LoginScreenState extends State<LoginScreen> {
                             width: 120,
                             height: 120,
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: cardBg,
                               borderRadius: BorderRadius.circular(32),
-                              border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-                              boxShadow: [AppColors.neoShadowLarge],
+                              border: Border.all(color: borderColor, width: 1.0),
+                              boxShadow: isDark ? null : [AppColors.neoShadowLarge],
                             ),
-                            child: const Center(
+                            child: Center(
                               child: Icon(
                                 Icons.local_fire_department_rounded, 
-                                color: Colors.black, 
+                                color: isDark ? AppColors.primary : Colors.black, 
                                 size: 70,
                               ),
                             ),
@@ -230,16 +237,16 @@ class _LoginScreenState extends State<LoginScreen> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                             decoration: BoxDecoration(
-                              color: Colors.black, // Sleek black badge
+                              color: isDark ? Colors.white : Colors.black,
                               borderRadius: BorderRadius.circular(16),
-                              boxShadow: [AppColors.neoShadow],
+                              boxShadow: isDark ? null : [AppColors.neoShadow],
                             ),
                             child: Text(
                               'DENGİM',
                               style: GoogleFonts.outfit(
                                 fontSize: 48,
                                 fontWeight: FontWeight.w900,
-                                color: Colors.white, // White text
+                                color: isDark ? Colors.black : Colors.white,
                                 letterSpacing: -2,
                               ),
                             ),
@@ -248,17 +255,17 @@ class _LoginScreenState extends State<LoginScreen> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                             decoration: BoxDecoration(
-                              color: Colors.white,
-                              border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
+                              color: cardBg,
+                              border: Border.all(color: borderColor, width: 1.0),
                               borderRadius: BorderRadius.circular(12),
-                              boxShadow: [AppColors.neoShadowSmall],
+                              boxShadow: isDark ? null : [AppColors.neoShadowSmall],
                             ),
                             child: Text(
                               'RUH EŞİNİ BUL.',
                               style: GoogleFonts.outfit(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w800,
-                                color: Colors.black,
+                                color: textColor,
                               ),
                             ),
                           ),
@@ -276,32 +283,39 @@ class _LoginScreenState extends State<LoginScreen> {
                           _LoginButton(
                             icon: Icons.account_circle_rounded,
                             text: 'Google ile Giriş Yap',
-                            color: Colors.white,
-                            textColor: Colors.black,
+                            color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+                            textColor: textColor,
+                            borderColor: borderColor,
+                            isDark: isDark,
                             onTap: _signInWithGoogle,
                           ),
                           const SizedBox(height: 16),
                           _LoginButton(
                             icon: Icons.alternate_email_rounded,
                             text: 'E-Posta ile Giriş Yap',
-                            color: Colors.black,
-                            textColor: Colors.white,
+                            color: isDark ? Colors.white : Colors.black,
+                            textColor: isDark ? Colors.black : Colors.white,
+                            isDark: isDark,
                             onTap: _showEmailLoginForm,
                           ),
                           const SizedBox(height: 16),
                           _LoginButton(
                             icon: Icons.phone_iphone_rounded,
                             text: 'Telefon Numarası ile Giriş',
-                            color: Colors.white,
-                            textColor: Colors.black,
+                            color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+                            textColor: textColor,
+                            borderColor: borderColor,
+                            isDark: isDark,
                             onTap: _showPhoneLoginForm,
                           ),
                           const SizedBox(height: 16),
                           _LoginButton(
                             icon: Icons.link_rounded,
                             text: 'E-Posta Linki (Şifresiz) Giriş',
-                            color: Colors.white,
-                            textColor: Colors.black,
+                            color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+                            textColor: textColor,
+                            borderColor: borderColor,
+                            isDark: isDark,
                             onTap: _showEmailLinkLoginForm,
                           ),
                           const SizedBox(height: 16),
@@ -310,6 +324,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             text: 'Facebook ile Giriş Yap',
                             color: const Color(0xFF1877F2),
                             textColor: Colors.white,
+                            isDark: isDark,
                             onTap: _signInWithFacebook,
                           ),
                           const SizedBox(height: 24),
@@ -324,7 +339,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               style: GoogleFonts.outfit(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w900,
-                                color: Colors.black,
+                                color: textColor,
                                 decoration: TextDecoration.underline,
                                 decorationThickness: 2,
                               ),
@@ -342,8 +357,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.6),
-                          border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
+                          color: isDark 
+                              ? Colors.white.withValues(alpha: 0.05) 
+                              : Colors.white.withValues(alpha: 0.6),
+                          border: Border.all(color: borderColor, width: 1.0),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: RichText(
@@ -351,7 +368,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           text: TextSpan(
                             style: GoogleFonts.outfit(
                               fontSize: 12,
-                              color: Colors.black,
+                              color: subtextColor,
                               fontWeight: FontWeight.w700,
                               height: 1.4,
                             ),
@@ -359,14 +376,14 @@ class _LoginScreenState extends State<LoginScreen> {
                               const TextSpan(text: 'Devam ederek '),
                               TextSpan(
                                 text: 'Kullanım Koşullarını',
-                                style: const TextStyle(decoration: TextDecoration.underline, color: Colors.black),
+                                style: TextStyle(decoration: TextDecoration.underline, color: textColor),
                                 recognizer: TapGestureRecognizer()
                                   ..onTap = () => _launchUrl('https://dengim.app/terms'),
                               ),
                               const TextSpan(text: ' ve '),
                               TextSpan(
                                 text: 'Gizlilik Politikamızı',
-                                style: const TextStyle(decoration: TextDecoration.underline, color: Colors.black),
+                                style: TextStyle(decoration: TextDecoration.underline, color: textColor),
                                 recognizer: TapGestureRecognizer()
                                   ..onTap = () => _launchUrl('https://dengim.app/privacy'),
                               ),
@@ -392,6 +409,8 @@ class _LoginButton extends StatelessWidget {
   final String text;
   final Color color;
   final Color textColor;
+  final Color? borderColor;
+  final bool isDark;
   final VoidCallback? onTap;
 
   const _LoginButton({
@@ -399,19 +418,22 @@ class _LoginButton extends StatelessWidget {
     required this.text,
     required this.color,
     required this.textColor,
+    this.borderColor,
+    this.isDark = false,
     this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final showBorder = borderColor != null;
     return Container(
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(AppColors.neoRadius),
-        border: color == Colors.white 
-            ? Border.all(color: Color(0xFFEEEEEE), width: 1.0) 
-            : null, // No border needed if background is solid black
-        boxShadow: [AppColors.neoShadowSmall],
+        border: showBorder
+            ? Border.all(color: borderColor!, width: 1.0)
+            : null,
+        boxShadow: isDark ? null : [AppColors.neoShadowSmall],
       ),
       child: Material(
         color: Colors.transparent,
@@ -555,11 +577,17 @@ class _EmailLoginFormState extends State<_EmailLoginForm> {
   }
 }
 
-class DottedPainter extends CustomPainter {
+/// Dark mode aware dotted background painter
+class _DottedPainterDM extends CustomPainter {
+  final bool isDark;
+  _DottedPainterDM({this.isDark = false});
+
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.black.withValues(alpha: 0.1)
+      ..color = isDark 
+          ? Colors.white.withValues(alpha: 0.06) 
+          : Colors.black.withValues(alpha: 0.1)
       ..strokeWidth = 2;
 
     const double gap = 24;
@@ -571,7 +599,7 @@ class DottedPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _DottedPainterDM oldDelegate) => oldDelegate.isDark != isDark;
 }
 
 // Bottom Sheet Form for Phone / OTP Login
@@ -689,6 +717,7 @@ class _PhoneLoginFormState extends State<_PhoneLoginForm> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : Colors.black;
+    final hintColor = isDark ? Colors.white54 : Colors.black54;
     final showOtpField = _verificationId != null;
 
     return SingleChildScrollView(
@@ -725,7 +754,7 @@ class _PhoneLoginFormState extends State<_PhoneLoginForm> {
               style: GoogleFonts.outfit(color: textColor, fontWeight: FontWeight.w600),
               decoration: InputDecoration(
                 hintText: 'Telefon Numarası (Örn: +905551234567)',
-                hintStyle: TextStyle(color: isDark ? Colors.white54 : Colors.black54),
+                hintStyle: TextStyle(color: hintColor),
                 prefixIcon: Icon(Icons.phone_outlined, color: textColor),
               ),
             ),
@@ -752,7 +781,7 @@ class _PhoneLoginFormState extends State<_PhoneLoginForm> {
               style: GoogleFonts.outfit(color: textColor, fontWeight: FontWeight.w600),
               decoration: InputDecoration(
                 hintText: '6 Haneli Doğrulama Kodu',
-                hintStyle: TextStyle(color: isDark ? Colors.white54 : Colors.black54),
+                hintStyle: TextStyle(color: hintColor),
                 prefixIcon: Icon(Icons.security, color: textColor),
               ),
             ),
@@ -782,7 +811,7 @@ class _PhoneLoginFormState extends State<_PhoneLoginForm> {
               },
               child: Text(
                 'Numarayı Değiştir',
-                style: GoogleFonts.outfit(color: Colors.black54, fontWeight: FontWeight.w900),
+                style: GoogleFonts.outfit(color: isDark ? Colors.white54 : Colors.black54, fontWeight: FontWeight.w900),
               ),
             ),
           ],
@@ -898,6 +927,7 @@ class _EmailLinkLoginFormState extends State<_EmailLinkLoginForm> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : Colors.black;
+    final hintColor = isDark ? Colors.white54 : Colors.black54;
     final cardBg = isDark ? const Color(0xFF121418) : Colors.white;
     final borderColor = isDark ? const Color(0xFF262629) : const Color(0xFFEEEEEE);
 
@@ -935,7 +965,7 @@ class _EmailLinkLoginFormState extends State<_EmailLinkLoginForm> {
               style: GoogleFonts.outfit(color: textColor, fontWeight: FontWeight.w600),
               decoration: InputDecoration(
                 hintText: 'E-posta Adresi',
-                hintStyle: TextStyle(color: isDark ? Colors.white54 : Colors.black54),
+                hintStyle: TextStyle(color: hintColor),
                 prefixIcon: Icon(Icons.email_outlined, color: textColor),
               ),
             ),
@@ -976,7 +1006,7 @@ class _EmailLinkLoginFormState extends State<_EmailLinkLoginForm> {
                   Text(
                     '${_emailController.text} adresine gönderilen linke tıklayabilir veya o linki kopyalayıp aşağıdaki kutuya yapıştırarak giriş yapabilirsiniz.',
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.outfit(fontWeight: FontWeight.w700, fontSize: 13, color: isDark ? Colors.white70 : Colors.black54, height: 1.4),
+                    style: GoogleFonts.outfit(fontWeight: FontWeight.w700, fontSize: 13, color: hintColor, height: 1.4),
                   ),
                 ],
               ),
@@ -987,7 +1017,7 @@ class _EmailLinkLoginFormState extends State<_EmailLinkLoginForm> {
               style: GoogleFonts.outfit(color: textColor, fontWeight: FontWeight.w600),
               decoration: InputDecoration(
                 hintText: 'E-Posta Linkini Yapıştırın',
-                hintStyle: TextStyle(color: isDark ? Colors.white54 : Colors.black54),
+                hintStyle: TextStyle(color: hintColor),
                 prefixIcon: Icon(Icons.link, color: textColor),
               ),
             ),
@@ -1017,7 +1047,7 @@ class _EmailLinkLoginFormState extends State<_EmailLinkLoginForm> {
               },
               child: Text(
                 'E-postayı Değiştir / Yeniden Gönder',
-                style: GoogleFonts.outfit(color: Colors.black54, fontWeight: FontWeight.w900),
+                style: GoogleFonts.outfit(color: isDark ? Colors.white54 : Colors.black54, fontWeight: FontWeight.w900),
               ),
             ),
           ],

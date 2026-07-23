@@ -4,9 +4,9 @@ plugins {
 
 // Kotlin version for plugins that use rootProject.ext.kotlin_version (Groovy compat)
 extra.set("kotlin_version", "2.0.21")
-extra.set("compileSdkVersion", 35)
+extra.set("compileSdkVersion", 36)
 extra.set("minSdkVersion", 23)
-extra.set("targetSdkVersion", 35)
+extra.set("targetSdkVersion", 36)
 
 allprojects {
     extra.set("kotlin_version", "2.0.21")

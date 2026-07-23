@@ -1,14 +1,21 @@
+const { onDocumentCreated, onDocumentUpdated, onDocumentWritten } = require("firebase-functions/v2/firestore");
+const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 admin.initializeApp();
 
-exports.onNotificationCreated = functions.firestore
-  .document("users/{userId}/notifications/{notificationId}")
-  .onCreate(async (snapshot, context) => {
-    const data = snapshot.data();
-    if (!data) return null;
+const REGION = "europe-west1";
 
-    const userId = context.params.userId;
+// 1. Push Notification Trigger (Gen 2 Firestore Trigger)
+exports.onNotificationCreated = onDocumentCreated(
+  { document: "users/{userId}/notifications/{notificationId}", region: REGION },
+  async (event) => {
+    const snapshot = event.data;
+    if (!snapshot) return;
+    const data = snapshot.data();
+    if (!data) return;
+
+    const userId = event.params.userId;
     let title = data.title || "Yeni Bildirim";
     let body = data.body || "";
     const type = data.type || "general";
@@ -17,26 +24,21 @@ exports.onNotificationCreated = functions.firestore
     const messageId = data.messageId || "";
 
     try {
-      // Get target user profile to read their FCM token
       const userDoc = await admin.firestore().collection("users").doc(userId).get();
-      if (!userDoc.exists) {
-        console.log(`User ${userId} does not exist.`);
-        return null;
-      }
+      if (!userDoc.exists) return;
 
       const fcmToken = userDoc.data().fcmToken;
-      if (!fcmToken) {
-        console.log(`User ${userId} has no FCM token.`);
-        return null;
-      }
+      if (!fcmToken) return;
 
-      // If it's a message/chat notification, fetch sender name dynamically for WhatsApp-style notification
+      let senderName = "Bir Üye";
+      let senderAvatar = "";
       if ((type === "chat" || type === "message" || type === "chat_message") && senderId) {
         try {
           const senderDoc = await admin.firestore().collection("users").doc(senderId).get();
           if (senderDoc.exists) {
             const senderData = senderDoc.data();
-            const senderName = senderData.name || senderData.fullName || "Bir Üye";
+            senderName = senderData.name || senderData.fullName || "Bir Üye";
+            senderAvatar = (senderData.photoUrls && senderData.photoUrls[0]) || senderData.imageUrl || "";
             title = senderName;
           }
         } catch (e) {
@@ -44,7 +46,6 @@ exports.onNotificationCreated = functions.firestore
         }
       }
 
-      // Build FCM payload (WhatsApp / Tinder style)
       const message = {
         token: fcmToken,
         notification: {
@@ -56,6 +57,9 @@ exports.onNotificationCreated = functions.firestore
           senderId: senderId,
           chatId: chatId,
           messageId: messageId,
+          otherUserId: senderId,
+          otherUserName: senderName,
+          otherUserAvatar: senderAvatar,
           clickAction: "FLUTTER_NOTIFICATION_CLICK",
         },
         android: {
@@ -66,6 +70,8 @@ exports.onNotificationCreated = functions.firestore
             priority: "max",
             visibility: "public",
             icon: "ic_stat_name",
+            clickAction: "FLUTTER_NOTIFICATION_CLICK",
+            defaultSound: true,
           },
         },
         apns: {
@@ -79,7 +85,6 @@ exports.onNotificationCreated = functions.firestore
         },
       };
 
-      // Send via Firebase Admin SDK
       const response = await admin.messaging().send(message);
       console.log("Successfully sent push notification to:", userId, "responseId:", response);
       return response;
@@ -87,33 +92,30 @@ exports.onNotificationCreated = functions.firestore
       console.error("Error sending push notification:", error);
       return null;
     }
-  });
+  }
+);
 
+// 2. Agora RTC Token Generator (Gen 2 Callable Function)
 const { RtcTokenBuilder, RtcRole } = require("agora-access-token");
-
 const AGORA_APP_ID = "0b227b12c2e54a2e9f5f20b30653c198";
 const AGORA_APP_CERTIFICATE = "8b5ba9f9ef6f4606ac52ff53022228a7";
 
-exports.generateAgoraToken = functions.https.onCall((data, context) => {
-  if (!context.auth) {
-    throw new functions.https.HttpsError(
-      "unauthenticated",
-      "Bu islemi gerceklestirmek icin giris yapmalisiniz."
-    );
+exports.generateAgoraToken = onCall({ region: REGION }, (request) => {
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "Bu islemi gerceklestirmek icin giris yapmalisiniz.");
   }
 
+  const data = request.data;
   const channelName = data.channelName;
-  const uid = data.uid !== undefined && data.uid !== null ? Number(data.uid) : 0;
+  const rawUid = data.uid !== undefined && data.uid !== null ? Number(data.uid) : 0;
+  const uid = Math.abs(rawUid) % 100000;
   const role = data.role === "publisher" ? RtcRole.PUBLISHER : RtcRole.SUBSCRIBER;
 
   if (!channelName) {
-    throw new functions.https.HttpsError(
-      "invalid-argument",
-      "Kanal adi (channelName) belirtilmelidir."
-    );
+    throw new HttpsError("invalid-argument", "Kanal adi (channelName) belirtilmelidir.");
   }
 
-  const expirationTimeInSeconds = 86400; // 24 saat gecerli
+  const expirationTimeInSeconds = 86400;
   const currentTimestamp = Math.floor(Date.now() / 1000);
   const privilegeExpiredTs = currentTimestamp + expirationTimeInSeconds;
 
@@ -129,31 +131,28 @@ exports.generateAgoraToken = functions.https.onCall((data, context) => {
     return { token: token };
   } catch (error) {
     console.error("Agora Token Generation Error:", error);
-    throw new functions.https.HttpsError(
-      "internal",
-      "Token olusturulurken bir hata olustu."
-    );
+    throw new HttpsError("internal", "Token olusturulurken bir hata olustu.");
   }
 });
 
-exports.onSwipeCreated = functions.firestore
-  .document("users/{userId}/swipes/{targetId}")
-  .onCreate(async (snapshot, context) => {
+// 3. Swipe & Match Logic Trigger (Gen 2 Firestore Trigger)
+exports.onSwipeCreated = onDocumentCreated(
+  { document: "users/{userId}/swipes/{targetId}", region: REGION },
+  async (event) => {
+    const snapshot = event.data;
+    if (!snapshot) return;
     const data = snapshot.data();
-    if (!data) return null;
+    if (!data) return;
 
-    const userId = context.params.userId;
-    const targetId = context.params.targetId;
+    const userId = event.params.userId;
+    const targetId = event.params.targetId;
     const swipeType = data.type || "like";
 
-    if (swipeType !== "like" && swipeType !== "super_like") {
-      return null;
-    }
+    if (swipeType !== "like" && swipeType !== "super_like") return;
 
     const db = admin.firestore();
 
     try {
-      // 1. Add to target user's likes sub-collection (who liked them)
       await db.collection("users").doc(targetId).collection("likes").doc(userId).set({
         fromUserId: userId,
         type: swipeType,
@@ -161,28 +160,19 @@ exports.onSwipeCreated = functions.firestore
         viewed: false,
       });
 
-      // 2. Check if target user also swiped like/super_like on us
-      const targetSwipeDoc = await db
-        .collection("users")
-        .doc(targetId)
-        .collection("swipes")
-        .doc(userId)
-        .get();
+      const targetSwipeDoc = await db.collection("users").doc(targetId).collection("swipes").doc(userId).get();
 
       if (targetSwipeDoc.exists) {
         const targetSwipeType = targetSwipeDoc.data().type;
         if (targetSwipeType === "like" || targetSwipeType === "super_like") {
-          // MATCH FOUND!
           const matchId = userId < targetId ? `${userId}_${targetId}` : `${targetId}_${userId}`;
 
-          // Create match record
           await db.collection("matches").doc(matchId).set({
             userIds: [userId, targetId],
             timestamp: admin.firestore.FieldValue.serverTimestamp(),
             seenBy: [],
           });
 
-          // Fetch profiles for both users to store denormalized names and avatars
           const userDoc = await db.collection("users").doc(userId).get();
           const targetDoc = await db.collection("users").doc(targetId).get();
 
@@ -196,84 +186,47 @@ exports.onSwipeCreated = functions.firestore
             avatar: targetDoc.exists ? (targetDoc.data().photoUrls?.[0] || "") : "",
           };
 
-          // Create conversation record
           await db.collection("conversations").doc(matchId).set({
             userIds: [userId, targetId],
             lastMessage: "Eslestiniz! 🎉 Ilk mesaji sen gonder.",
             lastMessageTime: admin.firestore.FieldValue.serverTimestamp(),
             lastMessageSenderId: "system",
-            unreadCounts: {
-              [userId]: 0,
-              [targetId]: 0,
-            },
-            userProfiles: {
-              [userId]: userProfile,
-              [targetId]: targetProfile,
-            }
+            unreadCounts: { [userId]: 0, [targetId]: 0 },
+            userProfiles: { [userId]: userProfile, [targetId]: targetProfile }
           });
 
-          // Increment match counts
-          await db.collection("users").doc(userId).update({
-            matchCount: admin.firestore.FieldValue.increment(1),
-          });
-          await db.collection("users").doc(targetId).update({
-            matchCount: admin.firestore.FieldValue.increment(1),
-          });
+          await db.collection("users").doc(userId).update({ matchCount: admin.firestore.FieldValue.increment(1) });
+          await db.collection("users").doc(targetId).update({ matchCount: admin.firestore.FieldValue.increment(1) });
 
-          // Update likes status
           await db.collection("users").doc(userId).collection("likes").doc(targetId).set({
-            fromUserId: targetId,
-            type: targetSwipeType,
-            timestamp: admin.firestore.FieldValue.serverTimestamp(),
-            viewed: true,
-            matched: true,
+            fromUserId: targetId, type: targetSwipeType, timestamp: admin.firestore.FieldValue.serverTimestamp(), viewed: true, matched: true,
           }, { merge: true });
 
           await db.collection("users").doc(targetId).collection("likes").doc(userId).set({
-            fromUserId: userId,
-            type: swipeType,
-            timestamp: admin.firestore.FieldValue.serverTimestamp(),
-            viewed: true,
-            matched: true,
+            fromUserId: userId, type: swipeType, timestamp: admin.firestore.FieldValue.serverTimestamp(), viewed: true, matched: true,
           }, { merge: true });
 
-          // Send match notifications via triggers
           await db.collection("users").doc(userId).collection("notifications").add({
-            type: "match",
-            title: "Eslesme! 🎉",
-            body: "Tebrikler, yeni bir eslesmen var!",
-            senderId: targetId,
-            createdAt: admin.firestore.FieldValue.serverTimestamp(),
-            isRead: false,
+            type: "match", title: "Eslesme! 🎉", body: "Tebrikler, yeni bir eslesmen var!", senderId: targetId, createdAt: admin.firestore.FieldValue.serverTimestamp(), isRead: false,
           });
 
           await db.collection("users").doc(targetId).collection("notifications").add({
-            type: "match",
-            title: "Eslesme! 🎉",
-            body: "Tebrikler, yeni bir eslesmen var!",
-            senderId: userId,
-            createdAt: admin.firestore.FieldValue.serverTimestamp(),
-            isRead: false,
+            type: "match", title: "Eslesme! 🎉", body: "Tebrikler, yeni bir eslesmen var!", senderId: userId, createdAt: admin.firestore.FieldValue.serverTimestamp(), isRead: false,
           });
         }
       } else {
-        // Send like notification
         await db.collection("users").doc(targetId).collection("notifications").add({
-          type: "like",
-          title: "Biri seni begendi 💖",
-          body: "Seni begenenleri gormek icin hemen tikla!",
-          senderId: userId,
-          createdAt: admin.firestore.FieldValue.serverTimestamp(),
-          isRead: false,
+          type: "like", title: "Biri seni begendi 💖", body: "Seni begenenleri gormek icin hemen tikla!", senderId: userId, createdAt: admin.firestore.FieldValue.serverTimestamp(), isRead: false,
         });
       }
     } catch (e) {
       console.error("Error in onSwipeCreated trigger:", e);
     }
-    return null;
-  });
+  }
+);
 
-exports.onUserDeleted = functions.auth.user().onDelete(async (user) => {
+// 4. Cascade User Delete Trigger (Gen 2 Auth Trigger)
+exports.onUserDeleted = functions.region("europe-west1").auth.user().onDelete(async (user) => {
   const userId = user.uid;
   const db = admin.firestore();
   const bucket = admin.storage().bucket();
@@ -281,17 +234,13 @@ exports.onUserDeleted = functions.auth.user().onDelete(async (user) => {
   console.log(`Starting cascade delete for user: ${userId}`);
 
   try {
-    // 1. Delete user photo folder in Firebase Storage
     try {
-      await bucket.deleteFiles({
-        prefix: `user_photos/${userId}/`
-      });
+      await bucket.deleteFiles({ prefix: `user_photos/${userId}/` });
       console.log(`Deleted storage files for user: ${userId}`);
     } catch (err) {
       console.error(`Error deleting storage files: ${err.message}`);
     }
 
-    // 2. Delete sub-collections (swipes, likes, visitors, stats, blocked_users, notifications)
     const subCollections = ['swipes', 'likes', 'visitors', 'stats', 'blocked_users', 'notifications'];
     for (const coll of subCollections) {
       const snapshot = await db.collection("users").doc(userId).collection(coll).get();
@@ -303,24 +252,17 @@ exports.onUserDeleted = functions.auth.user().onDelete(async (user) => {
       console.log(`Deleted sub-collection ${coll} for user: ${userId}`);
     }
 
-    // 3. Delete user document from users collection
     await db.collection("users").doc(userId).delete();
     console.log(`Deleted user profile document for user: ${userId}`);
 
-    // 4. Handle Matches & Conversations
-    const matchesSnapshot = await db
-      .collection("matches")
-      .where("userIds", "arrayContains", userId)
-      .get();
+    const matchesSnapshot = await db.collection("matches").where("userIds", "arrayContains", userId).get();
 
     for (const matchDoc of matchesSnapshot.docs) {
       const matchId = matchDoc.id;
       const otherUserId = matchDoc.data().userIds.find(id => id !== userId);
 
-      // Delete match document
       await matchDoc.reference.delete();
 
-      // Delete conversation and messages
       const convRef = db.collection("conversations").doc(matchId);
       const messagesSnapshot = await convRef.collection("messages").get();
       
@@ -329,7 +271,6 @@ exports.onUserDeleted = functions.auth.user().onDelete(async (user) => {
       batch.delete(convRef);
       await batch.commit();
 
-      // Decrement other user's matchCount
       if (otherUserId) {
         await db.collection("users").doc(otherUserId).update({
           matchCount: admin.firestore.FieldValue.increment(-1),
@@ -340,32 +281,30 @@ exports.onUserDeleted = functions.auth.user().onDelete(async (user) => {
   } catch (error) {
     console.error(`Cascade delete failed for user ${userId}:`, error);
   }
-  return null;
 });
 
-exports.onUserProfileUpdated = functions.firestore
-  .document("users/{userId}")
-  .onUpdate(async (change, context) => {
-    const before = change.before.data();
-    const after = change.after.data();
-    const userId = context.params.userId;
+// 5. Profile Update Trigger (Gen 2 Firestore Trigger)
+exports.onUserProfileUpdated = onDocumentUpdated(
+  { document: "users/{userId}", region: REGION },
+  async (event) => {
+    const before = event.data?.before.data();
+    const after = event.data?.after.data();
+    if (!before || !after) return;
+
+    const userId = event.params.userId;
 
     const nameChanged = before.name !== after.name;
     const photoChanged = (before.photoUrls?.[0] || "") !== (after.photoUrls?.[0] || "");
 
-    if (!nameChanged && !photoChanged) return null;
+    if (!nameChanged && !photoChanged) return;
 
     const db = admin.firestore();
     const newName = after.name || "";
     const newAvatar = after.photoUrls?.[0] || "";
 
     try {
-      const conversationsSnapshot = await db
-        .collection("conversations")
-        .where("userIds", "arrayContains", userId)
-        .get();
-
-      if (conversationsSnapshot.empty) return null;
+      const conversationsSnapshot = await db.collection("conversations").where("userIds", "arrayContains", userId).get();
+      if (conversationsSnapshot.empty) return;
 
       const batch = db.batch();
       conversationsSnapshot.docs.forEach((doc) => {
@@ -379,16 +318,17 @@ exports.onUserProfileUpdated = functions.firestore
     } catch (e) {
       console.error("Error updating userProfiles in conversations:", e);
     }
-    return null;
-  });
+  }
+);
 
-// Auto Content Moderation Trigger
-exports.autoModerateUserContent = functions.firestore
-  .document("users/{userId}")
-  .onWrite(async (change, context) => {
-    if (!change.after.exists) return null;
-    const data = change.after.data();
-    const userId = context.params.userId;
+// 6. Auto Content Moderation Trigger (Gen 2 Firestore Trigger)
+exports.autoModerateUserContent = onDocumentWritten(
+  { document: "users/{userId}", region: REGION },
+  async (event) => {
+    const after = event.data?.after;
+    if (!after || !after.exists) return;
+    const data = after.data();
+    const userId = event.params.userId;
     const db = admin.firestore();
 
     const bio = data.bio || "";
@@ -403,7 +343,6 @@ exports.autoModerateUserContent = functions.firestore
         flaggedReason: "Otomatik AI Moderasyon: İhlal içeren kelime veya telefon numarası tespiti.",
       });
 
-      // Add entry to pending moderation queue
       await db.collection("reports").add({
         reportedUserId: userId,
         reporterId: "SYSTEM_AI_MODERATION",
@@ -412,5 +351,5 @@ exports.autoModerateUserContent = functions.firestore
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
       });
     }
-    return null;
-  });
+  }
+);

@@ -44,6 +44,11 @@ export function Sidebar() {
             badge: counts.moderation > 0 ? counts.moderation : undefined,
         },
         {
+            label: 'Medya Tarayıcı',
+            icon: 'perm_media',
+            href: '/admin/media',
+        },
+        {
             label: 'Raporlar',
             icon: 'report',
             href: '/admin/reports',

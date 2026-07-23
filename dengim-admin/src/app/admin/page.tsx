@@ -18,6 +18,7 @@ export default function Dashboard() {
     const [genderData, setGenderData] = useState<GenderDistribution | null>(null);
     const [growthData, setGrowthData] = useState<ChartDataPoint[]>([]);
     const [recentUsers, setRecentUsers] = useState<User[]>([]);
+    const [onlineStats, setOnlineStats] = useState<{ onlineNow: number; recentlyActive: User[] }>({ onlineNow: 0, recentlyActive: [] });
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -25,17 +26,19 @@ export default function Dashboard() {
             setLoading(true);
             try {
                 // Paralel veri çekme
-                const [statsData, genderStats, growthStats, usersData] = await Promise.all([
+                const [statsData, genderStats, growthStats, usersData, onlineData] = await Promise.all([
                     AnalyticsService.getDashboardStats(),
                     AnalyticsService.getGenderDistribution(),
                     AnalyticsService.getUserGrowth(),
-                    UserService.getUsers(null, 5) // Son 5 kullanıcı
+                    UserService.getUsers(null, 5), // Son 5 kullanıcı
+                    AnalyticsService.getOnlineUserStats()
                 ]);
 
                 setStats(statsData);
                 setGenderData(genderStats);
                 setGrowthData(growthStats);
                 setRecentUsers(usersData.users);
+                setOnlineStats(onlineData);
             } catch (error) {
                 console.error("Dashboard yüklenirken hata:", error);
             } finally {
@@ -44,6 +47,8 @@ export default function Dashboard() {
         };
 
         loadDashboardData();
+        const interval = setInterval(loadDashboardData, 30000); // 30 saniyede bir güncelle
+        return () => clearInterval(interval);
     }, []);
 
     // Grafik verilerini hazırla
@@ -59,9 +64,15 @@ export default function Dashboard() {
                 <Header />
                 <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6 custom-scrollbar">
 
-                    <div className="mb-8">
-                        <h1 className="text-2xl font-bold text-white mb-2">Genel Bakış</h1>
-                        <p className="text-zinc-400">Platform istatistikleri ve anlık veriler.</p>
+                    <div className="mb-8 flex items-center justify-between">
+                        <div>
+                            <h1 className="text-2xl font-bold text-white mb-1">Genel Bakış</h1>
+                            <p className="text-zinc-400 text-sm">Platform istatistikleri, anlık çevrimiçi veriler ve sistem durumu.</p>
+                        </div>
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 rounded-full border border-emerald-500/20">
+                            <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                            <span className="text-xs font-bold text-emerald-400">{onlineStats.onlineNow} Çevrimiçi Kullanıcı</span>
+                        </div>
                     </div>
 
                     {loading ? (
@@ -73,18 +84,18 @@ export default function Dashboard() {
                             {/* Stats Grid */}
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                                 <StatCard
-                                    title="Toplam Kullanıcı"
-                                    value={stats?.totalUsers?.toString() || '0'}
-                                    subValue={`${stats?.newUsersToday || 0} bugün`}
-                                    icon={<span className="material-symbols-outlined text-2xl">group</span>}
-                                    borderColor="border-l-primary"
+                                    title="Anlık Çevrimiçi"
+                                    value={onlineStats.onlineNow.toString()}
+                                    subValue="Son 5 dakikada aktif"
+                                    icon={<span className="material-symbols-outlined text-2xl animate-pulse text-emerald-400">sensors</span>}
+                                    borderColor="border-l-emerald-500"
                                 />
                                 <StatCard
-                                    title="Bu Hafta Yeni"
-                                    value={stats?.newUsersThisWeek?.toString() || '0'}
-                                    subValue={`${stats?.newUsersThisMonth || 0} bu ay`}
-                                    icon={<span className="material-symbols-outlined text-2xl">person_add</span>}
-                                    borderColor="border-l-emerald-500"
+                                    title="Toplam Kullanıcı"
+                                    value={stats?.totalUsers?.toString() || '0'}
+                                    subValue={`${stats?.newUsersToday || 0} bugün kayıt oldu`}
+                                    icon={<span className="material-symbols-outlined text-2xl">group</span>}
+                                    borderColor="border-l-primary"
                                 />
                                 <StatCard
                                     title="Premium Üyeler"
@@ -127,17 +138,51 @@ export default function Dashboard() {
 
                             {/* Recent Activity & Alerts */}
                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                                <div className="lg:col-span-2">
+                                <div className="lg:col-span-2 space-y-6">
+                                    {/* Son Aktif Olanlar */}
+                                    <div className="bg-surface-dark rounded-2xl border border-white/5 overflow-hidden">
+                                        <div className="p-6 border-b border-white/5 flex items-center justify-between">
+                                            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                                                <span className="material-symbols-outlined text-emerald-400 text-base">pulse_alert</span>
+                                                Son Aktif Olan Kullanıcılar
+                                            </h3>
+                                            <span className="text-xs text-zinc-400">Canlı Hareketlilik</span>
+                                        </div>
+                                        <div className="divide-y divide-white/5">
+                                            {onlineStats.recentlyActive.length > 0 ? onlineStats.recentlyActive.map((user) => (
+                                                <div key={user.id} className="p-4 flex items-center justify-between hover:bg-white/5 transition-colors">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="relative">
+                                                            <Avatar src={user.photos && user.photos.length > 0 ? user.photos[0] : ''} name={user.name} />
+                                                            <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-emerald-500 border-2 border-surface-dark" />
+                                                        </div>
+                                                        <div>
+                                                            <p className="font-bold text-white text-sm">{user.name}</p>
+                                                            <p className="text-slate-400 text-xs">
+                                                                {user.email || 'E-posta yok'}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    <span className="text-xs text-emerald-400 font-medium bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
+                                                        {formatRelativeTime(user.lastActive)}
+                                                    </span>
+                                                </div>
+                                            )) : (
+                                                <div className="p-6 text-center text-slate-500">Çevrimiçi hareketlilik yok.</div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Son Kayıt Olanlar */}
                                     <div className="bg-surface-dark rounded-2xl border border-white/5 overflow-hidden">
                                         <div className="p-6 border-b border-white/5 flex items-center justify-between">
                                             <h3 className="text-lg font-bold text-white">Son Kayıt Olanlar</h3>
-                                            <button className="text-sm text-primary hover:text-primary/80">Tümünü Gör</button>
                                         </div>
                                         <div className="divide-y divide-white/5">
                                             {recentUsers.length > 0 ? recentUsers.map((user) => (
                                                 <div key={user.id} className="p-4 flex items-center justify-between hover:bg-white/5 transition-colors">
                                                     <div className="flex items-center gap-3">
-                                                        <Avatar src={user.photos[0]} name={user.name} />
+                                                        <Avatar src={user.photos && user.photos.length > 0 ? user.photos[0] : ''} name={user.name} />
                                                         <div>
                                                             <p className="font-bold text-white text-sm">{user.name}</p>
                                                             <p className="text-slate-400 text-xs">
@@ -150,7 +195,7 @@ export default function Dashboard() {
                                                     </span>
                                                 </div>
                                             )) : (
-                                                <div className="p-6 text-center text-slate-500">Henüz kullanıcı yok.</div>
+                                                <div className="p-6 text-center text-slate-500">Henüz yeni kullanıcı yok.</div>
                                             )}
                                         </div>
                                     </div>
@@ -162,14 +207,14 @@ export default function Dashboard() {
                                         <AlertCard
                                             title="Bekleyen Şikayetler"
                                             description={`${stats.pendingReports} yeni şikayet incelenmeyi bekliyor.`}
-                                            time="Simdi"
+                                            time="Şimdi"
                                             type="error"
                                         />
                                     ) : (
                                         <AlertCard
                                             title="Her şey yolunda"
                                             description="İncelenmesi gereken acil bir durum yok."
-                                            time="Simdi"
+                                            time="Şimdi"
                                             type="info"
                                         />
                                     )}
@@ -183,3 +228,4 @@ export default function Dashboard() {
         </div>
     );
 }
+

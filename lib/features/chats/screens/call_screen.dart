@@ -50,6 +50,8 @@ class _CallScreenState extends State<CallScreen> with SingleTickerProviderStateM
   bool _isCallConnected = false;
   bool _isOutgoingRinging = false;
   Timer? _timeoutTimer;
+  Timer? _agoraTimeoutTimer;
+  String? _connectionError;
 
   @override
   void initState() {
@@ -177,34 +179,72 @@ class _CallScreenState extends State<CallScreen> with SingleTickerProviderStateM
   }
 
   Future<void> _connectToAgora() async {
-    await _agoraService.init();
-    
-    _agoraService.engine.registerEventHandler(
-      RtcEngineEventHandler(
-        onUserJoined: (RtcConnection connection, int remoteUid, int elapsed) {
-          if (mounted) {
-            setState(() {
-              _remoteUid = remoteUid;
-            });
-          }
-        },
-        onUserOffline: (RtcConnection connection, int remoteUid, UserOfflineReasonType reason) {
-          if (mounted) {
-            setState(() {
-              _remoteUid = null;
-            });
-            _endCall();
-          }
-        },
-      ),
-    );
+    try {
+      await _agoraService.init();
+      
+      _agoraService.engine.registerEventHandler(
+        RtcEngineEventHandler(
+          onJoinChannelSuccess: (RtcConnection connection, int elapsed) {
+            LogService.i("Successfully joined Agora channel: ${connection.channelId}");
+            _agoraTimeoutTimer?.cancel();
+          },
+          onUserJoined: (RtcConnection connection, int remoteUid, int elapsed) {
+            if (mounted) {
+              setState(() {
+                _remoteUid = remoteUid;
+                _connectionError = null;
+              });
+            }
+          },
+          onUserOffline: (RtcConnection connection, int remoteUid, UserOfflineReasonType reason) {
+            if (mounted) {
+              setState(() {
+                _remoteUid = null;
+              });
+              _endCall();
+            }
+          },
+          onError: (ErrorCodeType err, String msg) {
+            LogService.e("Agora error: $err — $msg");
+            if (mounted) {
+              setState(() {
+                _connectionError = "Bağlantı hatası: $msg";
+              });
+            }
+          },
+        ),
+      );
 
-    await _agoraService.joinChannel(
-      channelId: widget.channelId,
-      uid: FirebaseAuth.instance.currentUser?.uid.hashCode.abs() ?? 0,
-      isVideo: false,
-      isHost: false,
-    );
+      // UID'yi güvenli aralığa sınırla (backend ile eşleşmesi için)
+      final safeUid = AgoraService.safeUid(FirebaseAuth.instance.currentUser?.uid);
+
+      await _agoraService.joinChannel(
+        channelId: widget.channelId,
+        uid: safeUid,
+        isVideo: false,
+      );
+
+      // Agora bağlantı timeout — 15 saniye içinde onJoinChannelSuccess gelmezse uyar
+      _agoraTimeoutTimer = Timer(const Duration(seconds: 15), () {
+        if (mounted && _remoteUid == null) {
+          setState(() {
+            _connectionError = "Bağlantı zaman aşımına uğradı. Lütfen tekrar deneyin.";
+          });
+          // Otomatik olarak çıkma, kullanıcıya bildir
+        }
+      });
+    } catch (e) {
+      LogService.e("Agora connection failed: $e");
+      if (mounted) {
+        setState(() {
+          _connectionError = "Sesli arama bağlantısı kurulamadı. Lütfen internet bağlantınızı kontrol edin.";
+        });
+        // 3 saniye sonra otomatik çık
+        Future.delayed(const Duration(seconds: 3), () {
+          if (mounted) _endCall();
+        });
+      }
+    }
   }
 
   void _startTimer() {
@@ -219,6 +259,7 @@ class _CallScreenState extends State<CallScreen> with SingleTickerProviderStateM
 
   Future<void> _endCall({bool isTimeout = false}) async {
     _timeoutTimer?.cancel();
+    _agoraTimeoutTimer?.cancel();
     _callSubscription?.cancel();
     _stopAudio();
 
@@ -256,6 +297,7 @@ class _CallScreenState extends State<CallScreen> with SingleTickerProviderStateM
   @override
   void dispose() {
     _timeoutTimer?.cancel();
+    _agoraTimeoutTimer?.cancel();
     _callSubscription?.cancel();
     _stopAudio();
     _audioPlayer.dispose();
@@ -336,7 +378,7 @@ class _CallScreenState extends State<CallScreen> with SingleTickerProviderStateM
                     Stack(
                       alignment: Alignment.center,
                       children: [
-                        if (_remoteUid == null)
+                        if (_remoteUid == null && _connectionError == null)
                           ...List.generate(3, (index) {
                             return AnimatedBuilder(
                               animation: _pulseController,
@@ -358,7 +400,12 @@ class _CallScreenState extends State<CallScreen> with SingleTickerProviderStateM
                           height: 130,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            border: Border.all(color: AppColors.primary.withValues(alpha: 0.3), width: 4),
+                            border: Border.all(
+                              color: _connectionError != null 
+                                  ? Colors.redAccent.withValues(alpha: 0.5) 
+                                  : AppColors.primary.withValues(alpha: 0.3), 
+                              width: 4,
+                            ),
                           ),
                           child: CircleAvatar(
                             radius: 60,
@@ -379,7 +426,28 @@ class _CallScreenState extends State<CallScreen> with SingleTickerProviderStateM
                       ),
                     ),
                     const SizedBox(height: 12),
-                    if (_remoteUid != null)
+                    if (_connectionError != null)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 32),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: Colors.redAccent.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.redAccent.withValues(alpha: 0.3)),
+                          ),
+                          child: Text(
+                            _connectionError!,
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.outfit(
+                              color: Colors.white70,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      )
+                    else if (_remoteUid != null)
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                         decoration: BoxDecoration(

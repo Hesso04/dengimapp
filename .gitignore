@@ -36,8 +36,16 @@ migrate_working_dir/
 # Symbolication related
 app.*.symbols
 
-# Obfuscation related
-app.*.map.json
+# Dependencies
+node_modules/
+**/node_modules/
+.next/
+**/out/
+
+# App Bundle / APK artifacts
+*.aab
+*.apk
+
 
 # Android Studio will place build artifacts here
 /android/app/debug

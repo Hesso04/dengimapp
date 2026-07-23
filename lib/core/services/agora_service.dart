@@ -14,6 +14,13 @@ class AgoraService {
   RtcEngine? _engine;
   bool _isInitialized = false;
 
+  /// UID'yi Agora SDK'nın desteklediği 31-bit unsigned int aralığına sınırla.
+  /// Backend (Cloud Function) tarafında da aynı modulo kullanılıyor.
+  static int safeUid(String? firebaseUid) {
+    if (firebaseUid == null || firebaseUid.isEmpty) return 0;
+    return firebaseUid.hashCode.abs() % 100000;
+  }
+
   /// Mikrofon izin durumunu doğrula ve gerekirse izin iste
   Future<bool> checkAndRequestMicrophonePermission() async {
     try {
@@ -47,6 +54,7 @@ class AgoraService {
       LogService.i("Agora SDK initialized successfully.");
     } catch (e) {
       LogService.e("Agora SDK initialization failed", e);
+      rethrow;
     }
   }
 
@@ -55,7 +63,6 @@ class AgoraService {
     required String channelId,
     required int uid,
     bool isVideo = false,
-    bool isHost = true,
   }) async {
     final hasMicPermission = await checkAndRequestMicrophonePermission();
     if (!hasMicPermission) {
@@ -81,24 +88,32 @@ class AgoraService {
         'role': 'publisher',
       });
       token = results.data['token'] ?? "";
+      if (token.isEmpty) {
+        throw Exception("Agora token is empty — token generation failed.");
+      }
     } catch (e) {
       LogService.e("Failed to generate Agora token via Cloud Function: $e");
       rethrow;
     }
 
-    await _engine!.joinChannel(
-      token: token,
-      channelId: channelId,
-      uid: uid,
-      options: const ChannelMediaOptions(
-        publishMicrophoneTrack: true,
-        publishCameraTrack: false,
-        clientRoleType: ClientRoleType.clientRoleBroadcaster,
-      ),
-    );
-    
-    final displayToken = token.length > 10 ? token.substring(0, 10) : token;
-    LogService.i("Joined Agora Channel: $channelId with token: $displayToken...");
+    try {
+      await _engine!.joinChannel(
+        token: token,
+        channelId: channelId,
+        uid: uid,
+        options: const ChannelMediaOptions(
+          publishMicrophoneTrack: true,
+          publishCameraTrack: false,
+          clientRoleType: ClientRoleType.clientRoleBroadcaster,
+        ),
+      );
+      
+      final displayToken = token.length > 10 ? token.substring(0, 10) : token;
+      LogService.i("Joined Agora Channel: $channelId with uid: $uid, token: $displayToken...");
+    } catch (e) {
+      LogService.e("Failed to join Agora channel: $e");
+      rethrow;
+    }
   }
 
   Future<void> leaveChannel() async {

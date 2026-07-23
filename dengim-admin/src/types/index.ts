@@ -267,3 +267,35 @@ export interface ReportFilters {
     dateTo?: Date;
     assignedTo?: string;
 }
+
+// Media Browser & Storage Types
+export interface MediaItem {
+    id: string;
+    url: string;
+    fullPath: string;
+    fileName: string;
+    userId: string;
+    userName?: string;
+    userEmail?: string;
+    userPhoto?: string;
+    size: number;
+    contentType: string;
+    timeCreated: Date;
+    type: 'image' | 'video' | 'audio' | 'other';
+    flagged?: boolean;
+}
+
+export interface StorageStats {
+    totalFiles: number;
+    totalSizeBytes: number;
+    formattedSize: string;
+    imagesCount: number;
+    videosCount: number;
+    audioCount: number;
+}
+
+export interface OnlineUserStats {
+    onlineNow: number;
+    recentlyActive: User[];
+}
+

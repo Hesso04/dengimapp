@@ -13,7 +13,7 @@ import { Timestamp } from 'firebase/firestore';
 export default function NotificationsPage() {
     const [activeTab, setActiveTab] = useState<'push' | 'announcements' | 'history'>('push');
     const [selectedSegment, setSelectedSegment] = useState('all');
-    const [counts, setCounts] = useState({ all: 0, premium: 0, new: 0, inactive: 0 });
+    const [counts, setCounts] = useState({ all: 0, premium: 0, new: 0, inactive: 0, male: 0, female: 0 });
     const [loading, setLoading] = useState(false);
     const [sentStatus, setSentStatus] = useState<{ message: string; count: number } | null>(null);
     const [history, setHistory] = useState<any[]>([]);
@@ -160,6 +160,8 @@ export default function NotificationsPage() {
                                             {[
                                                 { id: 'all', label: 'Tüm Kullanıcılar', count: counts.all, icon: '🌍' },
                                                 { id: 'premium', label: 'Premium Üyeler', count: counts.premium, icon: '👑' },
+                                                { id: 'male', label: 'Sadece Erkekler', count: counts.male, icon: '👨' },
+                                                { id: 'female', label: 'Sadece Kadınlar', count: counts.female, icon: '👩' },
                                                 { id: 'new', label: 'Yeni Üyeler (7g)', count: counts.new, icon: '🆕' },
                                                 { id: 'inactive', label: 'İnaktif Üyeler', count: counts.inactive, icon: '😴' },
                                             ].map((segment) => (

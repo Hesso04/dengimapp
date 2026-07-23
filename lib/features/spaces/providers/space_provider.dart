@@ -44,8 +44,7 @@ class SpaceProvider extends ChangeNotifier {
       // Agora Kanalına Katıl (Host olarak)
       await _agoraService.joinChannel(
         channelId: roomId,
-        uid: hostProfile.uid.hashCode.abs(),
-        isHost: true,
+        uid: AgoraService.safeUid(hostProfile.uid),
       );
 
       _startHeartbeat(roomId); // YENİ: Heartbeat başlat
@@ -67,8 +66,7 @@ class SpaceProvider extends ChangeNotifier {
       // Agora Kanalına Katıl (Dinleyici olarak)
       await _agoraService.joinChannel(
         channelId: spaceId,
-        uid: userProfile.uid.hashCode.abs(),
-        isHost: false,
+        uid: AgoraService.safeUid(userProfile.uid),
       );
     } catch (e) {
       LogService.e("Error joining space via provider", e);
