@@ -77,6 +77,7 @@ class _DiscoverUserCardState extends State<DiscoverUserCard> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final borderColor = isDark ? const Color(0xFF262629) : const Color(0xFFEEEEEE);
+    final bool isBoosted = widget.user.boostedUntil != null && widget.user.boostedUntil!.isAfter(DateTime.now());
 
     return RepaintBoundary(
       child: GestureDetector(
@@ -87,14 +88,25 @@ class _DiscoverUserCardState extends State<DiscoverUserCard> {
             decoration: BoxDecoration(
               color: theme.cardTheme.color ?? theme.colorScheme.surface,
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: borderColor, width: 1.0),
-              boxShadow: isDark ? null : [AppColors.neoShadowLarge],
+              border: Border.all(
+                color: isBoosted ? const Color(0xFFFFD700) : borderColor,
+                width: isBoosted ? 3.0 : 1.0,
+              ),
+              boxShadow: isBoosted
+                  ? [
+                      BoxShadow(
+                        color: const Color(0xFFFF9900).withValues(alpha: 0.6),
+                        blurRadius: 16,
+                        spreadRadius: 2,
+                      )
+                    ]
+                  : (isDark ? null : [AppColors.neoShadowLarge]),
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(16),
               child: Stack(
                 fit: StackFit.expand,
-                children: _buildStackChildren(showLike, showNope),
+                children: _buildStackChildren(showLike, showNope, isBoosted),
               ),
           ),
         ),
@@ -102,7 +114,7 @@ class _DiscoverUserCardState extends State<DiscoverUserCard> {
     );
   }
 
-  List<Widget> _buildStackChildren(bool showLike, bool showNope) {
+  List<Widget> _buildStackChildren(bool showLike, bool showNope, [bool isBoosted = false]) {
     final user = widget.user;
     final percentX = widget.percentX;
     final photoUrls = user.photoUrls ?? [user.imageUrl];
@@ -110,7 +122,7 @@ class _DiscoverUserCardState extends State<DiscoverUserCard> {
     final isDark = theme.brightness == Brightness.dark;
     final borderColor = isDark ? const Color(0xFF262629) : const Color(0xFFEEEEEE);
     final elementColor = isDark ? Colors.white : Colors.black;
-    
+
     final children = <Widget>[
       // Multi-photo PageView (High-res images)
       PageView.builder(
@@ -130,8 +142,39 @@ class _DiscoverUserCardState extends State<DiscoverUserCard> {
           );
         },
       ),
-      // Remove gradient overlay
-      const SizedBox.shrink(),
+      // Boost Badge
+      if (isBoosted)
+        Positioned(
+          top: 16,
+          left: 16,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFFFF9900), Color(0xFFFF0055)],
+              ),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: const [
+                BoxShadow(color: Color(0xFFFF0055), blurRadius: 8)
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.bolt_rounded, color: Colors.white, size: 14),
+                const SizedBox(width: 3),
+                Text(
+                  'BOOST',
+                  style: GoogleFonts.outfit(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       Positioned(
         top: 24,
         right: 24,

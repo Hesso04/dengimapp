@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
 import '../auth/models/user_profile.dart';
@@ -466,7 +467,10 @@ class _LikesScreenState extends State<LikesScreen> {
             ),
           ),
           GestureDetector(
-            onTap: () {},
+            onTap: () {
+              HapticFeedback.lightImpact();
+              _showSortFilterModal();
+            },
             child: Container(
               width: 42,
               height: 42,
@@ -478,6 +482,47 @@ class _LikesScreenState extends State<LikesScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showSortFilterModal() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: isDark ? const Color(0xFF1E1E24) : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Sıralama & Filtreleme',
+              style: GoogleFonts.outfit(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: isDark ? Colors.white : Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 16),
+            ListTile(
+              leading: const Icon(Icons.circle, color: AppColors.green, size: 16),
+              title: Text('Sadece Çevrimiçiler', style: GoogleFonts.outfit(fontWeight: FontWeight.w600, color: isDark ? Colors.white : Colors.black87)),
+              trailing: Switch(
+                value: _onlyOnline,
+                onChanged: (val) {
+                  setState(() => _onlyOnline = val);
+                  Navigator.pop(ctx);
+                },
+                activeColor: AppColors.primary,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

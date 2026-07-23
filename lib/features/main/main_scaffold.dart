@@ -22,7 +22,12 @@ import '../../core/providers/system_config_provider.dart';
 import '../../core/widgets/offline_banner.dart';
 
 class MainScaffold extends StatefulWidget {
+  static final GlobalKey<_MainScaffoldState> scaffoldKey = GlobalKey<_MainScaffoldState>();
   const MainScaffold({super.key});
+
+  static void navigateToTab(int index) {
+    scaffoldKey.currentState?._onTabTapped(index);
+  }
 
   @override
   State<MainScaffold> createState() => _MainScaffoldState();
@@ -204,6 +209,7 @@ class _MainScaffoldState extends State<MainScaffold> {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
       child: Scaffold(
+        key: MainScaffold.scaffoldKey,
         backgroundColor: theme.scaffoldBackgroundColor,
         extendBody: true, // body'nin tab bar altına uzanmasını sağla
         body: Column(

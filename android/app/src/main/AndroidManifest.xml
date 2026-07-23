@@ -23,6 +23,10 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT"/>
 
+    <!-- Ekran Paylaşımı İznini Kaldır (Agora SDK Otomatik Eklediği İçin Google Play Reddetmesin) -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" tools:node="remove"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE"/>
+
     <application
         android:label="Dengim"
         android:name="${applicationName}"

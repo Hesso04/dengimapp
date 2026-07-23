@@ -462,22 +462,47 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
       margin: const EdgeInsets.fromLTRB(24, 0, 24, 20),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: isDark ? 0.15 : 0.08),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: AppColors.primary.withValues(alpha: 0.3),
-          width: 1,
+        gradient: LinearGradient(
+          colors: isDark
+              ? [const Color(0xFF2A1B3D), const Color(0xFF1E142B)]
+              : [const Color(0xFFFFF0F5), const Color(0xFFF3E8FF)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: AppColors.primary.withValues(alpha: isDark ? 0.4 : 0.25),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: isDark ? 0.2 : 0.08),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          )
+        ],
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.2),
-              shape: BoxShape.circle,
+              gradient: const LinearGradient(
+                colors: [AppColors.primary, Color(0xFFFF6584)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withValues(alpha: 0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                )
+              ],
             ),
-            child: Icon(icon, color: AppColors.primary, size: 22),
+            child: Icon(icon, color: Colors.white, size: 20),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -487,19 +512,19 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                 Text(
                   title,
                   style: GoogleFonts.outfit(
-                    fontSize: 13,
+                    fontSize: 14,
                     fontWeight: FontWeight.w700,
-                    color: isDark ? Colors.white : Colors.black87,
+                    color: isDark ? Colors.white : const Color(0xFF2A1B3D),
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 3),
                 Text(
                   message,
                   style: GoogleFonts.outfit(
-                    fontSize: 12,
+                    fontSize: 12.5,
                     fontWeight: FontWeight.w400,
-                    color: isDark ? Colors.white70 : AppColors.textSecondary,
-                    height: 1.3,
+                    color: isDark ? Colors.white.withValues(alpha: 0.85) : Colors.black87,
+                    height: 1.35,
                   ),
                 ),
               ],

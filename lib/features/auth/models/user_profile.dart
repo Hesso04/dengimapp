@@ -43,6 +43,7 @@ class UserProfile {
   final List<String> blockedUsers;
   final String? fcmToken;
   final DateTime? boostUntil;
+  DateTime? get boostedUntil => boostUntil;
   final bool isGhostMode;
   final bool isIncognitoMode;
   final bool hasReceivedWelcomeBonus;

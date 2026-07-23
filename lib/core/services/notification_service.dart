@@ -6,6 +6,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../utils/log_service.dart';
 import '../../features/auth/services/profile_service.dart';
 import '../../features/chats/screens/chat_detail_screen.dart';
+import '../../features/main/main_scaffold.dart';
 import '../../main.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -207,22 +208,26 @@ class NotificationService {
     if (payload == null) return;
     try {
       final Map<String, dynamic> data = jsonDecode(payload);
+      final String? type = data['type'];
       final String? chatId = data['chatId'];
-      final String? otherUserId = data['otherUserId'];
-      final String? otherUserName = data['otherUserName'];
-      final String? otherUserAvatar = data['otherUserAvatar'];
+      final String? senderId = data['senderId'] ?? data['otherUserId'];
+      final String? senderName = data['senderName'] ?? data['otherUserName'];
 
-      if (chatId != null && navigatorKey.currentState != null) {
-        navigatorKey.currentState!.push(
-          MaterialPageRoute(
-            builder: (_) => ChatDetailScreen(
-              chatId: chatId,
-              otherUserId: otherUserId ?? '',
-              otherUserName: otherUserName ?? 'Kullanıcı',
-              otherUserAvatar: otherUserAvatar ?? '',
+      if (navigatorKey.currentState != null) {
+        if (chatId != null && chatId.isNotEmpty) {
+          navigatorKey.currentState!.push(
+            MaterialPageRoute(
+              builder: (_) => ChatDetailScreen(
+                chatId: chatId,
+                otherUserId: senderId ?? '',
+                otherUserName: senderName ?? 'Kullanıcı',
+                otherUserAvatar: data['otherUserAvatar'] ?? '',
+              ),
             ),
-          ),
-        );
+          );
+        } else if (type == 'match' || type == 'like') {
+          MainScaffold.navigateToTab(1);
+        }
       }
     } catch(e) {
       LogService.e('Navigation from notification failed', e);

@@ -568,6 +568,7 @@ class ChatService {
       'lastMessageTime': Timestamp.fromDate(now),
       'lastSenderId': user.uid,
       'unreadCount': { for (var id in memberIds) id : 0 },
+      'unreadCounts': { for (var id in memberIds) id : 0 },
       'createdAt': Timestamp.fromDate(now),
       'updatedAt': Timestamp.fromDate(now),
     });
