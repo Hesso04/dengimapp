@@ -18,6 +18,8 @@ export interface User {
     isPremium: boolean;
     premiumTier?: 'basic' | 'gold' | 'platinum';
     premiumExpiry?: Date;
+    credits?: number;
+    authProvider?: 'google' | 'facebook' | 'phone' | 'email';
     isVerified: boolean;
     relationshipGoal?: 'serious' | 'casual' | 'chat' | 'unsure' | string;
     reportCount: number;

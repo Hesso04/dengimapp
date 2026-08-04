@@ -53,9 +53,15 @@ export function GrowthChart({ data, color = '#ecb613', height = 256 }: AreaChart
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                 <XAxis
                     dataKey="date"
-                    stroke="rgba(255,255,255,0.3)"
-                    fontSize={10}
-                    tickFormatter={(value) => new Date(value).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' })}
+                    stroke="rgba(255,255,255,0.4)"
+                    fontSize={11}
+                    tickFormatter={(value) => {
+                        if (!value) return '';
+                        const dateObj = new Date(value);
+                        return isNaN(dateObj.getTime())
+                            ? value
+                            : dateObj.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
+                    }}
                 />
                 <YAxis
                     stroke="rgba(255,255,255,0.3)"
