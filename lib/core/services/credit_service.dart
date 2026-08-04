@@ -38,7 +38,108 @@ class CreditService {
   // ══════════════════════════════════════════
   //  GÜNLÜK LİMİTLER
   // ══════════════════════════════════════════
-  static const int maxDailyAdWatches = 10;       // Günde max 10 reklam izleyebilir
+  static const int maxDailyAdWatches = 10;       // Günde max 10 genel reklam izleyebilir
+  static const int freeDefaultDailyMessageCredits = 8; // Normal kullanıcı günlük mesaj kredisi
+  static const int maxDailyMessageAdWatches = 10;      // Reklamla kazanılabilecek max mesaj kredisi reklamı (10/gün)
+
+  // ══════════════════════════════════════════
+  //  MESAJLAŞMA KREDİSİ İŞLEMLERİ
+  // ══════════════════════════════════════════
+
+  /// Bugünkü kalan mesaj kredisini ve izlenen mesaj reklamı sayısını getir
+  Future<Map<String, int>> getTodayMessageCreditInfo() async {
+    if (_uid == null) {
+      return {'remaining': freeDefaultDailyMessageCredits, 'adWatches': 0};
+    }
+    try {
+      final now = DateTime.now();
+      final dateKey = "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+
+      final doc = await _firestore
+          .collection('users').doc(_uid)
+          .collection('stats').doc('message_credits')
+          .get();
+
+      if (!doc.exists || doc.data()?['lastDate'] != dateKey) {
+        // Yeni gün -> 8 kredi tanımla
+        await _firestore
+            .collection('users').doc(_uid)
+            .collection('stats').doc('message_credits')
+            .set({
+          'lastDate': dateKey,
+          'remaining': freeDefaultDailyMessageCredits,
+          'adWatches': 0,
+        });
+        return {'remaining': freeDefaultDailyMessageCredits, 'adWatches': 0};
+      }
+
+      final data = doc.data()!;
+      return {
+        'remaining': data['remaining']?.toInt() ?? freeDefaultDailyMessageCredits,
+        'adWatches': data['adWatches']?.toInt() ?? 0,
+      };
+    } catch (e) {
+      LogService.e("Get message credit info error", e);
+      return {'remaining': freeDefaultDailyMessageCredits, 'adWatches': 0};
+    }
+  }
+
+  /// Mesaj kredisi kullan (1 adet düş)
+  Future<bool> useMessageCredit() async {
+    if (_uid == null) return true;
+    try {
+      final info = await getTodayMessageCreditInfo();
+      final current = info['remaining'] ?? 0;
+      if (current <= 0) return false;
+
+      final now = DateTime.now();
+      final dateKey = "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+
+      await _firestore
+          .collection('users').doc(_uid)
+          .collection('stats').doc('message_credits')
+          .update({
+        'remaining': current - 1,
+        'lastDate': dateKey,
+      });
+      return true;
+    } catch (e) {
+      LogService.e("Use message credit error", e);
+      return false;
+    }
+  }
+
+  /// Reklam izleyerek +1 mesaj kredisi kazan
+  Future<bool> rewardForMessageCreditAd() async {
+    if (_uid == null) return false;
+    try {
+      final info = await getTodayMessageCreditInfo();
+      final adWatches = info['adWatches'] ?? 0;
+      final remaining = info['remaining'] ?? 0;
+
+      if (adWatches >= maxDailyMessageAdWatches) {
+        LogService.w("Daily message credit ad limit reached: $adWatches/$maxDailyMessageAdWatches");
+        return false;
+      }
+
+      final now = DateTime.now();
+      final dateKey = "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+
+      await _firestore
+          .collection('users').doc(_uid)
+          .collection('stats').doc('message_credits')
+          .set({
+        'lastDate': dateKey,
+        'remaining': remaining + 1,
+        'adWatches': adWatches + 1,
+        'lastWatchAt': FieldValue.serverTimestamp(),
+      });
+      return true;
+    } catch (e) {
+      LogService.e("Reward for message credit ad error", e);
+      return false;
+    }
+  }
 
   // ══════════════════════════════════════════
   //  BAKİYE İŞLEMLERİ
@@ -79,6 +180,73 @@ class CreditService {
     } catch (e) {
       LogService.e("Credit add error", e);
       return false;
+    }
+  }
+
+  /// Promosyon kodu kullan (Admin panelden oluşturulan kodlar)
+  Future<Map<String, dynamic>> redeemPromoCode(String code) async {
+    if (_uid == null) {
+      return {'success': false, 'message': 'Oturum açmanız gerekmektedir.'};
+    }
+    final cleanCode = code.trim().toUpperCase();
+    if (cleanCode.isEmpty) {
+      return {'success': false, 'message': 'Lütfen geçerli bir kod giriniz.'};
+    }
+
+    try {
+      final query = await _firestore
+          .collection('promo_codes')
+          .where('code', isEqualTo: cleanCode)
+          .where('isActive', isEqualTo: true)
+          .limit(1)
+          .get();
+
+      if (query.docs.isEmpty) {
+        return {'success': false, 'message': 'Geçersiz veya süresi dolmuş promosyon kodu.'};
+      }
+
+      final promoDoc = query.docs.first;
+      final promoData = promoDoc.data();
+      final promoId = promoDoc.id;
+
+      final int creditAmount = promoData['creditAmount']?.toInt() ?? 0;
+      final int maxUses = promoData['maxUses']?.toInt() ?? 999999;
+      final int usedCount = promoData['usedCount']?.toInt() ?? 0;
+      final List usedByUsers = List.from(promoData['usedByUsers'] ?? []);
+
+      if (usedByUsers.contains(_uid)) {
+        return {'success': false, 'message': 'Bu promosyon kodunu daha önce kullandınız.'};
+      }
+
+      if (usedCount >= maxUses) {
+        return {'success': false, 'message': 'Bu promosyon kodunun kullanım limiti dolmuştur.'};
+      }
+
+      await _firestore.runTransaction((transaction) async {
+        final userRef = _firestore.collection('users').doc(_uid);
+        final promoRef = _firestore.collection('promo_codes').doc(promoId);
+
+        transaction.update(userRef, {
+          'credits': FieldValue.increment(creditAmount),
+        });
+
+        transaction.update(promoRef, {
+          'usedCount': FieldValue.increment(1),
+          'usedByUsers': FieldValue.arrayUnion([_uid]),
+        });
+      });
+
+      await _logTransaction(creditAmount, "Promosyon Kodu: $cleanCode", 'earn');
+      LogService.i("Promo code redeemed: $cleanCode (+$creditAmount credits)");
+
+      return {
+        'success': true,
+        'amount': creditAmount,
+        'message': 'Tebrikler! +$creditAmount Kredi hesabınıza tanımlandı.'
+      };
+    } catch (e) {
+      LogService.e("Redeem promo code error", e);
+      return {'success': false, 'message': 'Kod kullanılırken bir hata oluştu: $e'};
     }
   }
 

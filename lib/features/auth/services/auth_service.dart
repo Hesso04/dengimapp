@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_auth_platform_interface/firebase_auth_platform_interface.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -13,6 +14,7 @@ class AuthService {
   AuthService._internal();
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     clientId: kIsWeb 
         ? '12239103870-nmqifbprc2t9pgtj68ar6efpl5mnrc0e.apps.googleusercontent.com'
@@ -88,22 +90,48 @@ class AuthService {
     try {
       final user = _auth.currentUser;
       if (user != null) {
-        // 1. Vercel uzerindeki API'ye silme istegi at
+        final uid = user.uid;
+
+        // 1. Admin Paneline Silme İsteği Düşmesi için Firestore 'deletion_requests' koleksiyonuna kaydet
+        try {
+          await _firestore.collection('deletion_requests').doc(uid).set({
+            'userId': uid,
+            'userEmail': user.email ?? '',
+            'displayName': user.displayName ?? '',
+            'requestedAt': FieldValue.serverTimestamp(),
+            'status': 'pending',
+          });
+
+          await _firestore.collection('users').doc(uid).update({
+            'isDeleted': true,
+            'status': 'deleted',
+            'deletedAt': FieldValue.serverTimestamp(),
+          });
+        } catch (e) {
+          LogService.e("Failed to write deletion request to Firestore", e);
+        }
+
+        // 2. Vercel / Web API silme tetikleyicisi (Varsa, zaman aşımı korumalı)
         try {
           final url = Uri.parse('https://dengim.app/api/delete-account');
           await http.post(
             url,
             headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({'userId': user.uid})
-          );
+            body: jsonEncode({'userId': uid})
+          ).timeout(const Duration(seconds: 4));
         } catch (e) {
           LogService.e("Failed to trigger cascade delete API", e);
         }
         
-        // 2. Yerel oturumlari kapat (API Firebase'den sildigi icin sadece cikis yapiyoruz)
+        // 3. Kullanıcıyı Firebase Auth'tan sil / Oturumları kapat
+        try {
+          await user.delete();
+        } catch (e) {
+          LogService.w("Direct user.delete() warning: $e");
+        }
         await _googleSignIn.signOut();
         await _auth.signOut();
-        LogService.i("User account deleted via Next.js API.");
+        LogService.i("User account deleted successfully.");
       }
     } catch (e) {
       LogService.e("Delete account error", e);

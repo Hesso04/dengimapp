@@ -620,6 +620,19 @@ class _PhoneLoginFormState extends State<_PhoneLoginForm> {
   String? _error;
   String? _verificationId;
 
+  String _selectedCountryCode = '+90';
+  final List<Map<String, String>> _countryCodes = const [
+    {'flag': '🇹🇷', 'code': '+90', 'name': 'TR (+90)'},
+    {'flag': '🇩🇪', 'code': '+49', 'name': 'DE (+49)'},
+    {'flag': '🇬🇧', 'code': '+44', 'name': 'UK (+44)'},
+    {'flag': '🇺🇸', 'code': '+1', 'name': 'US (+1)'},
+    {'flag': '🇦🇿', 'code': '+994', 'name': 'AZ (+994)'},
+    {'flag': '🇳🇱', 'code': '+31', 'name': 'NL (+31)'},
+    {'flag': '🇫🇷', 'code': '+33', 'name': 'FR (+33)'},
+    {'flag': '🇸🇦', 'code': '+966', 'name': 'SA (+966)'},
+    {'flag': '🇦🇪', 'code': '+971', 'name': 'AE (+971)'},
+  ];
+
   @override
   void dispose() {
     _phoneController.dispose();
@@ -628,14 +641,16 @@ class _PhoneLoginFormState extends State<_PhoneLoginForm> {
   }
 
   void _sendCode() async {
-    final phone = _phoneController.text.trim();
-    if (phone.isEmpty) {
+    final rawPhone = _phoneController.text.trim().replaceAll(RegExp(r'\s+'), '');
+    if (rawPhone.isEmpty) {
       setState(() => _error = "Lütfen telefon numaranızı girin.");
       return;
     }
 
-    // Format phone if it doesn't start with +
-    final formattedPhone = phone.startsWith('+') ? phone : '+$phone';
+    final cleanNumber = rawPhone.startsWith('0') ? rawPhone.substring(1) : rawPhone;
+    final formattedPhone = cleanNumber.startsWith('+')
+        ? cleanNumber
+        : '$_selectedCountryCode$cleanNumber';
 
     setState(() { _isLoading = true; _error = null; });
     try {
@@ -659,7 +674,6 @@ class _PhoneLoginFormState extends State<_PhoneLoginForm> {
           }
         },
         onVerificationCompleted: (credential) async {
-          // Auto login on native devices if detected
           try {
             await FirebaseAuth.instance.signInWithCredential(credential);
             if (mounted) {
@@ -718,6 +732,8 @@ class _PhoneLoginFormState extends State<_PhoneLoginForm> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : Colors.black;
     final hintColor = isDark ? Colors.white54 : Colors.black54;
+    final cardBg = isDark ? const Color(0xFF191B22) : const Color(0xFFF7F8FA);
+    final borderColor = isDark ? const Color(0xFF262629) : const Color(0xFFEEEEEE);
     final showOtpField = _verificationId != null;
 
     return SingleChildScrollView(
@@ -748,15 +764,54 @@ class _PhoneLoginFormState extends State<_PhoneLoginForm> {
             ),
           
           if (!showOtpField) ...[
-            TextField(
-              controller: _phoneController,
-              keyboardType: TextInputType.phone,
-              style: GoogleFonts.outfit(color: textColor, fontWeight: FontWeight.w600),
-              decoration: InputDecoration(
-                hintText: 'Telefon Numarası (Örn: +905551234567)',
-                hintStyle: TextStyle(color: hintColor),
-                prefixIcon: Icon(Icons.phone_outlined, color: textColor),
-              ),
+            Row(
+              children: [
+                // Country Code Picker
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  decoration: BoxDecoration(
+                    color: cardBg,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: borderColor, width: 1.0),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: _selectedCountryCode,
+                      dropdownColor: isDark ? const Color(0xFF1F1F23) : Colors.white,
+                      icon: Icon(Icons.arrow_drop_down, color: textColor),
+                      style: GoogleFonts.outfit(
+                        color: textColor,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 14,
+                      ),
+                      onChanged: (String? newValue) {
+                        if (newValue != null) {
+                          setState(() => _selectedCountryCode = newValue);
+                        }
+                      },
+                      items: _countryCodes.map<DropdownMenuItem<String>>((c) {
+                        return DropdownMenuItem<String>(
+                          value: c['code'],
+                          child: Text('${c['flag']} ${c['code']}'),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                // Phone input
+                Expanded(
+                  child: TextField(
+                    controller: _phoneController,
+                    keyboardType: TextInputType.phone,
+                    style: GoogleFonts.outfit(color: textColor, fontWeight: FontWeight.w700),
+                    decoration: InputDecoration(
+                      hintText: '5XX XXX XX XX',
+                      hintStyle: TextStyle(color: hintColor),
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 32),
             ElevatedButton(

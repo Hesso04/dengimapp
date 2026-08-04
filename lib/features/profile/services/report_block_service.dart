@@ -55,13 +55,19 @@ class ReportBlockService {
     if (currentUserId == null) return false;
 
     try {
-      // Engelleme kaydı ekle
+      // Engelleme kaydı ekle (hem subcollection hem de ana blocks koleksiyonuna)
       await _firestore
           .collection('users')
           .doc(currentUserId)
           .collection('blocked_users')
           .doc(blockedUserId)
           .set({
+        'blockedAt': FieldValue.serverTimestamp(),
+      });
+
+      await _firestore.collection('blocks').doc('${currentUserId}_$blockedUserId').set({
+        'blockerId': currentUserId,
+        'blockedId': blockedUserId,
         'blockedAt': FieldValue.serverTimestamp(),
       });
 

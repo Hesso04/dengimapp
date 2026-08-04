@@ -65,6 +65,16 @@ export function Sidebar() {
             href: '/admin/analytics',
         },
         {
+            label: 'Promosyon Kodları',
+            icon: 'confirmation_number',
+            href: '/admin/promotions',
+        },
+        {
+            label: 'Silme Talepleri',
+            icon: 'person_remove',
+            href: '/admin/deletion-requests',
+        },
+        {
             label: 'Bildirimler',
             icon: 'notifications',
             href: '/admin/notifications',

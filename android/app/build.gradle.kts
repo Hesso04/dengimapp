@@ -16,7 +16,7 @@ if (keystorePropertiesFile.exists()) {
 android {
     namespace = "com.dengim.dengim"
     compileSdk = 36
-    ndkVersion = flutter.ndkVersion
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
         isCoreLibraryDesugaringEnabled = true
@@ -59,8 +59,10 @@ android {
     buildTypes {
         release {
             signingConfig = signingConfigs.getByName("release")
-            isMinifyEnabled = false
-            isShrinkResources = false
+            // R8 kod gizleme + resource shrinking AÇIK.
+            // APK boyutu düşer, reverse engineering zorlaşır.
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

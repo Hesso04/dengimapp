@@ -1,7 +1,11 @@
 [
     {
         "origin": [
-            "*"
+            "https://dengim.app",
+            "https://dengim-kim.web.app",
+            "https://dengim-kim.firebaseapp.com",
+            "http://localhost:5000",
+            "http://localhost:8080"
         ],
         "method": [
             "GET",

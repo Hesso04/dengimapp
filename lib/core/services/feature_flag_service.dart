@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import '../utils/log_service.dart';
@@ -11,6 +12,7 @@ class FeatureFlagService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   Map<String, dynamic> _premiumConfig = {};
+  StreamSubscription? _premiumConfigSubscription;
 
   Future<void> init() async {
     // 1. Remote Config'i başlat (Fallback olarak kalacak)
@@ -60,7 +62,7 @@ class FeatureFlagService {
       }
 
       // Değişiklikleri anlık olarak dinle
-      _firestore.collection('system').doc('premium_config').snapshots().listen((snapshot) {
+      _premiumConfigSubscription = _firestore.collection('system').doc('premium_config').snapshots().listen((snapshot) {
         if (snapshot.exists && snapshot.data() != null) {
           _premiumConfig = snapshot.data()!;
           LogService.i("Premium config updated in real-time");
@@ -198,7 +200,7 @@ class FeatureFlagService {
     return _remoteConfig.getBool("show_ads");
   }
 
-  bool isStoryEnabled() {
-    return _remoteConfig.getBool("stories_enabled");
+  void dispose() {
+    _premiumConfigSubscription?.cancel();
   }
 }

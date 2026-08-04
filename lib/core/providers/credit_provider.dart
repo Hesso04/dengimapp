@@ -11,6 +11,8 @@ class CreditProvider extends ChangeNotifier {
   int _streak = 0;
   bool _dailyRewardClaimed = false;
   int _todayAdWatches = 0;
+  int _messageCreditsRemaining = CreditService.freeDefaultDailyMessageCredits;
+  int _messageAdWatchesToday = 0;
   bool _isLoading = false;
 
   StreamSubscription? _balanceSubscription;
@@ -22,6 +24,12 @@ class CreditProvider extends ChangeNotifier {
   int get todayAdWatches => _todayAdWatches;
   int get remainingAdWatches => CreditService.maxDailyAdWatches - _todayAdWatches;
   bool get canWatchAd => _todayAdWatches < CreditService.maxDailyAdWatches;
+
+  // Message Credits Getters
+  int get messageCreditsRemaining => _messageCreditsRemaining;
+  int get messageAdWatchesToday => _messageAdWatchesToday;
+  int get remainingMessageAdWatches => CreditService.maxDailyMessageAdWatches - _messageAdWatchesToday;
+  bool get canWatchAdForMessageCredit => _messageAdWatchesToday < CreditService.maxDailyMessageAdWatches;
   bool get isLoading => _isLoading;
 
   /// Provider'ı başlat
@@ -45,13 +53,41 @@ class CreditProvider extends ChangeNotifier {
       // Bugünkü reklam izleme sayısını çek
       _todayAdWatches = await _creditService.getTodayAdWatchCount();
 
-      LogService.i("CreditProvider initialized - Balance: $_balance, Streak: $_streak");
+      // Bugünkü mesaj kredisi bilgisini çek
+      final msgInfo = await _creditService.getTodayMessageCreditInfo();
+      _messageCreditsRemaining = msgInfo['remaining'] ?? CreditService.freeDefaultDailyMessageCredits;
+      _messageAdWatchesToday = msgInfo['adWatches'] ?? 0;
+
+      LogService.i("CreditProvider initialized - Balance: $_balance, MessageCredits: $_messageCreditsRemaining");
     } catch (e) {
       LogService.e("CreditProvider init error", e);
     } finally {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  /// 1 Mesaj Kredisi Harca
+  Future<bool> useMessageCredit() async {
+    if (_messageCreditsRemaining <= 0) return false;
+    final success = await _creditService.useMessageCredit();
+    if (success) {
+      _messageCreditsRemaining--;
+      notifyListeners();
+    }
+    return success;
+  }
+
+  /// Mesaj Reklamı İzleyerek +1 Mesaj Kredisi Kazan
+  Future<bool> rewardForMessageCreditAd() async {
+    if (!canWatchAdForMessageCredit) return false;
+    final success = await _creditService.rewardForMessageCreditAd();
+    if (success) {
+      _messageCreditsRemaining++;
+      _messageAdWatchesToday++;
+      notifyListeners();
+    }
+    return success;
   }
 
   /// Günlük giriş ödülünü al
@@ -99,7 +135,14 @@ class CreditProvider extends ChangeNotifier {
   Future<bool> spendUndo() => spend(CreditService.costUndoSwipe, 'undo_swipe');
 
   /// 10 ekstra swipe harca
-  Future<bool> spendExtraSwipes() => spend(CreditService.costExtraSwipes10, 'extra_swipes');
+  /// Promosyon kodu kullan
+  Future<Map<String, dynamic>> redeemPromoCode(String code) async {
+    final result = await _creditService.redeemPromoCode(code);
+    if (result['success'] == true) {
+      notifyListeners();
+    }
+    return result;
+  }
 
   @override
   void dispose() {

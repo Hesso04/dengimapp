@@ -7,7 +7,6 @@ import '../auth/login_screen.dart';
 import 'settings_screen.dart';
 import 'edit_profile_screen.dart';
 import 'visitors_screen.dart';
-import 'follows_list_screen.dart';
 
 import 'package:provider/provider.dart';
 import '../../core/providers/user_provider.dart';
@@ -210,9 +209,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ],
                       ),
 
-                      const SizedBox(height: 16),
-                      _buildFollowStatsRow(context, profile),
-
                       const SizedBox(height: 32),
                       _buildProfileCompletionCard(profile),
                       
@@ -239,6 +235,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       const SizedBox(height: 48),
 
                       _buildCreditAndTierCard(profile),
+                      const SizedBox(height: 24),
+
+                      // Premium Comparison Table (from humble-main)
+                      _buildPremiumComparisonTable(),
                       const SizedBox(height: 24),
 
                       Row(
@@ -777,14 +777,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
         final isDark = Theme.of(context).brightness == Brightness.dark;
         final tier = subProvider.currentTier;
         final isPremium = tier != 'free';
+        final watchedCount = creditProvider.todayAdWatches;
 
         return Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: isDark ? AppColors.cardDark : Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: isDark ? Colors.white10 : const Color(0xFFEEEEEE), width: 1.0),
-            boxShadow: isDark ? [] : [AppColors.neoShadowSmall],
+            color: isDark ? const Color(0xFF14161B) : Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: isDark ? const Color(0xFF262934) : const Color(0xFFEEEEEE), width: 1.0),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: Column(
             children: [
@@ -794,31 +801,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(10),
+                          padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: AppColors.primary, 
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: isDark ? Colors.white10 : const Color(0xFFEEEEEE), width: 1.0),
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+                            ),
+                            borderRadius: BorderRadius.circular(14),
                           ),
-                          child: const Icon(Icons.toll_rounded, color: Colors.white, size: 22),
+                          child: const Icon(Icons.bolt_rounded, color: Colors.black, size: 24),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 14),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              '${creditProvider.balance}',
+                              '${creditProvider.balance} Krediniz Var',
                               style: GoogleFonts.outfit(
-                                fontSize: 26,
+                                fontSize: 18,
                                 fontWeight: FontWeight.w900,
                                 color: isDark ? Colors.white : Colors.black,
                               ),
                             ),
                             Text(
-                              'KREDİ',
+                              'Ücretsiz kredi kazan veya harca',
                               style: GoogleFonts.outfit(
                                 fontSize: 11,
-                                fontWeight: FontWeight.w800,
+                                fontWeight: FontWeight.w600,
                                 color: isDark ? Colors.white54 : Colors.black.withValues(alpha: 0.5),
                               ),
                             ),
@@ -829,26 +837,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   if (creditProvider.streak > 0)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
-                        color: AppColors.orange,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: isDark ? Colors.white : Colors.black, width: 1.5),
-                        boxShadow: [
-                          BoxShadow(color: isDark ? Colors.white : Colors.black, offset: const Offset(2, 2)),
-                        ],
+                        color: const Color(0xFFFF5722).withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFFF5722)),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.local_fire_department, color: isDark ? Colors.white : Colors.black, size: 16),
+                          const Icon(Icons.local_fire_department_rounded, color: Color(0xFFFF5722), size: 16),
                           const SizedBox(width: 4),
                           Text(
-                            '${creditProvider.streak}',
+                            '${creditProvider.streak} GÜN',
                             style: GoogleFonts.outfit(
-                              fontSize: 14,
+                              fontSize: 12,
                               fontWeight: FontWeight.w900,
-                              color: isDark ? Colors.white : Colors.black,
+                              color: const Color(0xFFFF5722),
                             ),
                           ),
                         ],
@@ -862,8 +867,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Expanded(
                     child: _buildMiniBtn(
                       icon: Icons.play_circle_filled_rounded,
-                      label: 'İZLE & KAZAN',
-                      color: isDark ? const Color(0xFF26262A) : Colors.black,
+                      label: 'İZLE & KAZAN ($watchedCount/10)',
+                      color: AppColors.primary,
                       textColor: Colors.white,
                       onTap: () => Navigator.push(
                         context,
@@ -875,9 +880,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Expanded(
                     child: _buildMiniBtn(
                       icon: isPremium ? Icons.workspace_premium_rounded : Icons.star_rounded,
-                      label: isPremium ? tier.toUpperCase() : 'ÜYELİK',
-                      color: isDark ? const Color(0xFF26262A) : Colors.white,
-                      textColor: isDark ? Colors.white : Colors.black,
+                      label: isPremium ? tier.toUpperCase() : 'PAKETLER',
+                      color: isDark ? const Color(0xFF262934) : const Color(0xFF14161B),
+                      textColor: Colors.white,
                       onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute(builder: (_) => const PremiumOfferScreen()),
@@ -915,12 +920,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             Icon(icon, color: textColor, size: 18),
             const SizedBox(width: 6),
-            Text(
-              label.toUpperCase(),
-              style: GoogleFonts.outfit(
-                fontSize: 11,
-                fontWeight: FontWeight.w900,
-                color: textColor,
+            Flexible(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  label.toUpperCase(),
+                  style: GoogleFonts.outfit(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w900,
+                    color: textColor,
+                  ),
+                ),
               ),
             ),
           ],
@@ -929,104 +939,185 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildFollowStatsRow(BuildContext context, dynamic profile) {
-    if (profile == null) return const SizedBox.shrink();
-
-    final followersCount = (profile.followers as List?)?.length ?? 0;
-    final followingCount = (profile.following as List?)?.length ?? 0;
-
-    return Row(
-      children: [
-        Expanded(
-          child: _buildStatCard(
-            label: 'TAKİPÇİ',
-            value: followersCount.toString(),
-            onTap: () {
-              final userProvider = context.read<UserProvider>();
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => FollowsListScreen(
-                    userId: profile.uid,
-                    type: 'followers',
-                    userName: profile.name,
-                  ),
-                ),
-              ).then((_) {
-                if (mounted) {
-                  userProvider.loadCurrentUser();
-                }
-              });
-            },
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildStatCard(
-            label: 'TAKİP EDİLEN',
-            value: followingCount.toString(),
-            onTap: () {
-              final userProvider = context.read<UserProvider>();
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => FollowsListScreen(
-                    userId: profile.uid,
-                    type: 'following',
-                    userName: profile.name,
-                  ),
-                ),
-              ).then((_) {
-                if (mounted) {
-                  userProvider.loadCurrentUser();
-                }
-              });
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatCard({
-    required String label,
-    required String value,
-    required VoidCallback onTap,
-  }) {
+  /// Premium Comparison Table - Merged from humble-main
+  Widget _buildPremiumComparisonTable() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          color: isDark ? AppColors.cardDark : Colors.white,
-          borderRadius: BorderRadius.circular(AppColors.neoRadiusSmall),
-          border: Border.all(color: isDark ? Colors.white10 : const Color(0xFFEEEEEE), width: 1.0),
-          boxShadow: isDark ? [] : [AppColors.neoShadowSmall],
-        ),
-        child: Column(
-          children: [
-            Text(
-              value,
-              style: GoogleFonts.outfit(
-                fontSize: 22,
-                fontWeight: FontWeight.w900,
-                color: isDark ? Colors.white : Colors.black,
-              ),
+    final bgColor = isDark ? AppColors.cardDark : Colors.white;
+    final borderColor = isDark ? Colors.white10 : const Color(0xFFEEEEEE);
+    final textColor = isDark ? Colors.white : Colors.black;
+    final subColor = isDark ? Colors.white70 : Colors.black54;
+
+    final plans = [
+      PremiumPlanItem(title: 'Özel foto içgörüleri', gold: true, platinum: true),
+      PremiumPlanItem(title: 'Beğenileri hızlandır', gold: true, platinum: true),
+      PremiumPlanItem(title: 'Her gün öne çık', gold: true, platinum: true),
+      PremiumPlanItem(title: 'Sınırsız beğeni', gold: true, platinum: false),
+      PremiumPlanItem(title: 'Seni beğenenleri gör', gold: true, platinum: false),
+      PremiumPlanItem(title: 'Gelişmiş filtreler', gold: true, platinum: false),
+      PremiumPlanItem(title: 'Gizli mod', gold: true, platinum: false),
+      PremiumPlanItem(title: 'Haftada 2 iltifat', gold: true, platinum: true),
+      PremiumPlanItem(title: 'Konum değiştirme', gold: false, platinum: true),
+      PremiumPlanItem(title: 'Süper beğeni + %50', gold: false, platinum: true),
+    ];
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: borderColor, width: 1.0),
+        boxShadow: [AppColors.neoShadowSmall],
+      ),
+      child: Column(
+        children: [
+          // Header
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF191B22) : const Color(0xFF090A0C),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
             ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: GoogleFonts.outfit(
-                fontSize: 11,
-                fontWeight: FontWeight.w800,
-                color: AppColors.textSecondary,
-                letterSpacing: 0.5,
-              ),
+            child: Row(
+              children: [
+                const Icon(Icons.workspace_premium_rounded, color: AppColors.primary, size: 20),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'PAKET KARŞILAŞTIRMASI',
+                    style: GoogleFonts.outfit(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+                _buildTierBadge('GOLD', const Color(0xFFFFD700)),
+                const SizedBox(width: 8),
+                _buildTierBadge('PLATINUM', AppColors.primary),
+              ],
             ),
-          ],
+          ),
+          // Table rows
+          ...plans.map((plan) => Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              border: Border(bottom: BorderSide(color: borderColor, width: 0.5)),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: Text(
+                    plan.title,
+                    style: GoogleFonts.outfit(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: textColor,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Icon(
+                    Icons.check_circle,
+                    color: plan.gold ? AppColors.green : subColor,
+                    size: 20,
+                  ),
+                ),
+                Expanded(
+                  child: Icon(
+                    Icons.check_circle,
+                    color: plan.platinum ? AppColors.green : subColor,
+                    size: 20,
+                  ),
+                ),
+              ],
+            ),
+          )),
+          // Upgrade buttons
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PremiumOfferScreen())),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFD700),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: borderColor, width: 1.0),
+                      ),
+                      child: Center(
+                        child: Text(
+                          'GOLD\'A GEÇ',
+                          style: GoogleFonts.outfit(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PremiumOfferScreen())),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(colors: [Color(0xFFE5E4E2), Color(0xFF708090)]),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: borderColor, width: 1.0),
+                      ),
+                      child: Center(
+                        child: Text(
+                          'PLATINUM\'A GEÇ',
+                          style: GoogleFonts.outfit(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTierBadge(String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        label,
+        style: GoogleFonts.outfit(
+          fontSize: 9,
+          fontWeight: FontWeight.w900,
+          color: color == const Color(0xFFFFD700) ? Colors.black : Colors.white,
         ),
       ),
     );
   }
+}
+
+/// Helper class for premium comparison table
+class PremiumPlanItem {
+  final String title;
+  final bool gold;
+  final bool platinum;
+
+  PremiumPlanItem({required this.title, required this.gold, required this.platinum});
 }

@@ -339,7 +339,7 @@ class _UserProfileDetailScreenState extends State<UserProfileDetailScreen> {
       } else if (difference.inDays < 7) {
         label = "${difference.inDays} GÜN ÖNCE AKTİFTİ";
       } else {
-        label = "ÇEVRİMDIŞI";
+        label = "ÇEVRİM DIŞI";
       }
     }
 
@@ -650,91 +650,44 @@ class _UserProfileDetailScreenState extends State<UserProfileDetailScreen> {
       return const SizedBox.shrink(); // Don't show buttons on own profile
     }
 
-    final isFollowing = currentUser.following.contains(targetUser.uid);
-    final followersCount = targetUser.followers.length;
-    final followingCount = targetUser.following.length;
-
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Column(
+    return Row(
       children: [
-        // İstatisikler
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            _buildStatColumn('Takipçi', followersCount, isDark),
-            Container(height: 30, width: 2, color: isDark ? Colors.white12 : Colors.black12),
-            _buildStatColumn('Takip', followingCount, isDark),
-          ],
-        ),
-        const SizedBox(height: 16),
-        // Butonlar
-        Row(
-          children: [
-            Expanded(
-              child: _buildNeoButton(
-                label: isFollowing ? 'TAKİPTEN ÇIK' : 'TAKİP ET',
-                icon: isFollowing ? Icons.person_remove : Icons.person_add,
-                color: isFollowing 
-                    ? (isDark ? AppColors.cardDark : Colors.white) 
-                    : AppColors.primary,
-                textColor: isFollowing 
-                    ? (isDark ? Colors.white : Colors.black) 
-                    : Colors.white,
-                isDark: isDark,
-                onTap: () async {
-                  HapticFeedback.lightImpact();
-                  try {
-                    if (isFollowing) {
-                      await ProfileService().unfollowUser(targetUser.uid);
-                    } else {
-                      await ProfileService().followUser(targetUser.uid);
-                    }
-                  } catch (e) {
-                    if (context.mounted) {
-                      ErrorHandler.showException(context, e);
-                    }
-                  }
-                },
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildNeoButton(
-                label: 'MESAJ GÖNDER',
-                icon: Icons.send_rounded,
-                color: isDark ? AppColors.cardDark : Colors.white,
-                textColor: isDark ? Colors.white : Colors.black,
-                isDark: isDark,
-                onTap: () async {
-                  HapticFeedback.lightImpact();
-                  try {
-                    // Create or find chat id
-                    final chatId = await ChatService().startChat(targetUser.uid);
-                    if (context.mounted) {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ChatDetailScreen(
-                            chatId: chatId,
-                            otherUserId: targetUser.uid,
-                            otherUserName: targetUser.name,
-                            otherUserAvatar: targetUser.imageUrl,
-                          ),
-                        ),
-                      );
-                    }
-                  } catch (e) {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Sohbet başlatılamadı.')),
-                      );
-                    }
-                  }
-                },
-              ),
-            ),
-          ],
+        Expanded(
+          child: _buildNeoButton(
+            label: 'MESAJ GÖNDER',
+            icon: Icons.send_rounded,
+            color: AppColors.primary,
+            textColor: Colors.white,
+            isDark: isDark,
+            onTap: () async {
+              HapticFeedback.lightImpact();
+              try {
+                // Create or find chat id
+                final chatId = await ChatService().startChat(targetUser.uid);
+                if (context.mounted) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ChatDetailScreen(
+                        chatId: chatId,
+                        otherUserId: targetUser.uid,
+                        otherUserName: targetUser.name,
+                        otherUserAvatar: targetUser.imageUrl,
+                      ),
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Sohbet başlatılamadı.')),
+                  );
+                }
+              }
+            },
+          ),
         ),
       ],
     );

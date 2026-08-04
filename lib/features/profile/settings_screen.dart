@@ -13,6 +13,9 @@ import '../../core/providers/theme_provider.dart';
 import 'verification_screen.dart';
 import '../auth/services/profile_service.dart';
 import '../payment/premium_offer_screen.dart';
+import '../../core/services/biometric_service.dart';
+import 'widgets/invite_earn_modal.dart';
+import '../../core/widgets/promo_code_dialog.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -24,8 +27,22 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _isDeleting = false;
   bool _notificationsEnabled = true;
+  bool _biometricEnabled = false;
 
   String get _userEmail => FirebaseAuth.instance.currentUser?.email ?? 'E-posta bağlı değil';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBiometricStatus();
+  }
+
+  Future<void> _loadBiometricStatus() async {
+    final enabled = await BiometricService().isBiometricLockEnabled();
+    if (mounted) {
+      setState(() => _biometricEnabled = enabled);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -206,6 +223,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     );
                   },
                 ),
+                _buildSwitchItem(
+                  context,
+                  "Biyometrik Kilit (Face ID / Parmak İzi)",
+                  Icons.fingerprint_rounded,
+                  _biometricEnabled,
+                  (value) async {
+                    await BiometricService().setBiometricLockEnabled(value);
+                    setState(() => _biometricEnabled = value);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        backgroundColor: Colors.black,
+                        content: Text(
+                          value ? 'BİYOMETRİK KİLİT AKTİF' : 'BİYOMETRİK KİLİT KAPATILDI',
+                          style: GoogleFonts.outfit(fontWeight: FontWeight.w900, color: Colors.white),
+                        ),
+                        duration: const Duration(seconds: 2),
+                      ),
+                    );
+                  },
+                ),
                 _buildSettingItem(context, "Dil Seçeneği", Icons.language, trailing: "Türkçe"),
                 _buildSettingItem(
                   context,
@@ -231,18 +268,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
 
                 const SizedBox(height: 32),
-                _buildSectionHeader("DESTEK"),
+                _buildSectionHeader("DESTEK & KAMPANYALAR"),
+                _buildSettingItem(
+                  context,
+                  "Davet Et & Kredi Kazan",
+                  Icons.card_giftcard_rounded,
+                  onTap: () {
+                    final user = context.read<UserProvider>().currentUser;
+                    if (user != null) {
+                      InviteEarnModal.show(context, user);
+                    }
+                  },
+                ),
+                _buildSettingItem(
+                  context,
+                  "Promosyon Kodu Kullan",
+                  Icons.confirmation_number_outlined,
+                  onTap: () => PromoCodeDialog.show(context),
+                ),
                 _buildSettingItem(
                   context,
                   "Yardım ve Destek",
                   Icons.help_outline,
-                  onTap: () => _launchUrl("mailto:destek@dengim.app?subject=Destek Talebi"),
+                  onTap: () => _launchUrl("mailto:support@dengim.app"),
                 ),
                 _buildSettingItem(
                   context,
                   "Bizi Değerlendir",
                   Icons.star_outline,
-                  onTap: () => _showInfoDialog("Değerlendirme", "Uygulama mağazada yayınlandıktan sonra değerlendirme yapabileceksiniz."),
+                  onTap: () => _launchUrl("https://play.google.com/store/apps/details?id=dengim.kim"),
                 ),
                 
                 const SizedBox(height: 48),
@@ -612,14 +666,108 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               elevation: 0,
             ),
-            onPressed: () async {
+            onPressed: () {
               Navigator.pop(context);
-              await _deleteAccount();
+              _showSecondaryDeleteVerification(context);
             },
             child: Text("EVET, SİL", style: GoogleFonts.outfit(fontWeight: FontWeight.w900)),
           ),
         ],
       ),
+    );
+  }
+
+  void _showSecondaryDeleteVerification(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final bgColor = theme.colorScheme.surface;
+    final elementColor = isDark ? Colors.white : Colors.black;
+    final borderColor = isDark ? const Color(0xFF262629) : const Color(0xFFEEEEEE);
+    final controller = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        bool isValid = false;
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: bgColor,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+                side: BorderSide(color: borderColor, width: 1.0),
+              ),
+              title: Text(
+                "SON ONAY: 'delete' YAZIN",
+                style: GoogleFonts.outfit(color: elementColor, fontWeight: FontWeight.w900, fontSize: 16),
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Hesabınızı kalıcı olarak silmek istediğinizden eminseniz, onaylamak için aşağıya 'delete' yazınız:",
+                    style: GoogleFonts.outfit(color: isDark ? Colors.white70 : Colors.black87, fontSize: 13),
+                  ),
+                  const SizedBox(height: 14),
+                  TextField(
+                    controller: controller,
+                    autofocus: true,
+                    style: GoogleFonts.outfit(color: elementColor, fontWeight: FontWeight.w700),
+                    decoration: InputDecoration(
+                      hintText: "delete",
+                      hintStyle: GoogleFonts.outfit(color: isDark ? Colors.white30 : Colors.black38),
+                      filled: true,
+                      fillColor: isDark ? const Color(0xFF191C24) : const Color(0xFFF2F4F7),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: borderColor),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: borderColor),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: AppColors.red, width: 1.5),
+                      ),
+                    ),
+                    onChanged: (val) {
+                      setDialogState(() {
+                        isValid = val.trim().toLowerCase() == 'delete';
+                      });
+                    },
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  child: Text("İPTAL", style: GoogleFonts.outfit(color: isDark ? Colors.white70 : Colors.black, fontWeight: FontWeight.w900)),
+                  onPressed: () => Navigator.pop(context),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: isValid ? AppColors.red : Colors.grey,
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size(130, 46),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
+                  ),
+                  onPressed: isValid
+                      ? () async {
+                          Navigator.pop(context);
+                          await _deleteAccount();
+                        }
+                      : null,
+                  child: Text("HESABI SİL", style: GoogleFonts.outfit(fontWeight: FontWeight.w900)),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 

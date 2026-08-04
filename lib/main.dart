@@ -22,7 +22,6 @@ import 'core/providers/connectivity_provider.dart';
 import 'core/providers/badge_provider.dart';
 import 'core/providers/likes_provider.dart';
 import 'core/providers/map_provider.dart';
-import 'core/providers/story_provider.dart';
 import 'core/providers/system_config_provider.dart';
 import 'core/providers/subscription_provider.dart';
 import 'core/providers/credit_provider.dart';
@@ -36,9 +35,10 @@ import 'core/services/feature_flag_service.dart';
 import 'features/ads/services/ad_service.dart';
 import 'package:geolocator/geolocator.dart';
 
-import 'features/spaces/providers/space_provider.dart';
 import 'core/widgets/maintenance_screen.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'dart:ui' show PlatformDispatcher;
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -101,17 +101,31 @@ void main() async {
     );
     LogService.i("Firebase initialized successfully.");
 
-    // Remote Configuration, Feature Flags ve AdService'ı paralel başlat (Startup hızı için)
-    await Future.wait([
-      ConfigService().init(),
-      FeatureFlagService().init(),
-      AdService().init(),
-    ]);
+    // ═══ Crashlytics init (release modda anlamlı) ═══
+    if (!kDebugMode) {
+      try {
+        await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(true);
+        FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+        PlatformDispatcher.instance.onError = (error, stack) {
+          FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+          return true;
+        };
+        LogService.i("Crashlytics enabled.");
+      } catch (e) {
+        LogService.w("Crashlytics init warning: $e");
+      }
+    }
 
-    // Bildirim servisini başlat
+    // ConfigService, FeatureFlagService ve AdService'ı arka planda başlat
+    // (Startup hızı için bloklama yok — fire-and-forget)
+    ConfigService().init();
+    FeatureFlagService().init();
+    AdService().init();
+
+    // Bildirim servisini arka planda başlat (bloklama yok)
     try {
       FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-      await NotificationService().initialize();
+      NotificationService().initialize();
     } catch (e) {
       LogService.w("Notification init warning: $e");
     }
@@ -133,9 +147,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => BadgeProvider()..initialize()),
         ChangeNotifierProvider(create: (_) => LikesProvider()),
         ChangeNotifierProvider(create: (_) => MapProvider()),
-        ChangeNotifierProvider(create: (_) => StoryProvider()),
         ChangeNotifierProvider(create: (_) => SystemConfigProvider()),
-        ChangeNotifierProvider(create: (_) => SpaceProvider()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProxyProvider<UserProvider, SubscriptionProvider>(
           create: (_) => SubscriptionProvider()..init(),
@@ -281,11 +293,13 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   }
 
   Future<void> _checkFirstTime() async {
-    // Suni gecikmeyi en aza indiriyoruz
-    await Future.delayed(const Duration(milliseconds: 50));
-
     try {
-      final prefs = await SharedPreferences.getInstance();
+      // Ekran ilk karesinin çizilmesi ve logo animasyonu için 500ms bekle
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      final prefsFuture = SharedPreferences.getInstance();
+      final user = FirebaseAuth.instance.currentUser;
+      final prefs = await prefsFuture;
       final isFirstTime = prefs.getBool('isFirstTime') ?? true;
 
       if (!mounted) return;
@@ -299,51 +313,44 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
             },
           ),
         );
+      } else if (user == null) {
+        Navigator.of(context).pushReplacement(
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) => const LoginScreen(),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return FadeTransition(opacity: animation, child: child);
+            },
+          ),
+        );
       } else {
-        final user = FirebaseAuth.instance.currentUser;
-        
-        if (user == null) {
+        try {
+          final userProvider = Provider.of<UserProvider>(context, listen: false);
+          await userProvider.loadCurrentUser();
+          
+          if (!mounted) return;
+
+          // CreditProvider'i arka planda başlat (ekran yönlendirmesini beklemesin)
+          final creditProvider = Provider.of<CreditProvider>(context, listen: false);
+          creditProvider.init().then((_) => creditProvider.claimDailyReward());
+
+          Widget nextScreen = userProvider.currentUser != null 
+              ? const MainScaffold() 
+              : const CreateProfileScreen();
+
           Navigator.of(context).pushReplacement(
             PageRouteBuilder(
-              pageBuilder: (context, animation, secondaryAnimation) => const LoginScreen(),
+              pageBuilder: (context, animation, secondaryAnimation) => nextScreen,
               transitionsBuilder: (context, animation, secondaryAnimation, child) {
                 return FadeTransition(opacity: animation, child: child);
               },
             ),
           );
-        } else {
-          try {
-            final userProvider = Provider.of<UserProvider>(context, listen: false);
-            await userProvider.loadCurrentUser();
-            
-            if (!mounted) return;
-
-            final creditProvider = Provider.of<CreditProvider>(context, listen: false);
-            await creditProvider.init();
-            // Await etmeden arka planda çalıştırıyoruz, açılış hızlansın!
-            creditProvider.claimDailyReward();
-
-            if (!mounted) return;
-
-            Widget nextScreen = userProvider.currentUser != null 
-                ? const MainScaffold() 
-                : const CreateProfileScreen();
-
+        } catch (e) {
+          LogService.e("Profile check error", e);
+          if (mounted) {
             Navigator.of(context).pushReplacement(
-              PageRouteBuilder(
-                pageBuilder: (context, animation, secondaryAnimation) => nextScreen,
-                transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                  return FadeTransition(opacity: animation, child: child);
-                },
-              ),
+              MaterialPageRoute(builder: (context) => const CreateProfileScreen()),
             );
-          } catch (e) {
-            LogService.e("Profile check error", e);
-            if (mounted) {
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (context) => const CreateProfileScreen()),
-              );
-            }
           }
         }
       }

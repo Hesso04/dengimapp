@@ -50,7 +50,6 @@ class FilterSettings {
     );
   }
 
-  /// Convert to Map for passing to services
   Map<String, dynamic> toMap() {
     return {
       'minAge': ageRange.start.toInt(),
@@ -66,7 +65,6 @@ class FilterSettings {
     };
   }
 }
-
 
 class FilterBottomSheet extends StatefulWidget {
   final FilterSettings initialSettings;
@@ -85,6 +83,13 @@ class FilterBottomSheet extends StatefulWidget {
 class _FilterBottomSheetState extends State<FilterBottomSheet> {
   late FilterSettings _settings;
 
+  final List<Map<String, String>> _relationshipGoals = const [
+    {'id': 'serious', 'label': 'Ciddi İlişki 💍'},
+    {'id': 'casual', 'label': 'Eğlence 🥂'},
+    {'id': 'chat', 'label': 'Sohbet ☕'},
+    {'id': 'unsure', 'label': 'Belirsiz 🤷‍♂️'},
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -93,18 +98,28 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
       gender: widget.initialSettings.gender,
       distance: widget.initialSettings.distance,
       location: widget.initialSettings.location,
-      interests: widget.initialSettings.interests,
+      interests: List.from(widget.initialSettings.interests),
+      verifiedOnly: widget.initialSettings.verifiedOnly,
+      hasPhotoOnly: widget.initialSettings.hasPhotoOnly,
+      onlineOnly: widget.initialSettings.onlineOnly,
+      relationshipGoal: widget.initialSettings.relationshipGoal,
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? const Color(0xFF14161B) : Colors.white;
+    final textColor = isDark ? Colors.white : Colors.black;
+    final borderColor = isDark ? const Color(0xFF262629) : const Color(0xFFEEEEEE);
+    final cardBg = isDark ? const Color(0xFF1F1F23) : const Color(0xFFF7F8FA);
+
     return Container(
-      height: MediaQuery.of(context).size.height * 0.9,
-      decoration: const BoxDecoration(
-        color: Color(0xFF090A0C),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-        border: Border(top: BorderSide(color: Colors.white10, width: 1.0)),
+      height: MediaQuery.of(context).size.height * 0.88,
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        border: Border.all(color: borderColor, width: 1.0),
       ),
       child: Stack(
         children: [
@@ -112,25 +127,25 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
             children: [
               // Header
               Container(
-                padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
-                decoration: const BoxDecoration(
-                  border: Border(bottom: BorderSide(color: Colors.white10, width: 1.0)),
+                padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
+                decoration: BoxDecoration(
+                  border: Border(bottom: BorderSide(color: borderColor, width: 1.0)),
                 ),
                 child: Row(
                   children: [
-                    _buildNeoCircleButton(
-                      icon: Icons.close,
-                      onTap: () => Navigator.pop(context),
+                    IconButton(
+                      icon: Icon(Icons.close_rounded, color: textColor),
+                      onPressed: () => Navigator.pop(context),
                     ),
                     Expanded(
                       child: Center(
                         child: Text(
                           'FİLTRELER',
                           style: GoogleFonts.outfit(
-                            fontSize: 20,
+                            fontSize: 18,
                             fontWeight: FontWeight.w900,
-                            color: Colors.white,
-                            letterSpacing: -0.5,
+                            color: textColor,
+                            letterSpacing: 0.5,
                           ),
                         ),
                       ),
@@ -144,9 +159,9 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                       child: Text(
                         'SIFIRLA',
                         style: GoogleFonts.outfit(
-                          fontSize: 14,
+                          fontSize: 13,
                           fontWeight: FontWeight.w900,
-                          color: AppColors.red,
+                          color: AppColors.primary,
                         ),
                       ),
                     ),
@@ -156,40 +171,37 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
 
               Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const SizedBox(height: 32),
-                      _buildSectionHeader('KİMİ GÖRMEK İSTERSİN?'),
-                      const SizedBox(height: 16),
+                      _buildSectionHeader('KİMİ GÖRMEK İSTERSİN?', textColor),
+                      const SizedBox(height: 12),
                       Row(
                         children: [
-                          _buildGenderChip('ERKEK', 'male'),
-                          const SizedBox(width: 12),
-                          _buildGenderChip('KADIN', 'female'),
-                          const SizedBox(width: 12),
-                          _buildGenderChip('HEPSİ', 'all'),
+                          _buildGenderChip('ERKEK', 'male', isDark, cardBg, borderColor, textColor),
+                          const SizedBox(width: 8),
+                          _buildGenderChip('KADIN', 'female', isDark, cardBg, borderColor, textColor),
+                          const SizedBox(width: 8),
+                          _buildGenderChip('HEPSİ', 'all', isDark, cardBg, borderColor, textColor),
                         ],
                       ),
 
-                      const SizedBox(height: 40),
+                      const SizedBox(height: 32),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          _buildSectionHeader('YAŞ ARALIĞI'),
+                          _buildSectionHeader('YAŞ ARALIĞI', textColor),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                             decoration: BoxDecoration(
                               color: AppColors.primary,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-                              boxShadow: [AppColors.neoShadowSmall],
+                              borderRadius: BorderRadius.circular(10),
                             ),
                             child: Text(
                               '${_settings.ageRange.start.toInt()} - ${_settings.ageRange.end.toInt()}',
                               style: GoogleFonts.outfit(
-                                fontSize: 16,
+                                fontSize: 13,
                                 fontWeight: FontWeight.w900,
                                 color: Colors.white,
                               ),
@@ -197,26 +209,24 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 16),
-                      _buildRangeSlider(),
+                      const SizedBox(height: 8),
+                      _buildRangeSlider(isDark),
 
-                      const SizedBox(height: 40),
+                      const SizedBox(height: 32),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          _buildSectionHeader('MESAFE'),
+                          _buildSectionHeader('MAKSİMUM MESAFE', textColor),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                             decoration: BoxDecoration(
-                              color: AppColors.secondary,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-                              boxShadow: [AppColors.neoShadowSmall],
+                              color: isDark ? const Color(0xFF262629) : Colors.black,
+                              borderRadius: BorderRadius.circular(10),
                             ),
                             child: Text(
                               '${_settings.distance.toInt()} KM',
                               style: GoogleFonts.outfit(
-                                fontSize: 16,
+                                fontSize: 13,
                                 fontWeight: FontWeight.w900,
                                 color: Colors.white,
                               ),
@@ -224,20 +234,51 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 16),
-                      _buildDistanceSlider(),
+                      const SizedBox(height: 8),
+                      _buildDistanceSlider(isDark),
 
-                      const SizedBox(height: 40),
-                      _buildSectionHeader('KONUM'),
-                      const SizedBox(height: 16),
-                      _buildLocationPicker(),
+                      const SizedBox(height: 32),
+                      _buildSectionHeader('NE ARIYORSUN? (İLİŞKİ HEDEFİ)', textColor),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: _relationshipGoals.map((goal) {
+                          final isSelected = _settings.relationshipGoal == goal['id'];
+                          return GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _settings.relationshipGoal = isSelected ? null : goal['id'];
+                              });
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: isSelected ? AppColors.primary : cardBg,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: isSelected ? AppColors.primary : borderColor,
+                                ),
+                              ),
+                              child: Text(
+                                goal['label']!,
+                                style: GoogleFonts.outfit(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w800,
+                                  color: isSelected ? Colors.white : textColor,
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
 
-                      const SizedBox(height: 40),
-                      _buildSectionHeader('İLGİ ALANLARI'),
-                      const SizedBox(height: 16),
-                      _buildInterestsSection(),
+                      const SizedBox(height: 32),
+                      _buildSectionHeader('İLGİ ALANLARI', textColor),
+                      const SizedBox(height: 12),
+                      _buildInterestsSection(isDark, cardBg, borderColor, textColor),
 
-                      const SizedBox(height: 120), // Extra space for button
+                      const SizedBox(height: 110),
                     ],
                   ),
                 ),
@@ -247,32 +288,27 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
 
           // Footer Apply Button
           Positioned(
-            bottom: 30,
-            left: 20,
-            right: 20,
-            child: GestureDetector(
-              onTap: () {
+            bottom: 24,
+            left: 24,
+            right: 24,
+            child: ElevatedButton(
+              onPressed: () {
                 widget.onApply(_settings);
                 Navigator.pop(context);
               },
-              child: Container(
-                width: double.infinity,
-                height: 64,
-                decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-                  boxShadow: [AppColors.neoShadowSmall],
-                ),
-                child: Center(
-                  child: Text(
-                    'FİLTRELERİ UYGULA',
-                    style: GoogleFonts.outfit(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.white,
-                    ),
-                  ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                minimumSize: const Size(double.infinity, 54),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                elevation: 4,
+              ),
+              child: Text(
+                'FİLTRELERİ UYGULA',
+                style: GoogleFonts.outfit(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 0.5,
                 ),
               ),
             ),
@@ -282,57 +318,37 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
     );
   }
 
-  Widget _buildSectionHeader(String title) {
+  Widget _buildSectionHeader(String title, Color textColor) {
     return Text(
       title,
       style: GoogleFonts.outfit(
-        fontSize: 14,
+        fontSize: 12,
         fontWeight: FontWeight.w900,
-        color: Colors.black.withValues(alpha: 0.4),
-        letterSpacing: 2.0,
+        color: textColor.withValues(alpha: 0.7),
+        letterSpacing: 0.8,
       ),
     );
   }
 
-  Widget _buildNeoCircleButton({required IconData icon, required VoidCallback onTap}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 44,
-        height: 44,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-          boxShadow: [AppColors.neoShadowSmall],
-        ),
-        child: Icon(icon, color: Colors.black, size: 22),
-      ),
-    );
-  }
-
-  Widget _buildGenderChip(String label, String value) {
+  Widget _buildGenderChip(String label, String value, bool isDark, Color cardBg, Color borderColor, Color textColor) {
     final isSelected = _settings.gender == value;
     return Expanded(
       child: GestureDetector(
         onTap: () => setState(() => _settings.gender = value),
         child: Container(
-          height: 52,
+          height: 48,
           decoration: BoxDecoration(
-            color: isSelected ? AppColors.primary : Colors.white,
+            color: isSelected ? AppColors.primary : cardBg,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-            boxShadow: [
-              if (isSelected) AppColors.neoShadowSmall,
-            ],
+            border: Border.all(color: isSelected ? AppColors.primary : borderColor),
           ),
           child: Center(
             child: Text(
               label,
               style: GoogleFonts.outfit(
-                fontSize: 14,
+                fontSize: 13,
                 fontWeight: FontWeight.w900,
-                color: isSelected ? Colors.white : Colors.black,
+                color: isSelected ? Colors.white : textColor,
               ),
             ),
           ),
@@ -341,17 +357,17 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
     );
   }
 
-  Widget _buildRangeSlider() {
+  Widget _buildRangeSlider(bool isDark) {
     return SliderTheme(
       data: SliderThemeData(
-        activeTrackColor: Colors.black,
-        inactiveTrackColor: Colors.black12,
+        activeTrackColor: AppColors.primary,
+        inactiveTrackColor: isDark ? Colors.white10 : Colors.black12,
         thumbColor: Colors.white,
-        overlayColor: Colors.black12,
-        trackHeight: 12,
+        overlayColor: AppColors.primary.withValues(alpha: 0.2),
+        trackHeight: 6,
         rangeThumbShape: const RoundRangeSliderThumbShape(
-          enabledThumbRadius: 16,
-          elevation: 0,
+          enabledThumbRadius: 12,
+          elevation: 2,
         ),
       ),
       child: RangeSlider(
@@ -363,17 +379,17 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
     );
   }
 
-  Widget _buildDistanceSlider() {
+  Widget _buildDistanceSlider(bool isDark) {
     return SliderTheme(
       data: SliderThemeData(
-        activeTrackColor: Colors.black,
-        inactiveTrackColor: Colors.black12,
+        activeTrackColor: isDark ? Colors.white : Colors.black,
+        inactiveTrackColor: isDark ? Colors.white10 : Colors.black12,
         thumbColor: Colors.white,
-        overlayColor: Colors.black12,
-        trackHeight: 12,
+        overlayColor: isDark ? Colors.white10 : Colors.black12,
+        trackHeight: 6,
         thumbShape: const RoundSliderThumbShape(
-          enabledThumbRadius: 16,
-          elevation: 0,
+          enabledThumbRadius: 12,
+          elevation: 2,
         ),
       ),
       child: Slider(
@@ -385,63 +401,16 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
     );
   }
 
-  Widget _buildLocationPicker() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-        boxShadow: [AppColors.neoShadowSmall],
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: AppColors.primary,
-              shape: BoxShape.circle,
-              border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-              boxShadow: [AppColors.neoShadowSmall],
-            ),
-            child: const Icon(Icons.location_on, color: Colors.white),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  _settings.location.toUpperCase(),
-                  style: GoogleFonts.outfit(
-                    fontWeight: FontWeight.w900,
-                    color: Colors.black,
-                    fontSize: 16,
-                  ),
-                ),
-                Text(
-                  'YAKINIMDAKİLERİ ARA',
-                  style: GoogleFonts.outfit(color: Colors.black54, fontSize: 10, fontWeight: FontWeight.w800),
-                ),
-              ],
-            ),
-          ),
-          const Icon(Icons.chevron_right, color: Colors.black),
-        ],
-      ),
-    );
-  }
-
   final List<String> _interestOptions = const [
     'Müzik', 'Spor', 'Sanat', 'Gezi', 'Teknoloji', 
     'Yemek', 'Dans', 'Oyun', 'Sinema', 'Kitap', 
     'Moda', 'Fotoğraf', 'Doğa', 'Hayvanlar'
   ];
 
-  Widget _buildInterestsSection() {
+  Widget _buildInterestsSection(bool isDark, Color cardBg, Color borderColor, Color textColor) {
     return Wrap(
-      spacing: 10,
-      runSpacing: 10,
+      spacing: 8,
+      runSpacing: 8,
       children: _interestOptions.map((interest) {
         final isSelected = _settings.interests.contains(interest);
         return GestureDetector(
@@ -457,20 +426,17 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
             });
           },
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: BoxDecoration(
-              color: isSelected ? AppColors.primary : Colors.white,
+              color: isSelected ? AppColors.primary : cardBg,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Color(0xFFEEEEEE), width: 1.0),
-              boxShadow: [
-                if (isSelected) AppColors.neoShadowSmall,
-              ],
+              border: Border.all(color: isSelected ? AppColors.primary : borderColor),
             ),
             child: Text(
               interest.toUpperCase(),
               style: GoogleFonts.outfit(
-                color: isSelected ? Colors.white : Colors.black,
-                fontWeight: FontWeight.w900,
+                color: isSelected ? Colors.white : textColor,
+                fontWeight: FontWeight.w800,
                 fontSize: 12,
               ),
             ),

@@ -9,6 +9,8 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/services/typing_indicator_service.dart';
 import '../../../core/widgets/online_status_indicator.dart';
 import '../../../core/providers/user_provider.dart';
+import '../../../core/providers/subscription_provider.dart';
+import '../../../core/providers/credit_provider.dart';
 
 import '../models/chat_models.dart';
 import '../services/chat_service.dart';
@@ -17,7 +19,6 @@ import '../widgets/chat_input_widget.dart';
 import '../../auth/services/report_service.dart';
 import '../../profile/services/report_block_service.dart';
 import '../../payment/premium_offer_screen.dart';
-import 'call_screen.dart';
 import '../../../core/utils/error_handler.dart';
 import '../../../core/extensions/string_extensions.dart';
 import '../../discover/user_profile_detail_screen.dart';
@@ -107,63 +108,65 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            ListTile(
-              leading: const Icon(Icons.flag_outlined, color: Colors.amber),
-              title: Text(
-                'Kullanıcıyı Raporla',
-                style: GoogleFonts.outfit(color: Colors.amber, fontWeight: FontWeight.w800),
+            if (widget.otherUserId.isNotEmpty) ...[
+              ListTile(
+                leading: const Icon(Icons.flag_outlined, color: Colors.amber),
+                title: Text(
+                  'Kullanıcıyı Raporla',
+                  style: GoogleFonts.outfit(color: Colors.amber, fontWeight: FontWeight.w800),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showReportDialog();
+                },
               ),
-              onTap: () {
-                Navigator.pop(context);
-                _showReportDialog();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.block, color: Colors.orange),
-              title: Text(
-                'Kullanıcıyı Engelle',
-                style: GoogleFonts.outfit(color: Colors.orange, fontWeight: FontWeight.w800),
-              ),
-              onTap: () async {
-                final navigator = Navigator.of(context);
-                final messenger = ScaffoldMessenger.of(context);
-                navigator.pop();
-                final confirm = await showDialog<bool>(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    backgroundColor: isDark ? AppColors.scaffoldDark : Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(24),
-                      side: BorderSide(color: isDark ? Colors.white10 : const Color(0xFFEEEEEE), width: 1.0),
-                    ),
-                    title: Text('KULLANICIYI ENGELLE?', style: GoogleFonts.outfit(color: isDark ? Colors.white : Colors.black, fontWeight: FontWeight.w900)),
-                    content: Text(
-                      '${widget.otherUserName} ENGELLENSİN Mİ? SİZE MESAJ GÖNDEREMEYECEK.',
-                      style: GoogleFonts.outfit(color: isDark ? Colors.white70 : Colors.black, fontWeight: FontWeight.w700),
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context, false),
-                        child: Text('İPTAL', style: GoogleFonts.outfit(color: AppColors.textSecondary, fontWeight: FontWeight.w900)),
-                      ),
-                      TextButton(
-                        onPressed: () => Navigator.pop(context, true),
-                        style: TextButton.styleFrom(foregroundColor: AppColors.red),
-                        child: Text('ENGELLE', style: GoogleFonts.outfit(color: AppColors.red, fontWeight: FontWeight.w900)),
-                      ),
-                    ],
-                  ),
-                );
-                
-                if (confirm == true) {
-                  await _chatService.blockUser(widget.otherUserId);
+              ListTile(
+                leading: const Icon(Icons.block, color: Colors.orange),
+                title: Text(
+                  'Kullanıcıyı Engelle',
+                  style: GoogleFonts.outfit(color: Colors.orange, fontWeight: FontWeight.w800),
+                ),
+                onTap: () async {
+                  final navigator = Navigator.of(context);
+                  final messenger = ScaffoldMessenger.of(context);
                   navigator.pop();
-                  messenger.showSnackBar(
-                    SnackBar(content: Text('${widget.otherUserName} engellendi')),
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      backgroundColor: isDark ? AppColors.scaffoldDark : Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(24),
+                        side: BorderSide(color: isDark ? Colors.white10 : const Color(0xFFEEEEEE), width: 1.0),
+                      ),
+                      title: Text('KULLANICIYI ENGELLE?', style: GoogleFonts.outfit(color: isDark ? Colors.white : Colors.black, fontWeight: FontWeight.w900)),
+                      content: Text(
+                        '${widget.otherUserName} ENGELLENSİN Mİ? SİZE MESAJ GÖNDEREMEYECEK.',
+                        style: GoogleFonts.outfit(color: isDark ? Colors.white70 : Colors.black, fontWeight: FontWeight.w700),
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: Text('İPTAL', style: GoogleFonts.outfit(color: AppColors.textSecondary, fontWeight: FontWeight.w900)),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          style: TextButton.styleFrom(foregroundColor: AppColors.red),
+                          child: Text('ENGELLE', style: GoogleFonts.outfit(color: AppColors.red, fontWeight: FontWeight.w900)),
+                        ),
+                      ],
+                    ),
                   );
-                }
-              },
-            ),
+                  
+                  if (confirm == true) {
+                    await _chatService.blockUser(widget.otherUserId);
+                    navigator.pop();
+                    messenger.showSnackBar(
+                      SnackBar(content: Text('${widget.otherUserName} engellendi')),
+                    );
+                  }
+                },
+              ),
+            ],
             ListTile(
               leading: const Icon(Icons.delete_sweep, color: Colors.red),
               title: Text(
@@ -242,14 +245,27 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
           },
           child: Row(
             children: [
-              OnlineStatusBadge(
-                userId: widget.otherUserId,
-                badgeSize: 12,
-                child: CircleAvatar(
+              if (widget.otherUserId.isNotEmpty)
+                OnlineStatusBadge(
+                  userId: widget.otherUserId,
+                  badgeSize: 12,
+                  child: CircleAvatar(
+                    radius: 18,
+                    backgroundImage: widget.otherUserAvatar.isNotEmpty 
+                        ? NetworkImage(widget.otherUserAvatar) 
+                        : null,
+                    child: widget.otherUserAvatar.isEmpty ? const Icon(Icons.person, size: 20) : null,
+                  ),
+                )
+              else
+                CircleAvatar(
                   radius: 18,
-                  backgroundImage: NetworkImage(widget.otherUserAvatar),
+                  backgroundColor: AppColors.primary.withValues(alpha: 0.2),
+                  backgroundImage: widget.otherUserAvatar.isNotEmpty 
+                      ? NetworkImage(widget.otherUserAvatar) 
+                      : null,
+                  child: widget.otherUserAvatar.isEmpty ? const Icon(Icons.groups, color: AppColors.primary, size: 20) : null,
                 ),
-              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -264,15 +280,27 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                         color: isDark ? Colors.white : Colors.black,
                         letterSpacing: -0.5,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    LastSeenText(
-                      userId: widget.otherUserId,
-                      style: GoogleFonts.outfit(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
-                        fontWeight: FontWeight.w600,
+                    if (widget.otherUserId.isNotEmpty)
+                      LastSeenText(
+                        userId: widget.otherUserId,
+                        style: GoogleFonts.outfit(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      )
+                    else
+                      Text(
+                        'Grup Sohbeti',
+                        style: GoogleFonts.outfit(
+                          fontSize: 12,
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ),
@@ -280,31 +308,50 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
           ),
         ),
         actions: [
-          IconButton(
-            icon: Icon(Icons.call, color: isDark ? Colors.white : Colors.black, size: 22),
-            onPressed: () {
-              final userProvider = context.read<UserProvider>();
-              final userTier = userProvider.currentUser?.subscriptionTier ?? 'free';
-              
-              if (userTier == 'free') {
-                 Navigator.push(context, MaterialPageRoute(builder: (_) => PremiumOfferScreen()));
-                 return;
-              }
-
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => CallScreen(
-                    channelId: widget.chatId,
-                    userName: widget.otherUserName,
-                    userAvatar: widget.otherUserAvatar,
-                    isVideo: false,
-                    otherUserId: widget.otherUserId,
-                  ),
+          Consumer2<SubscriptionProvider, CreditProvider>(
+            builder: (context, subProvider, creditProvider, _) {
+              if (subProvider.currentTier != 'free') return const SizedBox.shrink();
+              return Container(
+                margin: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.chat_bubble_rounded, color: AppColors.primary, size: 14),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${creditProvider.messageCreditsRemaining}/8',
+                      style: GoogleFonts.outfit(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w900,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ],
                 ),
               );
             },
           ),
+          if (widget.otherUserId.isNotEmpty)
+            IconButton(
+              icon: Icon(Icons.call, color: isDark ? Colors.white : Colors.black, size: 22),
+              onPressed: () {
+                final userProvider = context.read<UserProvider>();
+                final userTier = userProvider.currentUser?.subscriptionTier ?? 'free';
+                
+                if (userTier == 'free') {
+                   Navigator.push(context, MaterialPageRoute(builder: (_) => PremiumOfferScreen()));
+                   return;
+                }
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Sesli arama özelliği yakında eklenecektir.')),
+                );
+              },
+            ),
           IconButton(
             icon: Icon(Icons.more_vert, color: isDark ? Colors.white : Colors.black, size: 24),
             onPressed: _showChatOptions,

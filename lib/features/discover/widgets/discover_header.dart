@@ -14,15 +14,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../notifications/notifications_screen.dart';
 
 class DiscoverHeader extends StatelessWidget {
-  final bool showSearchBar;
-  final VoidCallback onSearchToggle;
   final FilterSettings filterSettings;
   final ValueChanged<FilterSettings> onFiltersApplied;
 
   const DiscoverHeader({
     super.key,
-    required this.showSearchBar,
-    required this.onSearchToggle,
     required this.filterSettings,
     required this.onFiltersApplied,
   });
@@ -95,15 +91,9 @@ class DiscoverHeader extends StatelessWidget {
                 ),
               ),
 
-              // Sağ: İkonlar (Arama, Bildirimler, Filtre)
+              // Sağ: İkonlar (Bildirimler, Filtre)
               Row(
                 children: [
-                  _buildHeaderIcon(
-                    context,
-                    showSearchBar ? Icons.close_rounded : Icons.search_rounded,
-                    onTap: onSearchToggle,
-                  ),
-                  const SizedBox(width: 8),
                   // Bildirim Merkezi Çan İkonu
                   Consumer<UserProvider>(
                     builder: (context, userProvider, _) {

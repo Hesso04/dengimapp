@@ -7,6 +7,9 @@ import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/providers/user_provider.dart';
+import '../../../core/providers/subscription_provider.dart';
+import '../../../core/providers/credit_provider.dart';
+import '../../ads/services/ad_service.dart';
 import '../../../core/services/feature_flag_service.dart';
 import '../../payment/premium_offer_screen.dart';
 import '../services/chat_service.dart';
@@ -59,8 +62,172 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
     super.dispose();
   }
 
-  void _sendMessage() {
+  void _showOutOfMessageCreditsModal() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return Consumer2<CreditProvider, SubscriptionProvider>(
+          builder: (context, creditProvider, subProvider, _) {
+            final canWatchAd = creditProvider.canWatchAdForMessageCredit;
+            final adWatchesToday = creditProvider.messageAdWatchesToday;
+
+            return Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF14161B) : Colors.white,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                border: Border.all(color: isDark ? const Color(0xFF2D313E) : const Color(0xFFEEEEEE)),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.white24 : Colors.black12,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.chat_bubble_outline_rounded, color: AppColors.primary, size: 36),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'GÜNLÜK MESAJ HAKKIN BİTTİ!',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.outfit(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
+                      color: isDark ? Colors.white : Colors.black,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Bugünkü 8 ücretsiz mesaj hakkını kullandın. Mesajlaşmaya devam etmek için reklam izle veya Gold/Platinum üyeliğe geç!',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.outfit(
+                      fontSize: 13,
+                      color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.6),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Option 1: Watch Ad (+1 Message Credit)
+                  ElevatedButton(
+                    onPressed: canWatchAd
+                        ? () {
+                            Navigator.pop(context);
+                            final tier = subProvider.currentTier;
+                            AdService().showRewardedAdForMessageCredit(
+                              tier: tier,
+                              onReward: () async {
+                                final success = await creditProvider.rewardForMessageCreditAd();
+                                if (success && mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('🎉 +1 Mesaj Hakkı Kazandın!'),
+                                      backgroundColor: AppColors.success,
+                                      behavior: SnackBarBehavior.floating,
+                                    ),
+                                  );
+                                }
+                              },
+                            );
+                          }
+                        : null,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF8A2BE2),
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(double.infinity, 52),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      elevation: 3,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.play_circle_fill_rounded, size: 22),
+                        const SizedBox(width: 10),
+                        Text(
+                          canWatchAd
+                              ? 'REKLAM İZLE (+1 MESAJ HAKKI)'
+                              : 'GÜNLÜK REKLAM LİMİTİ DOLDU ($adWatchesToday/10)',
+                          style: GoogleFonts.outfit(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Option 2: Buy Subscription (Unlimited)
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const PremiumOfferScreen()),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFFFD700),
+                      foregroundColor: Colors.black,
+                      minimumSize: const Size(double.infinity, 52),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      elevation: 2,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.workspace_premium_rounded, size: 22),
+                        const SizedBox(width: 10),
+                        Text(
+                          '👑 SINIRSIZ MESAJLAŞ (ÜYELİK AL)',
+                          style: GoogleFonts.outfit(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _sendMessage() async {
     if (_messageController.text.trim().isEmpty) return;
+
+    final subProvider = context.read<SubscriptionProvider>();
+    final creditProvider = context.read<CreditProvider>();
+    final tier = subProvider.currentTier;
+
+    // Free users check daily message credits
+    if (tier == 'free') {
+      if (creditProvider.messageCreditsRemaining <= 0) {
+        _showOutOfMessageCreditsModal();
+        return;
+      }
+      await creditProvider.useMessageCredit();
+    }
 
     final text = _messageController.text.trim();
     _messageController.clear();

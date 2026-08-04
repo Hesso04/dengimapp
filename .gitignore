@@ -57,3 +57,20 @@ android/app/build/
 # Release APK
 *.apk
 dengim-release.apk
+
+# ═══════════════════════════════════════════════════════
+# SECURITY: keystore, key passwords, .env (defense in depth)
+# ═══════════════════════════════════════════════════════
+# Android release keystore + signing config
+*.jks
+*.keystore
+android/key.properties
+android/app/key.properties
+# Environment / secrets
+.env
+.env.*
+!.env.example
+# Firebase Functions local secrets
+functions/.env
+functions/.env.*
+functions/.runtimeconfig.json

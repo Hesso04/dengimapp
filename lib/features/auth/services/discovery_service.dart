@@ -41,11 +41,24 @@ class DiscoveryService {
       final Set<String> swipedIds = swipedIdsSnapshot.docs.map((doc) => doc.id).toSet();
       swipedIds.add(user.uid); 
       
-      // 1.5 Engellenen kullanıcıları elenenler listesine ekle
+      // 1.5 Engellenen kullanıcıları (karşılıklı) elenenler listesine ekle
       final userDoc = await _firestore.collection('users').doc(user.uid).get();
       if (userDoc.exists) {
         final blockedUsers = List<String>.from(userDoc.data()?['blockedUsers'] ?? []);
         swipedIds.addAll(blockedUsers);
+      }
+
+      try {
+        final blockedBySnap = await _firestore
+            .collection('blocks')
+            .where('blockedId', isEqualTo: user.uid)
+            .get();
+        for (var doc in blockedBySnap.docs) {
+          final blockerId = doc.data()['blockerId'];
+          if (blockerId != null) swipedIds.add(blockerId.toString());
+        }
+      } catch (e) {
+        LogService.w("Failed to fetch blockedBy ids: $e");
       }
 
       // Get current user's location for distance filtering
@@ -97,6 +110,12 @@ class DiscoveryService {
 
             // Freeze Account filter
             if (profile.isFrozen) return false;
+
+            // Engellenen Kullanıcı Süzgeci (Karşılıklı Engel Kontrolü)
+            if (currentUserProfile != null) {
+              if (currentUserProfile.blockedUsers.contains(profile.uid)) return false;
+              if (profile.blockedUsers.contains(currentUserProfile.uid)) return false;
+            }
 
             // Relax completion check to allow showing all registered users
             // if (!profile.isComplete) return false;
@@ -165,7 +184,7 @@ class DiscoveryService {
         users.sort((a, b) {
           final scoreA = _calculateCompatibilityScore(currentProfile, a);
           final scoreB = _calculateCompatibilityScore(currentProfile, b);
-          return scoreB.compareTo(scoreA); // High score first
+          return scoreB.compareTo(scoreA); // High score first (Boosted + compatible)
         });
       }
 
@@ -176,6 +195,8 @@ class DiscoveryService {
       return [];
     }
   }
+
+
 
   /// Calculate approximate distance between two coordinates in kilometers (Haversine)
   double _calculateDistanceKm(double lat1, double lon1, double lat2, double lon2) {
@@ -681,8 +702,8 @@ class DiscoveryService {
       score -= (approxKm / 10).clamp(0, 30).toInt();
     }
 
-    // 5. Premium Boost (+100)
-    if (other.isBoosted) score += 100;
+    // 5. Premium Boost (+1000 — Öne çıkan boosted profiller en üstte gösterilir)
+    if (other.isBoosted) score += 1000;
 
     return score;
   }

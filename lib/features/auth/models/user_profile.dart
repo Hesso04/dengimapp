@@ -47,8 +47,6 @@ class UserProfile {
   final bool isGhostMode;
   final bool isIncognitoMode;
   final bool hasReceivedWelcomeBonus;
-  final List<String> followers; // YENİ: Takipçiler
-  final List<String> following; // YENİ: Takip ettikleri
   final String searchName;
   final bool isFrozen; // YENİ: Hesap Dondurma
 
@@ -94,8 +92,6 @@ class UserProfile {
     this.isIncognitoMode = false,
     this.isFrozen = false, // YENİ
     this.hasReceivedWelcomeBonus = false,
-    this.followers = const [],
-    this.following = const [],
     this.searchName = '',
   });
 
@@ -149,6 +145,14 @@ class UserProfile {
   
   String get location => country;
 
+  static String generateReferralCode(String uid) {
+    final cleanUid = uid.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '').toUpperCase();
+    if (cleanUid.length >= 5) {
+      return 'DENGIM${cleanUid.substring(0, 5)}';
+    }
+    return 'DENGIM${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
+  }
+
   Map<String, dynamic> toMap() {
     return {
       'uid': uid,
@@ -187,8 +191,6 @@ class UserProfile {
       'isIncognitoMode': isIncognitoMode,
       'isFrozen': isFrozen, // YENİ
       'hasReceivedWelcomeBonus': hasReceivedWelcomeBonus,
-      'followers': followers,
-      'following': following,
       'searchName': searchName,
     };
   }
@@ -232,7 +234,9 @@ class UserProfile {
       isVerified: map['isVerified'] ?? false,
       isOnline: map['isOnline'] ?? false,
       role: map['role'] ?? 'user',
-      referralCode: map['referralCode'] ?? '',
+      referralCode: (map['referralCode'] != null && map['referralCode'].toString().isNotEmpty)
+          ? map['referralCode']
+          : generateReferralCode(map['uid'] ?? ''),
       referredBy: map['referredBy'],
       achievements: List<String>.from(map['achievements'] ?? []),
       latitude: map['latitude']?.toDouble(),
@@ -255,8 +259,6 @@ class UserProfile {
       isIncognitoMode: map['isIncognitoMode'] ?? false,
       isFrozen: map['isFrozen'] ?? false, // YENİ
       hasReceivedWelcomeBonus: map['hasReceivedWelcomeBonus'] ?? false,
-      followers: List<String>.from(map['followers'] ?? []),
-      following: List<String>.from(map['following'] ?? []),
       searchName: map['searchName'] ?? (nameVal).trim().toLowerCase(),
     );
   }

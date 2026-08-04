@@ -1,7 +1,7 @@
 name: dengim
 description: DENGİM - Modern Premium Tanışma Uygulaması
 publish_to: 'none'
-version: 1.0.9+15
+version: 1.2.9+29
 
 environment:
   sdk: ^3.5.0
@@ -30,14 +30,13 @@ dependencies:
   image_picker: ^1.0.7
   video_player: ^2.8.2
   
-  # Ödeme Sistemi (Native IAP)
-  in_app_purchase: ^3.2.0
-  in_app_purchase_storekit: ^0.3.18
-  in_app_purchase_android: ^0.3.0
+  # Ödeme Sistemi (Native IAP - Google Play Billing Library 8+ Uyumlu)
+  in_app_purchase: ^3.3.0
+  in_app_purchase_storekit: ^0.4.11
+  in_app_purchase_android: ^0.5.2
   
-  # RTC (Voice & Video)
-  agora_rtc_engine: ^6.3.2
   permission_handler: ^11.3.1
+  local_auth: ^2.3.0
   
   # Bağlantı Durumu
   connectivity_plus: ^6.0.3
@@ -76,7 +75,7 @@ dependencies:
   record: ^5.1.2
   just_audio: ^0.9.39
   path_provider: ^2.1.2
-  agora_token_generator: ^0.0.1
+
 
   # Swipe Actions
   flutter_slidable: ^3.1.0

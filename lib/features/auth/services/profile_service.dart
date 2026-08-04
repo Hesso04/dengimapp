@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import '../models/user_profile.dart';
 import '../../../core/utils/log_service.dart';
 import '../../../core/services/cloudinary_service.dart';
+import '../../../core/services/credit_service.dart';
 import 'package:flutter/foundation.dart';
 
 class ProfileService {
@@ -29,6 +30,7 @@ class ProfileService {
     String? bio,
     String? job,
     String? education,
+    String? referredByCode,
   }) async {
     final user = _currentUser;
     if (user == null) throw Exception("Kullanıcı bulunamadı");
@@ -39,6 +41,34 @@ class ProfileService {
       initialAge = now.year - birthDate.year;
       if (now.month < birthDate.month || (now.month == birthDate.month && now.day < birthDate.day)) {
         initialAge--;
+      }
+    }
+
+    final myReferralCode = UserProfile.generateReferralCode(user.uid);
+    int initialCredits = 0;
+    String? inviterUid;
+
+    if (referredByCode != null && referredByCode.trim().isNotEmpty) {
+      final cleanCode = referredByCode.trim().toUpperCase();
+      try {
+        final query = await _firestore
+            .collection('users')
+            .where('referralCode', isEqualTo: cleanCode)
+            .limit(1)
+            .get();
+
+        if (query.docs.isNotEmpty) {
+          inviterUid = query.docs.first.id;
+          initialCredits = 10; // Kaydolan kullanıcıya +10 Kredi hoş geldin bonusu
+
+          // Davet eden kullanıcıya +15 Kredi yükle
+          await _firestore.collection('users').doc(inviterUid).update({
+            'credits': FieldValue.increment(CreditService.rewardInviteFriend),
+          });
+          LogService.i("Referral rewarded! Inviter $inviterUid received +15 credits");
+        }
+      } catch (e) {
+        LogService.e("Error resolving referral code", e);
       }
     }
 
@@ -56,9 +86,11 @@ class ProfileService {
       'job': job,
       'education': education,
       'photoUrls': photoUrls,
-      'isPremium': true,
-      'subscriptionTier': 'gold',
-      'credits': 1000,
+      'isPremium': false,
+      'subscriptionTier': 'free',
+      'credits': initialCredits,
+      'referralCode': myReferralCode,
+      'referredBy': inviterUid,
       'hasReceivedWelcomeBonus': true,
       'createdAt': FieldValue.serverTimestamp(),
       'lastActive': FieldValue.serverTimestamp(),
@@ -84,11 +116,23 @@ class ProfileService {
       final doc = await _firestore.collection('users').doc(targetUid).get();
       if (doc.exists) {
         final data = doc.data()!;
-        // Backfill searchName if missing
+        // Backfill searchName atomically (yarış koşulunu önlemek için transaction).
+        // Not: Asıl güncelleme backend'de onUserProfileUpdated tetikleyicisi ile yapılmalı.
         if (data['searchName'] == null && data['name'] != null) {
           final sName = data['name'].toString().trim().toLowerCase();
-          await _firestore.collection('users').doc(targetUid).update({'searchName': sName});
-          data['searchName'] = sName;
+          try {
+            await _firestore.runTransaction((txn) async {
+              final fresh = await txn.get(_firestore.collection('users').doc(targetUid));
+              if (!fresh.exists) return;
+              if (fresh.data()?['searchName'] != null) return; // başka client yazdı
+              txn.update(_firestore.collection('users').doc(targetUid), {
+                'searchName': sName,
+              });
+            });
+            data['searchName'] = sName;
+          } catch (e) {
+            LogService.w("searchName backfill failed (non-critical): $e");
+          }
         }
         return UserProfile.fromMap(data);
       }
@@ -337,89 +381,6 @@ class ProfileService {
       LogService.i("FCM Token updated");
     } catch (e) {
       LogService.e("FCM update error", e);
-    }
-  }
-
-  Future<List<UserProfile>> searchUsers(String query) async {
-    final currentUid = _currentUser?.uid;
-    if (query.isEmpty || currentUid == null) return [];
-
-    try {
-      final searchKey = query.trim().toLowerCase();
-      final snapshot = await _firestore
-          .collection('users')
-          .where('searchName', isGreaterThanOrEqualTo: searchKey)
-          .where('searchName', isLessThanOrEqualTo: '$searchKey\uf8ff')
-          .limit(20)
-          .get();
-
-      // Kendini filtrele
-      final results = snapshot.docs
-          .where((doc) => doc.id != currentUid)
-          .map((doc) => UserProfile.fromMap(doc.data()))
-          .toList();
-
-      LogService.i("Search found ${results.length} users for: $query");
-      return results;
-    } catch (e) {
-      LogService.e("Search users error", e);
-      return [];
-    }
-  }
-
-  /// Takip Et
-  Future<void> followUser(String targetUid) async {
-    final currentUid = _currentUser?.uid;
-    if (currentUid == null || currentUid == targetUid) return;
-
-    try {
-      // 1. Kendi following listeme ekle (kendi dökümanım, her zaman izin var)
-      await _firestore.collection('users').doc(currentUid).update({
-        'following': FieldValue.arrayUnion([targetUid])
-      });
-      
-      // 2. Karşı tarafın followers listesine ekle
-      // set + merge kullanarak alan yoksa bile sorunsuz çalışır
-      try {
-        await _firestore.collection('users').doc(targetUid).set({
-          'followers': FieldValue.arrayUnion([currentUid])
-        }, SetOptions(merge: true));
-      } catch (e) {
-        // Karşı tarafın dökümanı güncellenemezse bile takip işlemi başarılı sayılsın
-        LogService.w("Could not update target followers list: $e");
-      }
-
-      LogService.i("User $currentUid started following $targetUid");
-    } catch (e) {
-      LogService.e("Follow user error", e);
-      rethrow;
-    }
-  }
-
-  /// Takipten Çık
-  Future<void> unfollowUser(String targetUid) async {
-    final currentUid = _currentUser?.uid;
-    if (currentUid == null || currentUid == targetUid) return;
-
-    try {
-      // 1. Kendi following listemden çıkar (kendi dökümanım, her zaman izin var)
-      await _firestore.collection('users').doc(currentUid).update({
-        'following': FieldValue.arrayRemove([targetUid])
-      });
-      
-      // 2. Karşı tarafın followers listesinden çıkar
-      try {
-        await _firestore.collection('users').doc(targetUid).set({
-          'followers': FieldValue.arrayRemove([currentUid])
-        }, SetOptions(merge: true));
-      } catch (e) {
-        LogService.w("Could not update target followers list: $e");
-      }
-
-      LogService.i("User $currentUid unfollowed $targetUid");
-    } catch (e) {
-      LogService.e("Unfollow user error", e);
-      rethrow;
     }
   }
 }

@@ -5,10 +5,10 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 import '../../core/theme/app_colors.dart';
 import 'models/chat_models.dart';
 import 'widgets/chat_widgets.dart';
-import 'services/chat_service.dart';
 import 'screens/chat_detail_screen.dart';
-import 'screens/create_group_chat_screen.dart';
+import 'services/chat_service.dart';
 import '../profile/blocked_users_screen.dart';
+import '../ads/widgets/dengim_banner_ad.dart';
 
 import 'package:provider/provider.dart';
 import '../../core/providers/chat_provider.dart';
@@ -159,6 +159,7 @@ class _ChatsScreenState extends State<ChatsScreen> {
                 },
               ),
             ),
+            DengimBannerAd(),
           ],
         ),
       ),
@@ -198,28 +199,10 @@ class _ChatsScreenState extends State<ChatsScreen> {
                 ),
               ),
               const Spacer(),
-              _buildIconButton(Icons.group_add_rounded, () {
-                HapticFeedback.lightImpact();
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const CreateGroupChatScreen()),
-                );
-              }),
               PopupMenuButton<String>(
-                onSelected: (value) async {
-                  HapticFeedback.lightImpact();
+                onSelected: (value) {
                   if (value == 'mark_read') {
-                    await ChatService().markAllConversationsAsRead();
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Tüm sohbetler okundu olarak işaretlendi.')),
-                      );
-                    }
-                  } else if (value == 'create_group') {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const CreateGroupChatScreen()),
-                    );
+                    context.read<ChatProvider>().markAllAsRead();
                   } else if (value == 'blocked_users') {
                     Navigator.push(
                       context,
@@ -232,7 +215,15 @@ class _ChatsScreenState extends State<ChatsScreen> {
                   borderRadius: BorderRadius.circular(16),
                   side: BorderSide(color: isDark ? const Color(0xFF262629) : const Color(0xFFEEEEEE)),
                 ),
-                icon: _buildIconButton(Icons.more_vert_rounded, () {}),
+                icon: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1F222A) : const Color(0xFFF2F4F7),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.more_vert_rounded, color: textColor, size: 22),
+                ),
                 itemBuilder: (context) => [
                   PopupMenuItem(
                     value: 'mark_read',
@@ -245,22 +236,12 @@ class _ChatsScreenState extends State<ChatsScreen> {
                     ),
                   ),
                   PopupMenuItem(
-                    value: 'create_group',
-                    child: Row(
-                      children: [
-                        Icon(Icons.group_add_rounded, color: AppColors.primary, size: 20),
-                        const SizedBox(width: 10),
-                        Text('Yeni Grup Sohbeti', style: GoogleFonts.outfit(color: isDark ? Colors.white : Colors.black, fontSize: 13, fontWeight: FontWeight.w600)),
-                      ],
-                    ),
-                  ),
-                  PopupMenuItem(
                     value: 'blocked_users',
                     child: Row(
                       children: [
-                        Icon(Icons.block_rounded, color: Colors.redAccent, size: 20),
+                        const Icon(Icons.block_rounded, color: Colors.redAccent, size: 20),
                         const SizedBox(width: 10),
-                        Text('Engellenen Kullanıcılar', style: GoogleFonts.outfit(color: isDark ? Colors.white : Colors.black, fontSize: 13, fontWeight: FontWeight.w600)),
+                        Text('Engellediğim Hesaplar', style: GoogleFonts.outfit(color: isDark ? Colors.white : Colors.black, fontSize: 13, fontWeight: FontWeight.w600)),
                       ],
                     ),
                   ),

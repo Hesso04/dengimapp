@@ -21,7 +21,6 @@ import 'user_profile_detail_screen.dart';
 import 'widgets/discover_header.dart';
 import 'widgets/discover_empty_state.dart';
 import 'widgets/match_overlay.dart';
-import 'widgets/discover_search_bar.dart';
 import 'widgets/discover_user_card.dart';
 import '../../core/widgets/shimmer_card.dart';
 
@@ -33,17 +32,12 @@ class DiscoverScreen extends StatefulWidget {
 }
 
 class _DiscoverScreenState extends State<DiscoverScreen> {
-  final TextEditingController _searchController = TextEditingController();
   final Set<String> _dismissedUserIds = {};
   final Set<String> _animatingUserIds = {};
   final List<String> _historyOfSwipedUserIds = [];
   
   FilterSettings _filterSettings = FilterSettings();
   bool _isRefreshing = false;
-  bool _showSearchBar = false;
-  String _searchQuery = '';
-  List<UserProfile> _searchResults = [];
-  bool _isSearching = false;
 
   @override
   void initState() {
@@ -88,9 +82,6 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     try {
       // Haptic feedback
       HapticFeedback.mediumImpact();
-      
-      // Hikayeleri yenile (devre dışı)
-      // await context.read<StoryProvider>().loadStories();
       
       // Kullanıcıları yenile
       await context.read<DiscoveryProvider>().loadDiscoveryUsers(
@@ -313,7 +304,6 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
 
   @override
   void dispose() {
-    _searchController.dispose();
     super.dispose();
   }
 
@@ -463,38 +453,9 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
           hasPhotoOnly: settings.hasPhotoOnly,
           onlineOnly: settings.onlineOnly,
           relationshipGoal: settings.relationshipGoal,
-          forceRefresh: true,
         );
       },
     );
-  }
-
-  /// Profil arama
-  Future<void> _searchUsers(String query) async {
-    if (query.trim().isEmpty) {
-      setState(() {
-        _searchResults = [];
-        _isSearching = false;
-      });
-      return;
-    }
-
-    setState(() => _isSearching = true);
-
-    try {
-      final results = await ProfileService().searchUsers(query.trim());
-      if (mounted) {
-        setState(() {
-          _searchResults = results;
-          _isSearching = false;
-        });
-      }
-    } catch (e) {
-      LogService.e("Search error", e);
-      if (mounted) {
-        setState(() => _isSearching = false);
-      }
-    }
   }
 
   Widget _buildNonPremiumBanner(BuildContext context, bool isDark) {
@@ -542,6 +503,8 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
               children: [
                 Text(
                   "Gold & Platinum Üyelik",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.outfit(
                     fontSize: 13,
                     fontWeight: FontWeight.w800,
@@ -550,6 +513,8 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                 ),
                 Text(
                   "Sınırsız beğeni ve Seni Beğenenleri gör!",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.outfit(
                     fontSize: 11,
                     fontWeight: FontWeight.w500,
@@ -586,16 +551,6 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
         ],
       ),
     );
-  }
-
-  void _onSearchChanged(String value) {
-    setState(() => _searchQuery = value);
-    // Debounce: Kısa arama sorgularında bekle
-    if (value.length >= 2) {
-      _searchUsers(value);
-    } else {
-      setState(() => _searchResults = []);
-    }
   }
 
   void _onCardTap(UserProfile user) {
@@ -637,26 +592,9 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                       child: Column(
                         children: [
                           DiscoverHeader(
-                            showSearchBar: _showSearchBar,
-                            onSearchToggle: () {
-                              HapticFeedback.lightImpact();
-                              setState(() => _showSearchBar = !_showSearchBar);
-                            },
                             filterSettings: _filterSettings,
                             onFiltersApplied: (settings) {
                               setState(() => _filterSettings = settings);
-                            },
-                          ),
-                          DiscoverSearchBar(
-                            showSearchBar: _showSearchBar,
-                            searchController: _searchController,
-                            searchQuery: _searchQuery,
-                            isSearching: _isSearching,
-                            searchResults: _searchResults,
-                            onSearchChanged: _onSearchChanged,
-                            onClear: () {
-                              _searchController.clear();
-                              _onSearchChanged('');
                             },
                           ),
                           if (!(context.watch<UserProvider>().currentUser?.isPremium ?? false))

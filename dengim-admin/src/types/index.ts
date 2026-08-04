@@ -216,17 +216,29 @@ export interface TicketMessage {
 export interface PromoCode {
     id: string;
     code: string;
-    discountType: 'percentage' | 'fixed';
-    discountValue: number;
+    creditAmount: number; // Kredi yükleme miktarı (Örn: +50 Kredi)
+    discountType?: 'percentage' | 'fixed';
+    discountValue?: number;
     maxUses: number;
     usedCount: number;
-    minPurchase?: number;
-    applicablePlans: string[];
-    validFrom: Date;
-    validUntil: Date;
+    usedBy?: string[];
+    validFrom?: Date;
+    validUntil?: Date | null;
+    expiresAt?: Date | null;
     isActive: boolean;
-    createdBy: string;
+    createdBy?: string;
     createdAt: Date;
+}
+
+// Account Deletion Request Types
+export interface DeletionRequest {
+    id: string;
+    userId: string;
+    userName?: string;
+    userEmail?: string;
+    requestedAt: Date;
+    status: 'pending' | 'approved' | 'rejected';
+    reason?: string;
 }
 
 // API Response Types

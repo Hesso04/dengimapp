@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:just_audio/just_audio.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/services/audio_recorder_service.dart';
+import '../../../core/services/cloudinary_service.dart';
 
 /// Voice Message Player Widget
 /// Ses mesajlarını oynatmak için kullanılır
@@ -295,19 +297,32 @@ class _VoiceRecorderButtonState extends State<VoiceRecorderButton>
     );
   }
 
-  void _startRecording() {
-    setState(() => _isRecording = true);
-    widget.onRecordStart?.call();
-    // TODO: Implement actual recording logic using audio_recorder_service
+  final AudioRecorderService _audioRecorder = AudioRecorderService();
+  final CloudinaryService _cloudinaryService = CloudinaryService();
+
+  void _startRecording() async {
+    final success = await _audioRecorder.startRecording();
+    if (success) {
+      setState(() => _isRecording = true);
+      widget.onRecordStart?.call();
+    }
   }
 
-  void _stopRecording() {
+  void _stopRecording() async {
+    final audioPath = await _audioRecorder.stopRecording();
+    final duration = _audioRecorder.recordingDuration;
     setState(() => _isRecording = false);
-    // TODO: Implement stop recording and upload
-    // widget.onRecordComplete(audioPath, durationInSeconds);
+
+    if (audioPath != null && audioPath.isNotEmpty) {
+      final downloadUrl = await _cloudinaryService.uploadAudio(audioPath);
+      if (downloadUrl != null && downloadUrl.isNotEmpty) {
+        widget.onRecordComplete(downloadUrl, duration > 0 ? duration : 1);
+      }
+    }
   }
 
-  void _cancelRecording() {
+  void _cancelRecording() async {
+    await _audioRecorder.cancelRecording();
     setState(() => _isRecording = false);
     widget.onRecordCancel?.call();
   }

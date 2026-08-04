@@ -13,14 +13,12 @@ class PurchaseService {
   final InAppPurchase _iap = InAppPurchase.instance;
   late StreamSubscription<List<PurchaseDetails>> _subscription;
 
-  // Product IDs as per requirement
+  // Product IDs matching Google Play Console configuration
   static const Set<String> _kProductIds = {
-    'dengim_gold_1month',
-    'dengim_gold_3months',
-    'dengim_gold_6months',
-    'dengim_platinum_1month',
-    'dengim_platinum_3months',
-    'dengim_platinum_6months',
+    'dengim_gold',          // Gold 3 Aylık (base plan: dengim-gold-3ay)
+    'dengim_gold_6ay',      // Gold 6 Aylık (base plan: dengim-gold-6ay)
+    'dengim_platinum_3ay',  // Platinum 3 Aylık (base plan: dengim-platinum-3ay)
+    'dengim_platinum_6ay',  // Platinum 6 Aylık (base plan: dengim-platinum-6ay)
   };
 
   List<ProductDetails> products = [];

@@ -179,34 +179,43 @@ class ReportService extends BaseService {
         'createdAt': FieldValue.serverTimestamp(),
         'status': 'pending',
       });
-
       LogService.i('Message $messageId reported');
       return true;
     }, operationName: 'reportMessage', defaultValue: false) ?? false;
   }
 
-  /// Hikayeyi raporla
-  Future<bool> reportStory({
-    required String storyId,
-    required String reportedUserId,
-    required ReportReason reason,
+  /// Sesli odayı raporla (Space Report)
+  Future<bool> reportSpace({
+    required String spaceId,
+    required String hostId,
+    required String reason,
+    String? description,
   }) async {
     final user = _currentUser;
     if (user == null) return false;
 
     return await safeAsync(() async {
-      await _firestore.collection('story_reports').add({
+      await _firestore.collection('reports').add({
         'reporterId': user.uid,
-        'reportedUserId': reportedUserId,
-        'storyId': storyId,
-        'reason': reason.name,
-        'reasonDisplayName': reason.displayName,
-        'createdAt': FieldValue.serverTimestamp(),
+        'reportedUserId': hostId,
+        'spaceId': spaceId,
+        'category': 'space',
+        'reason': reason,
+        'description': description,
         'status': 'pending',
+        'createdAt': FieldValue.serverTimestamp(),
       });
-
-      LogService.i('Story $storyId reported');
+      LogService.i('Space $spaceId reported by ${user.uid}');
       return true;
-    }, operationName: 'reportStory', defaultValue: false) ?? false;
+    }, operationName: 'reportSpace', defaultValue: false) ?? false;
+  }
+
+  /// Admin Paneli için Sesli Oda Raporlarını Getir
+  Stream<QuerySnapshot> getSpaceReportsStream() {
+    return _firestore
+        .collection('reports')
+        .where('category', isEqualTo: 'space')
+        .orderBy('createdAt', descending: true)
+        .snapshots();
   }
 }

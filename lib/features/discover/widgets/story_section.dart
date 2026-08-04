@@ -74,7 +74,9 @@ class StorySection extends StatelessWidget {
                             child: CircleAvatar(
                               radius: 28,
                               backgroundColor: AppColors.scaffold,
-                              backgroundImage: NetworkImage(myStories.userAvatar),
+                              backgroundImage: (myStories.userAvatar.isNotEmpty && myStories.userAvatar.startsWith('http'))
+                                  ? CachedNetworkImageProvider(myStories.userAvatar)
+                                  : null,
                             ),
                           ),
                           const SizedBox(height: 8),

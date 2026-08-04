@@ -22,6 +22,9 @@ class NotificationService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   
   StreamSubscription? _firestoreSubscription;
+  StreamSubscription? _tokenSubscription;
+  StreamSubscription? _messageSubscription;
+  StreamSubscription? _messageOpenedSubscription;
 
   Future<void> initialize() async {
     // 1. Android/iOS Local Notification Setup
@@ -75,12 +78,12 @@ class NotificationService {
         LogService.w("FCM Token fetch warning: $e");
       }
       
-      _fcm.onTokenRefresh.listen((token) {
+      _tokenSubscription = _fcm.onTokenRefresh.listen((token) {
         ProfileService().updateFcmToken(token);
       });
 
       // 4. Foreground FCM Listener
-      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      _messageSubscription = FirebaseMessaging.onMessage.listen((RemoteMessage message) {
         LogService.i('FCM Received: ${message.notification?.title}');
         
         final data = message.data;
@@ -109,7 +112,7 @@ class NotificationService {
       });
 
       // Handle when app is opened via FCM tap from background
-      FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      _messageOpenedSubscription = FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
         _handleNotificationClick(jsonEncode(message.data));
       });
 
@@ -256,5 +259,8 @@ class NotificationService {
 
   void dispose() {
     _firestoreSubscription?.cancel();
+    _tokenSubscription?.cancel();
+    _messageSubscription?.cancel();
+    _messageOpenedSubscription?.cancel();
   }
 }

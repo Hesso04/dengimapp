@@ -51,16 +51,36 @@
 -keep class com.google.firebase.storage.** { *; }
 
 # ============================================================
-# AGORA & WEBRTC (VOICE / VIDEO CALLS) KORUMASI
+# LIVEKIT (VOICE / VIDEO CALLS) & WEBRTC KORUMASI
 # ============================================================
+-keep class io.livekit.** { *; }
+-dontwarn io.livekit.**
+-keep class org.webrtc.** { *; }
+-dontwarn org.webrtc.**
+-keep class com.cloudwebrtc.webrtc.** { *; }
+-dontwarn com.cloudwebrtc.webrtc.**
+
+# Native JNI Method protection (WebRTC native audio engines)
+-keepclasseswithmembernames class * {
+    native <methods>;
+}
+
+# OkHttp / WebSocket signaling for LiveKit RTC
+-keep class okhttp3.** { *; }
+-dontwarn okhttp3.**
+-keep class okio.** { *; }
+-dontwarn okio.**
+
+# Kotlin Coroutine & Reflective Access
+-keep class kotlinx.coroutines.** { *; }
+-dontwarn kotlinx.coroutines.**
+
+# AGORA - eski/aktif değil ama geriye uyumluluk için kurallar kalsın
 -keep class io.agora.** { *; }
 -dontwarn io.agora.**
 
 -keep class io.agora.rtc2.** { *; }
 -dontwarn io.agora.rtc2.**
-
--keep class org.webrtc.** { *; }
--dontwarn org.webrtc.**
 
 # ============================================================
 # PERMISSION HANDLER & SYSTEM PLUGINS

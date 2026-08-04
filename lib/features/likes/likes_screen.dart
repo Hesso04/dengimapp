@@ -9,6 +9,8 @@ import 'package:provider/provider.dart';
 import '../../core/providers/likes_provider.dart';
 import '../../core/providers/badge_provider.dart';
 import '../../core/providers/user_provider.dart';
+import '../../core/providers/subscription_provider.dart';
+import '../ads/services/ad_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 
@@ -24,6 +26,148 @@ class _LikesScreenState extends State<LikesScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = "";
   bool _onlyOnline = false;
+  final Set<String> _unlockedLikeUserIds = {};
+
+  void _showLikeUnlockModal(BuildContext context, UserProfile user) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF14161B) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            border: Border.all(color: isDark ? const Color(0xFF2D313E) : const Color(0xFFEEEEEE)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white24 : Colors.black12,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.favorite_rounded, color: AppColors.primary, size: 36),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'BEĞENEN PROFİLİ GÖR',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.outfit(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                  color: isDark ? Colors.white : Colors.black,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Seni beğenen bu profili açmak için 1 kısa reklam izle veya Platinum üyeliğe geç!',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.outfit(
+                  fontSize: 13,
+                  color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.6),
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Option 1: Watch Ad
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  final tier = context.read<SubscriptionProvider>().currentTier;
+                  AdService().showRewardedAdForSeeLikes(
+                    tier: tier,
+                    onReward: () {
+                      if (mounted) {
+                        setState(() {
+                          _unlockedLikeUserIds.add(user.uid);
+                        });
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('🎉 Beğeni Kartı Açıldı!'),
+                            backgroundColor: AppColors.success,
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      }
+                    },
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(double.infinity, 52),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  elevation: 3,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.play_circle_fill_rounded, size: 22),
+                    const SizedBox(width: 10),
+                    Text(
+                      'REKLAM İZLE VE BEĞENİYİ AÇ',
+                      style: GoogleFonts.outfit(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Option 2: Subscription Upgrade
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const PremiumOfferScreen()),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFFFD700),
+                  foregroundColor: Colors.black,
+                  minimumSize: const Size(double.infinity, 52),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  elevation: 2,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.workspace_premium_rounded, size: 22),
+                    const SizedBox(width: 10),
+                    Text(
+                      '👑 PLATINUM AL (TÜMÜNÜ GÖR)',
+                      style: GoogleFonts.outfit(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   @override
   void initState() {
@@ -130,7 +274,18 @@ class _LikesScreenState extends State<LikesScreen> {
                                         mainAxisSpacing: 12,
                                       ),
                                       delegate: SliverChildBuilderDelegate(
-                                        (context, index) => const _LockedLikeCard(),
+                                        (context, index) {
+                                          final user = provider.likedMeUsers[index];
+                                          final isUnlocked = _unlockedLikeUserIds.contains(user.uid);
+
+                                          if (isUnlocked) {
+                                            return _UnlockedLikeCard(user: user);
+                                          }
+
+                                          return _LockedLikeCard(
+                                            onTap: () => _showLikeUnlockModal(context, user),
+                                          );
+                                        },
                                         childCount: provider.likedMeUsers.length,
                                       ),
                                     ),
@@ -625,7 +780,9 @@ class _LikesScreenState extends State<LikesScreen> {
 }
 
 class _LockedLikeCard extends StatelessWidget {
-  const _LockedLikeCard();
+  final VoidCallback onTap;
+
+  const _LockedLikeCard({required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -644,7 +801,7 @@ class _LockedLikeCard extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(17),
         child: GestureDetector(
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PremiumOfferScreen())),
+          onTap: onTap,
           child: Stack(
             fit: StackFit.expand,
             children: [

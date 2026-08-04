@@ -7,8 +7,10 @@ import '../../core/theme/app_colors.dart';
 import '../auth/models/user_profile.dart';
 import '../auth/services/discovery_service.dart';
 import '../../../core/providers/user_provider.dart';
+import '../../../core/providers/subscription_provider.dart';
 import '../payment/premium_offer_screen.dart';
-import '../discover/user_profile_detail_screen.dart'; // Added for navigation
+import '../discover/user_profile_detail_screen.dart';
+import '../ads/services/ad_service.dart';
 
 class VisitorsScreen extends StatefulWidget {
   const VisitorsScreen({super.key});
@@ -20,6 +22,7 @@ class VisitorsScreen extends StatefulWidget {
 class _VisitorsScreenState extends State<VisitorsScreen> {
   List<UserProfile> _visitors = [];
   bool _isLoading = true;
+  final Set<String> _unlockedVisitorIds = {}; // Reklam izleyerek açılan ziyaretçiler
 
   @override
   void initState() {
@@ -35,6 +38,144 @@ class _VisitorsScreenState extends State<VisitorsScreen> {
         _isLoading = false;
       });
     }
+  }
+
+  void _showVisitorUnlockModal(BuildContext context, UserProfile visitor) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF14161B) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            border: Border.all(color: isDark ? const Color(0xFF2D313E) : const Color(0xFFEEEEEE)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white24 : Colors.black12,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.visibility_rounded, color: AppColors.primary, size: 36),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'ZİYARETÇİ PROFİLİNİ GÖR',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.outfit(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                  color: isDark ? Colors.white : Colors.black,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Profilini kimin ziyaret ettiğini görmek için 1 kısa reklam izle veya Gold/Platinum üyeliğe geç!',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.outfit(
+                  fontSize: 13,
+                  color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.6),
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Option 1: Watch Ad
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  final tier = context.read<SubscriptionProvider>().currentTier;
+                  AdService().showRewardedAdForSeeVisitors(
+                    tier: tier,
+                    onReward: () {
+                      if (mounted) {
+                        setState(() {
+                          _unlockedVisitorIds.add(visitor.uid);
+                        });
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => UserProfileDetailScreen(user: visitor)),
+                        );
+                      }
+                    },
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(double.infinity, 52),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  elevation: 3,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.play_circle_fill_rounded, size: 22),
+                    const SizedBox(width: 10),
+                    Text(
+                      'REKLAM İZLE VE PROFİLİ AÇ',
+                      style: GoogleFonts.outfit(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Option 2: Subscription Upgrade
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const PremiumOfferScreen()),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFFFD700),
+                  foregroundColor: Colors.black,
+                  minimumSize: const Size(double.infinity, 52),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  elevation: 2,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.workspace_premium_rounded, size: 22),
+                    const SizedBox(width: 10),
+                    Text(
+                      '👑 PAKET AL (TÜMÜNÜ KİLİTSİZ GÖR)',
+                      style: GoogleFonts.outfit(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -99,9 +240,13 @@ class _VisitorsScreenState extends State<VisitorsScreen> {
                     ),
                     itemCount: _visitors.length,
                     itemBuilder: (context, index) {
+                      final visitor = _visitors[index];
+                      final isUnlocked = isPremium || _unlockedVisitorIds.contains(visitor.uid);
+
                       return _VisitorCard(
-                        user: _visitors[index],
-                        isPremium: isPremium,
+                        user: visitor,
+                        isUnlocked: isUnlocked,
+                        onUnlockTap: () => _showVisitorUnlockModal(context, visitor),
                       );
                     },
                   ),
@@ -155,9 +300,14 @@ class _VisitorsScreenState extends State<VisitorsScreen> {
 
 class _VisitorCard extends StatelessWidget {
   final UserProfile user;
-  final bool isPremium;
+  final bool isUnlocked;
+  final VoidCallback onUnlockTap;
 
-  const _VisitorCard({required this.user, required this.isPremium});
+  const _VisitorCard({
+    required this.user,
+    required this.isUnlocked,
+    required this.onUnlockTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -167,8 +317,8 @@ class _VisitorCard extends StatelessWidget {
 
     return GestureDetector(
       onTap: () {
-        if (!isPremium) {
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const PremiumOfferScreen()));
+        if (!isUnlocked) {
+          onUnlockTap();
         } else {
           Navigator.push(context, MaterialPageRoute(builder: (_) => UserProfileDetailScreen(user: user)));
         }
@@ -181,7 +331,7 @@ class _VisitorCard extends StatelessWidget {
           boxShadow: isDark ? [] : [AppColors.neoShadowSmall],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(13), // 16 - 3 border
+          borderRadius: BorderRadius.circular(15),
           child: Stack(
             fit: StackFit.expand,
             children: [
@@ -191,7 +341,7 @@ class _VisitorCard extends StatelessWidget {
                 memCacheWidth: 250,
                 placeholder: (context, url) => Container(color: Colors.black12),
               ),
-              if (!isPremium)
+              if (!isUnlocked)
                 BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
                   child: Container(
@@ -226,15 +376,14 @@ class _VisitorCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        isPremium ? user.name : "Gizli Ziyaretçi",
+                        isUnlocked ? user.name : "Gizli Ziyaretçi",
                         style: GoogleFonts.outfit(
                           color: Colors.white,
                           fontSize: 16,
                           fontWeight: FontWeight.w900,
-                          letterSpacing: 0,
                         ),
                       ),
-                      if (isPremium)
+                      if (isUnlocked)
                         Text(
                           "${user.age} • ${user.location}",
                           style: GoogleFonts.outfit(

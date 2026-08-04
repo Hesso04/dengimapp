@@ -75,4 +75,12 @@ class ChatProvider extends ChangeNotifier {
       LogService.e("Error marking chat as read", e);
     }
   }
+
+  Future<void> markAllAsRead() async {
+    try {
+      await _chatService.markAllConversationsAsRead();
+    } catch (e) {
+      LogService.e("Error marking all chats as read", e);
+    }
+  }
 }

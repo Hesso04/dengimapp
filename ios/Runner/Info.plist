@@ -56,8 +56,19 @@
 		</array>
 		<key>NSCameraUsageDescription</key>
 		<string>Görüntülü görüşme ve profil fotoğrafı için kamera izni gereklidir.</string>
+		<key>NSPhotoLibraryUsageDescription</key>
+		<string>Profil fotoğrafı seçmek ve sohbette paylaşmak için galeri erişimi gereklidir.</string>
+		<key>NSPhotoLibraryAddUsageUsageDescription</key>
+		<string>Sohbette paylaştığın görselleri galerine kaydetmek için izin gerekiyor.</string>
 		<key>NSMicrophoneUsageDescription</key>
-		<string>Sesli görüşme ve sesli mesajlar için mikrofon izni gereklidir.</string>
+		<string>Selam Dengim, sesli arama için mikrofonunuza ihtiyaç duyar.</string>
+		<key>NSLocationWhenInUseUsageDescription</key>
+		<string>Yakınındaki kullanıcıları gösterebilmek için konum izni gerekiyor.</string>
+		<key>UIBackgroundModes</key>
+		<array>
+			<string>audio</string>
+			<string>voip</string>
+		</array>
 		<key>UIStatusBarHidden</key>
 		<false/>
 	</dict>

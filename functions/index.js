@@ -95,45 +95,53 @@ exports.onNotificationCreated = onDocumentCreated(
   }
 );
 
-// 2. Agora RTC Token Generator (Gen 2 Callable Function)
-const { RtcTokenBuilder, RtcRole } = require("agora-access-token");
-const AGORA_APP_ID = "0b227b12c2e54a2e9f5f20b30653c198";
-const AGORA_APP_CERTIFICATE = "8b5ba9f9ef6f4606ac52ff53022228a7";
+// 2. LiveKit Access Token Generator (Gen 2 Callable Function)
+const { AccessToken } = require("livekit-server-sdk");
 
-exports.generateAgoraToken = onCall({ region: REGION }, (request) => {
-  if (!request.auth) {
-    throw new HttpsError("unauthenticated", "Bu islemi gerceklestirmek icin giris yapmalisiniz.");
+exports.generateLiveKitToken = onCall(
+  {
+    region: REGION,
+  },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Bu islemi gerceklestirmek icin giris yapmalisiniz.");
+    }
+
+    const data = request.data;
+    const roomName = data.roomName;
+
+    // Güvenlik: identity'yi her zaman auth.uid'den al, client'a güvenme.
+    const identity = request.auth.uid;
+
+    if (!roomName) {
+      throw new HttpsError("invalid-argument", "Oda adi (roomName) belirtilmelidir.");
+    }
+
+    const apiKey = process.env.LIVEKIT_API_KEY || "APIdbX9XXqxuL84";
+    const apiSecret = process.env.LIVEKIT_API_SECRET || "9OGHaMhlAO1hhjPfQS1HJjCoGsiiQbN7GHXo5yaidP";
+
+    try {
+      const token = new AccessToken(
+        apiKey,
+        apiSecret,
+        { identity: identity, ttl: "10m" }
+      );
+
+      token.addGrant({
+        roomJoin: true,
+        room: roomName,
+        canPublish: true,
+        canSubscribe: true,
+      });
+
+      const jwt = await token.toJwt();
+      return { token: jwt };
+    } catch (error) {
+      console.error("LiveKit Token Generation Error:", error);
+      throw new HttpsError("internal", "Token olusturulurken bir hata olustu.");
+    }
   }
-
-  const data = request.data;
-  const channelName = data.channelName;
-  const rawUid = data.uid !== undefined && data.uid !== null ? Number(data.uid) : 0;
-  const uid = Math.abs(rawUid) % 100000;
-  const role = data.role === "publisher" ? RtcRole.PUBLISHER : RtcRole.SUBSCRIBER;
-
-  if (!channelName) {
-    throw new HttpsError("invalid-argument", "Kanal adi (channelName) belirtilmelidir.");
-  }
-
-  const expirationTimeInSeconds = 86400;
-  const currentTimestamp = Math.floor(Date.now() / 1000);
-  const privilegeExpiredTs = currentTimestamp + expirationTimeInSeconds;
-
-  try {
-    const token = RtcTokenBuilder.buildTokenWithUid(
-      AGORA_APP_ID,
-      AGORA_APP_CERTIFICATE,
-      channelName,
-      uid,
-      role,
-      privilegeExpiredTs
-    );
-    return { token: token };
-  } catch (error) {
-    console.error("Agora Token Generation Error:", error);
-    throw new HttpsError("internal", "Token olusturulurken bir hata olustu.");
-  }
-});
+);
 
 // 3. Swipe & Match Logic Trigger (Gen 2 Firestore Trigger)
 exports.onSwipeCreated = onDocumentCreated(
@@ -350,6 +358,54 @@ exports.autoModerateUserContent = onDocumentWritten(
         status: "pending",
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
       });
+    }
+  }
+);
+
+// 7. Auto Clean-up on User Block (Gen 2 Firestore Trigger)
+exports.onUserBlocked = onDocumentCreated(
+  { document: "blocks/{blockId}", region: REGION },
+  async (event) => {
+    const data = event.data?.data();
+    if (!data) return;
+    const { blockerId, blockedId } = data;
+    if (!blockerId || !blockedId) return;
+
+    const db = admin.firestore();
+    console.log(`Auto cleanup triggered: ${blockerId} blocked ${blockedId}`);
+
+    try {
+      // 1. Hide conversation for both users
+      const conversationsSnap = await db.collection("conversations")
+        .where("userIds", "arrayContains", blockerId)
+        .get();
+
+      const batch = db.batch();
+      conversationsSnap.docs.forEach((doc) => {
+        const userIds = doc.data().userIds || [];
+        if (userIds.includes(blockedId)) {
+          batch.update(doc.reference, {
+            deletedFor: admin.firestore.FieldValue.arrayUnion(blockerId, blockedId)
+          });
+        }
+      });
+
+      // 2. Remove from matches if exists
+      const matchesSnap = await db.collection("matches")
+        .where("userIds", "arrayContains", blockerId)
+        .get();
+
+      matchesSnap.docs.forEach((doc) => {
+        const userIds = doc.data().userIds || [];
+        if (userIds.includes(blockedId)) {
+          batch.delete(doc.reference);
+        }
+      });
+
+      await batch.commit();
+      console.log(`Successfully cleaned up conversation & matches for block: ${blockerId} -> ${blockedId}`);
+    } catch (e) {
+      console.error("Error in onUserBlocked trigger:", e);
     }
   }
 );

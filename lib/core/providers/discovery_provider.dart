@@ -24,9 +24,15 @@ class DiscoveryProvider extends ChangeNotifier {
   
   int _swipeCount = 0;
 
+  /// Oturum boyunca etkileşime girilmiş kullanıcı ID'leri.
+  /// Pull-to-refresh yapılsa bile bu set korunur, böylece
+  /// aynı profiller tekrar görünmez.
+  final Set<String> _seenUserIds = {};
+
   List<UserProfile> get users => _users;
   List<UserProfile> get activeUsers => _activeUsers;
   bool get isLoading => _isLoading;
+  Set<String> get seenUserIds => _seenUserIds;
 
   /// Minimum kullanıcı sayısı (bu sayının altındaysa demo profiller eklenir)
 
@@ -61,8 +67,9 @@ class DiscoveryProvider extends ChangeNotifier {
         relationshipGoal: relationshipGoal,
       );
       
-      _users = loadedUsers;
-      _activeUsers = loadedUsers.where((u) => u.isOnline).toList();
+      // Oturum boyunca görülmüş profilleri filtrele (duplicate prevention)
+      _users = loadedUsers.where((u) => !_seenUserIds.contains(u.uid)).toList();
+      _activeUsers = _users.where((u) => u.isOnline).toList();
     } catch (e) {
       LogService.e("Error loading discovery users", e);
     } finally {
@@ -103,6 +110,9 @@ class DiscoveryProvider extends ChangeNotifier {
 
       final isMatch = await _discoveryService.swipeUser(targetUserId, swipeType: swipeType);
       
+      // Swipe başarılı: kullanıcıyı görülmüşler listesine ekle
+      _seenUserIds.add(targetUserId);
+      
       AnalyticsService().logSwipe(swipeType, targetUserId);
       
       // Increment counts (the swipe succeeded)
@@ -136,6 +146,13 @@ class DiscoveryProvider extends ChangeNotifier {
     } catch (e) {
       LogService.e("Error activating boost", e);
     }
+  }
+
+  /// Oturum boyunca biriken görülmüş kullanıcı listesini sıfırla.
+  /// Logout veya re-login durumlarında çağrılır.
+  void resetSeenUsers() {
+    _seenUserIds.clear();
+    notifyListeners();
   }
 }
 

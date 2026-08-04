@@ -77,33 +77,47 @@ class _DiscoverUserCardState extends State<DiscoverUserCard> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final borderColor = isDark ? const Color(0xFF262629) : const Color(0xFFEEEEEE);
-    final bool isBoosted = widget.user.boostedUntil != null && widget.user.boostedUntil!.isAfter(DateTime.now());
+    final bool isBoosted = widget.user.isBoosted;
+
+    // Responsive kart yüksekliği: küçük ekranlarda taşma engellenir
+    final screenHeight = MediaQuery.of(context).size.height;
+    final cardHeight = screenHeight * 0.45 < 350 ? screenHeight * 0.45 : 350.0;
 
     return RepaintBoundary(
       child: GestureDetector(
         onTap: widget.onTap,
         child: Container(
-            height: 350,
+            height: cardHeight,
             width: double.infinity,
+            padding: isBoosted ? const EdgeInsets.all(2.5) : EdgeInsets.zero,
             decoration: BoxDecoration(
-              color: theme.cardTheme.color ?? theme.colorScheme.surface,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: isBoosted ? const Color(0xFFFFD700) : borderColor,
-                width: isBoosted ? 3.0 : 1.0,
-              ),
+              gradient: isBoosted
+                  ? const LinearGradient(
+                      colors: [Color(0xFFFF9900), Color(0xFFFF0055), Color(0xFFFFD700)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    )
+                  : null,
+              color: isBoosted ? null : (theme.cardTheme.color ?? theme.colorScheme.surface),
+              borderRadius: BorderRadius.circular(22),
+              border: isBoosted ? null : Border.all(color: borderColor, width: 1.0),
               boxShadow: isBoosted
                   ? [
                       BoxShadow(
-                        color: const Color(0xFFFF9900).withValues(alpha: 0.6),
-                        blurRadius: 16,
-                        spreadRadius: 2,
-                      )
+                        color: const Color(0xFFFF4B55).withValues(alpha: 0.5),
+                        blurRadius: 20,
+                        spreadRadius: 3,
+                      ),
+                      BoxShadow(
+                        color: const Color(0xFFFFD700).withValues(alpha: 0.4),
+                        blurRadius: 10,
+                        spreadRadius: 1,
+                      ),
                     ]
                   : (isDark ? null : [AppColors.neoShadowLarge]),
             ),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(19),
               child: Stack(
                 fit: StackFit.expand,
                 children: _buildStackChildren(showLike, showNope, isBoosted),
@@ -148,27 +162,28 @@ class _DiscoverUserCardState extends State<DiscoverUserCard> {
           top: 16,
           left: 16,
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFFFF9900), Color(0xFFFF0055)],
+                colors: [Color(0xFFFF9900), Color(0xFFFF0055), Color(0xFF9000FF)],
               ),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(14),
               boxShadow: const [
-                BoxShadow(color: Color(0xFFFF0055), blurRadius: 8)
+                BoxShadow(color: Color(0xFFFF0055), blurRadius: 12, spreadRadius: 1)
               ],
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.bolt_rounded, color: Colors.white, size: 14),
-                const SizedBox(width: 3),
+                const Icon(Icons.bolt_rounded, color: Colors.white, size: 16),
+                const SizedBox(width: 4),
                 Text(
-                  'BOOST',
+                  '⚡ ÖNE ÇIKARILAN PROFİL',
                   style: GoogleFonts.outfit(
                     color: Colors.white,
                     fontWeight: FontWeight.w900,
                     fontSize: 11,
+                    letterSpacing: 0.5,
                   ),
                 ),
               ],
@@ -416,7 +431,7 @@ class _DiscoverUserCardState extends State<DiscoverUserCard> {
     if (diff.inMinutes < 60) return '${diff.inMinutes} DK ÖNCE';
     if (diff.inHours < 24) return '${diff.inHours} SAAT ÖNCE';
     if (diff.inDays < 7) return '${diff.inDays} GÜN ÖNCE';
-    return 'ÇEVRİMDIŞI';
+    return 'ÇEVRİM DIŞI';
   }
 
   double _calculateDistance(double lat1, double lon1, double lat2, double lon2) {
@@ -445,18 +460,25 @@ class _DiscoverUserCardState extends State<DiscoverUserCard> {
     double iconSize = 20,
     double size = 44,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: size,
         height: size,
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.05),
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.12)
+              : Colors.white.withValues(alpha: 0.85),
           shape: BoxShape.circle,
-          border: Border.all(color: Colors.black.withValues(alpha: 0.08)),
+          border: Border.all(
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.15)
+                : Colors.black.withValues(alpha: 0.08),
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
+              color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),

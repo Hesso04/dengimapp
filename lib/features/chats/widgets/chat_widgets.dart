@@ -362,6 +362,35 @@ class _ChatBubbleState extends State<ChatBubble> {
                 child: Column(
                   crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                   children: [
+                    // Grup Sohbeti / Karşı Taraf İsim & Profil Başlığı (Telegram / WhatsApp Tarzı)
+                    if (!isMe && widget.message.senderName != null && widget.message.senderName!.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 6),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            CircleAvatar(
+                              radius: 10,
+                              backgroundColor: AppColors.primary.withValues(alpha: 0.3),
+                              backgroundImage: (widget.message.senderAvatar != null && widget.message.senderAvatar!.isNotEmpty && widget.message.senderAvatar!.startsWith('http'))
+                                  ? CachedNetworkImageProvider(widget.message.senderAvatar!)
+                                  : null,
+                              child: (widget.message.senderAvatar == null || widget.message.senderAvatar!.isEmpty)
+                                  ? Text(widget.message.senderName![0].toUpperCase(), style: GoogleFonts.outfit(fontSize: 8, color: Colors.white, fontWeight: FontWeight.bold))
+                                  : null,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              widget.message.senderName!,
+                              style: GoogleFonts.outfit(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w900,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     if (widget.message.storyReply != null)
                       Container(
                         margin: const EdgeInsets.only(bottom: 8),

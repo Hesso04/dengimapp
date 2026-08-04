@@ -9,59 +9,60 @@ class AdService {
   AdService._internal();
 
   RewardedAd? _rewardedAd;
+  RewardedAd? _seeLikesAd;
+  RewardedAd? _messageCreditAd;
+  RewardedAd? _seeVisitorsAd;
   InterstitialAd? _interstitialAd;
-  int _numRewardedLoadAttempts = 0;
-  int _numInterstitialLoadAttempts = 0;
+
   final int maxFailedLoadAttempts = 3;
 
-  // Test Ad Unit IDs
-  static const String _androidBannerId = 'ca-app-pub-3940256099942544/6300978111';
-  static const String _iosBannerId = 'ca-app-pub-3940256099942544/2934735716';
-  
-  static const String _androidInterstitialId = 'ca-app-pub-3940256099942544/1033173712';
-  static const String _iosInterstitialId = 'ca-app-pub-3940256099942544/4411468910';
+  // Production AdMob Unit IDs
+  static const String _prodBannerId = 'ca-app-pub-6698554585648483/9090704729';
+  static const String _prodSeeLikesId = 'ca-app-pub-6698554585648483/8136715701';
+  static const String _prodMessageCreditId = 'ca-app-pub-6698554585648483/8899133037';
+  static const String _prodSeeVisitorsId = 'ca-app-pub-6698554585648483/4090373496';
 
-  static const String _androidRewardedId = 'ca-app-pub-3940256099942544/5224354917';
-  static const String _iosRewardedId = 'ca-app-pub-3940256099942544/1712485313';
+  // Test Ad Unit IDs (Fallback)
+  static const String _testBannerId = 'ca-app-pub-3940256099942544/6300978111';
+  static const String _testInterstitialId = 'ca-app-pub-3940256099942544/1033173712';
+  static const String _testRewardedId = 'ca-app-pub-3940256099942544/5224354917';
 
   String get bannerAdUnitId {
     if (kIsWeb) return '';
-    return Platform.isAndroid ? _androidBannerId : _iosBannerId;
+    return Platform.isAndroid ? _prodBannerId : _testBannerId;
   }
   
-  String get _interstitialAdUnitId {
+  String get seeLikesRewardedAdUnitId {
     if (kIsWeb) return '';
-    return Platform.isAndroid ? _androidInterstitialId : _iosInterstitialId;
+    return Platform.isAndroid ? _prodSeeLikesId : _testRewardedId;
   }
-  
-  String get _rewardedAdUnitId {
+
+  String get messageCreditRewardedAdUnitId {
     if (kIsWeb) return '';
-    return Platform.isAndroid ? _androidRewardedId : _iosRewardedId;
+    return Platform.isAndroid ? _prodMessageCreditId : _testRewardedId;
+  }
+
+  String get seeVisitorsRewardedAdUnitId {
+    if (kIsWeb) return '';
+    return Platform.isAndroid ? _prodSeeVisitorsId : _testRewardedId;
   }
 
   Future<void> init() async {
-    if (kIsWeb) return; // Ads are not supported on web in this setup
+    if (kIsWeb) return;
     await MobileAds.instance.initialize();
     _loadRewardedAd();
     _loadInterstitialAd();
   }
 
-  // --- REWARDED ADS ---
+  // --- GENERAL REWARDED AD ---
 
   void _loadRewardedAd() {
     RewardedAd.load(
-      adUnitId: _rewardedAdUnitId,
+      adUnitId: messageCreditRewardedAdUnitId,
       request: const AdRequest(),
       rewardedAdLoadCallback: RewardedAdLoadCallback(
-        onAdLoaded: (ad) {
-          _rewardedAd = ad;
-          _numRewardedLoadAttempts = 0;
-        },
-        onAdFailedToLoad: (error) {
-          _rewardedAd = null;
-          _numRewardedLoadAttempts++;
-          if (_numRewardedLoadAttempts < maxFailedLoadAttempts) _loadRewardedAd();
-        },
+        onAdLoaded: (ad) => _rewardedAd = ad,
+        onAdFailedToLoad: (error) => _rewardedAd = null,
       ),
     );
   }
@@ -71,6 +72,7 @@ class AdService {
 
     if (_rewardedAd == null) {
       _loadRewardedAd();
+      onReward(1);
       return;
     }
 
@@ -82,36 +84,121 @@ class AdService {
       onAdFailedToShowFullScreenContent: (ad, error) {
         ad.dispose();
         _loadRewardedAd();
+        onReward(1);
       },
     );
 
-    _rewardedAd!.show(onUserEarnedReward: (ad, reward) => onReward(reward.amount.toInt()));
+    _rewardedAd!.show(onUserEarnedReward: (ad, reward) => onReward(reward.amount.toInt() > 0 ? reward.amount.toInt() : 1));
     _rewardedAd = null;
+  }
+
+  // --- MESAJ KREDİSİ REWARDED AD ---
+
+  void showRewardedAdForMessageCredit({required String tier, required Function() onReward}) {
+    if (!FeatureFlagService().shouldShowAds(tier)) {
+      onReward();
+      return;
+    }
+
+    RewardedAd.load(
+      adUnitId: messageCreditRewardedAdUnitId,
+      request: const AdRequest(),
+      rewardedAdLoadCallback: RewardedAdLoadCallback(
+        onAdLoaded: (ad) {
+          _messageCreditAd = ad;
+          _messageCreditAd!.fullScreenContentCallback = FullScreenContentCallback(
+            onAdDismissedFullScreenContent: (ad) {
+              ad.dispose();
+            },
+            onAdFailedToShowFullScreenContent: (ad, error) {
+              ad.dispose();
+              onReward();
+            },
+          );
+          _messageCreditAd!.show(onUserEarnedReward: (ad, reward) => onReward());
+        },
+        onAdFailedToLoad: (error) {
+          onReward(); // Fallback reward if ad fails to load in test/dev
+        },
+      ),
+    );
+  }
+
+  // --- BEĞENİLERİ GÖR REWARDED AD ---
+
+  void showRewardedAdForSeeLikes({required String tier, required Function() onReward}) {
+    if (!FeatureFlagService().shouldShowAds(tier)) {
+      onReward();
+      return;
+    }
+
+    RewardedAd.load(
+      adUnitId: seeLikesRewardedAdUnitId,
+      request: const AdRequest(),
+      rewardedAdLoadCallback: RewardedAdLoadCallback(
+        onAdLoaded: (ad) {
+          _seeLikesAd = ad;
+          _seeLikesAd!.fullScreenContentCallback = FullScreenContentCallback(
+            onAdDismissedFullScreenContent: (ad) => ad.dispose(),
+            onAdFailedToShowFullScreenContent: (ad, error) {
+              ad.dispose();
+              onReward();
+            },
+          );
+          _seeLikesAd!.show(onUserEarnedReward: (ad, reward) => onReward());
+        },
+        onAdFailedToLoad: (error) {
+          onReward();
+        },
+      ),
+    );
+  }
+
+  // --- ZİYARETÇİYİ GÖR REWARDED AD ---
+
+  void showRewardedAdForSeeVisitors({required String tier, required Function() onReward}) {
+    if (!FeatureFlagService().shouldShowAds(tier)) {
+      onReward();
+      return;
+    }
+
+    RewardedAd.load(
+      adUnitId: seeVisitorsRewardedAdUnitId,
+      request: const AdRequest(),
+      rewardedAdLoadCallback: RewardedAdLoadCallback(
+        onAdLoaded: (ad) {
+          _seeVisitorsAd = ad;
+          _seeVisitorsAd!.fullScreenContentCallback = FullScreenContentCallback(
+            onAdDismissedFullScreenContent: (ad) => ad.dispose(),
+            onAdFailedToShowFullScreenContent: (ad, error) {
+              ad.dispose();
+              onReward();
+            },
+          );
+          _seeVisitorsAd!.show(onUserEarnedReward: (ad, reward) => onReward());
+        },
+        onAdFailedToLoad: (error) {
+          onReward();
+        },
+      ),
+    );
   }
 
   // --- INTERSTITIAL ADS ---
 
   void _loadInterstitialAd() {
     InterstitialAd.load(
-      adUnitId: _interstitialAdUnitId,
+      adUnitId: _testInterstitialId,
       request: const AdRequest(),
       adLoadCallback: InterstitialAdLoadCallback(
-        onAdLoaded: (ad) {
-          _interstitialAd = ad;
-          _numInterstitialLoadAttempts = 0;
-        },
-        onAdFailedToLoad: (error) {
-          _interstitialAd = null;
-          _numInterstitialLoadAttempts++;
-          if (_numInterstitialLoadAttempts < maxFailedLoadAttempts) _loadInterstitialAd();
-        },
+        onAdLoaded: (ad) => _interstitialAd = ad,
+        onAdFailedToLoad: (error) => _interstitialAd = null,
       ),
     );
   }
 
   void showInterstitialAd({required String tier}) {
     if (!FeatureFlagService().shouldShowAds(tier)) return;
-
     if (_interstitialAd == null) {
       _loadInterstitialAd();
       return;

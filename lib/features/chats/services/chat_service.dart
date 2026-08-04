@@ -28,9 +28,18 @@ class ChatService {
     return _firestore
         .collection('conversations')
         .where('userIds', arrayContains: user.uid)
-        .orderBy('lastMessageTime', descending: true)
         .snapshots()
-        .map((snapshot) {
+        .asyncMap((snapshot) async {
+          List<String> blockedUsers = [];
+          try {
+            final userDoc = await _firestore.collection('users').doc(user.uid).get();
+            if (userDoc.exists) {
+              blockedUsers = List<String>.from(userDoc.data()?['blockedUsers'] ?? []);
+            }
+          } catch (e) {
+            LogService.e("Failed to load blockedUsers list: $e");
+          }
+
           final chats = <ChatConversation>[];
           
           for (var doc in snapshot.docs) {
@@ -44,6 +53,11 @@ class ChatService {
             
             var chat = ChatConversation.fromFirestore(doc, user.uid);
             
+            // Engellenen kullanıcı ile olan sohbetleri listede gösterme
+            if (chat.otherUserId.isNotEmpty && blockedUsers.contains(chat.otherUserId)) {
+              continue;
+            }
+            
             if (chat.otherUserId.isNotEmpty) {
               if (_profileCache.containsKey(chat.otherUserId)) {
                 final cachedProfile = _profileCache[chat.otherUserId]!;
@@ -53,12 +67,14 @@ class ChatService {
                   isOnline: cachedProfile.isOnline,
                 );
               } else {
-                // Eğer denormalize edilmiş veri yoksa arka planda sessizce çekip önbelleğe al ve Firestore'u güncelle
                 _loadAndCacheProfile(chat.otherUserId, doc.id);
               }
             }
             chats.add(chat);
           }
+          
+          // Son mesaj zamanına göre sıralama
+          chats.sort((a, b) => b.lastMessageTime.compareTo(a.lastMessageTime));
           return chats;
         });
   }
@@ -154,21 +170,45 @@ class ChatService {
       lastMessagePreview = "💬 Hikayeye yanıt";
     }
 
-    // Alıcının activeChatId'sini kontrol et
+    // Grubun veya sohbetin bilgilerini al
+    final convDoc = await _firestore.collection('conversations').doc(chatId).get();
+    final convData = convDoc.data() ?? {};
+    final bool isGroup = convData['isGroup'] == true || convData['type'] == 'group';
+    final List<String> memberIds = List<String>.from(convData['userIds'] ?? []);
+
+    // Alıcının activeChatId'sini kontrol et (1v1 ise)
     bool isReceiverInChat = false;
+    if (!isGroup && receiverId.isNotEmpty) {
+      try {
+        final receiverDoc = await _firestore.collection('users').doc(receiverId).get();
+        if (receiverDoc.exists) {
+          final receiverActiveChatId = receiverDoc.data()?['activeChatId'];
+          isReceiverInChat = receiverActiveChatId == chatId;
+        }
+      } catch (e) {
+        LogService.e("Failed to check receiver activeChatId: $e");
+      }
+    }
+
+    // Sender profile info
+    String senderName = 'Kullanıcı';
+    String senderAvatar = '';
     try {
-      final receiverDoc = await _firestore.collection('users').doc(receiverId).get();
-      if (receiverDoc.exists) {
-        final receiverActiveChatId = receiverDoc.data()?['activeChatId'];
-        isReceiverInChat = receiverActiveChatId == chatId;
+      final senderDoc = await _firestore.collection('users').doc(user.uid).get();
+      if (senderDoc.exists) {
+        final senderData = senderDoc.data() ?? {};
+        senderName = senderData['name'] ?? senderData['fullName'] ?? 'Kullanıcı';
+        senderAvatar = (senderData['photoUrls'] as List?)?.firstOrNull ?? senderData['imageUrl'] ?? '';
       }
     } catch (e) {
-      LogService.e("Failed to check receiver activeChatId: $e");
+      LogService.w("Failed to load sender info for message: $e");
     }
 
     // 1. Mesajı alt koleksiyona ekle
-    final messageData = {
+    final messageData = <String, dynamic>{
       'senderId': user.uid,
+      'senderName': senderName,
+      'senderAvatar': senderAvatar,
       'content': content,
       'timestamp': timestamp,
       'isRead': isReceiverInChat,
@@ -194,8 +234,16 @@ class ChatService {
       'lastMessageSenderId': user.uid,
     };
 
-    if (incrementUnread && !isReceiverInChat) {
-      updateData['unreadCounts.$receiverId'] = FieldValue.increment(1);
+    if (incrementUnread) {
+      if (isGroup) {
+        for (var memberId in memberIds) {
+          if (memberId != user.uid) {
+            updateData['unreadCounts.$memberId'] = FieldValue.increment(1);
+          }
+        }
+      } else if (receiverId.isNotEmpty && !isReceiverInChat) {
+        updateData['unreadCounts.$receiverId'] = FieldValue.increment(1);
+      }
     }
 
     await _firestore.collection('conversations').doc(chatId).update(updateData);
@@ -205,8 +253,14 @@ class ChatService {
       'messageCount': FieldValue.increment(1),
     });
 
-    // 4. Send Push Notification (sadece alıcı sohbette değilken)
-    if (!isReceiverInChat) {
+    // 4. Send Push Notification
+    if (isGroup) {
+      for (var memberId in memberIds) {
+        if (memberId != user.uid) {
+          await _sendChatNotification(memberId, lastMessagePreview, chatId, messageId);
+        }
+      }
+    } else if (receiverId.isNotEmpty && !isReceiverInChat) {
       await _sendChatNotification(receiverId, lastMessagePreview, chatId, messageId);
     }
   }
@@ -241,41 +295,39 @@ class ChatService {
   }
 
   /// Yeni Sohbet Başlat veya Mevcut Olanı Getir
+  /// Deterministic ID kullanır: iki UID'nin alfabetik sıralı halleriyle
+  /// tek bir doküman ID'si üretir. Bu sayede her startChat'te tüm
+  /// sohbetleri taramak yerine .doc(id).get() ile O(1) erişim sağlanır.
   Future<String> startChat(String receiverId) async {
     final user = currentUser;
     if (user == null) throw Exception("Giriş yapılmamış");
-
-    // Önce mevcut sohbet var mı kontrol et
-    // Not: userIds dizisi sıralı değilse [user.uid, receiverId] ve [receiverId, user.uid] permütasyonlarını kontrol etmek zor olabilir.
-    // İpucu: 'userIds' array-contains sorgusu ile kullanıcının sohbetlerini çekip memory'de receiverId'yi kontrol etmek,
-    // çok fazla sohbet yoksa (MVP için) daha ucuzdur.
-    // Büyük ölçekte userIds'i sorted saklamak ve composite key (uid1_uid2) kullanmak daha iyidir.
-    
-    // Yöntem 1: Basit sorgu
-    final query = await _firestore
-        .collection('conversations')
-        .where('userIds', arrayContains: user.uid)
-        .get();
-
-    for (var doc in query.docs) {
-      final List<dynamic> users = doc['userIds'];
-      if (users.length == 2 && users.contains(receiverId)) {
-        return doc.id; // Zaten var
-      }
+    if (receiverId.isEmpty || receiverId == user.uid) {
+      throw Exception("Geçersiz alıcı");
     }
 
-    // Yoksa yeni oluştur
-    final docRef = await _firestore.collection('conversations').add({
-      'userIds': [user.uid, receiverId],
+    // Deterministic ID: küçük_uid_büyük_uid
+    final ids = [user.uid, receiverId]..sort();
+    final deterministicId = '${ids[0]}_${ids[1]}';
+
+    final convRef = _firestore.collection('conversations').doc(deterministicId);
+    final existing = await convRef.get();
+
+    if (existing.exists) {
+      return deterministicId; // Zaten var, dokunma
+    }
+
+    // Yoksa oluştur (yarış koşuluna karşı set merge + create bilinçli olarak)
+    // Not: Cloud Functions tarafı da bu ID ile yazabilir, çakışma riski yok.
+    await convRef.set({
+      'userIds': ids,
       'lastMessage': '',
       'lastMessageTime': FieldValue.serverTimestamp(),
-      'unreadCounts': {
-        user.uid: 0,
-        receiverId: 0,
-      }
-    });
+      'createdAt': FieldValue.serverTimestamp(),
+      'unreadCount': { ids[0]: 0, ids[1]: 0 },   // canonical field (eski kodlarla uyum için unreadCounts da yazılıyor)
+      'unreadCounts': { ids[0]: 0, ids[1]: 0 },
+    }, SetOptions(merge: true));
 
-    return docRef.id;
+    return deterministicId;
   }
   
   
@@ -286,12 +338,18 @@ class ChatService {
 
     try {
       // 1. Sohbet belgesindeki okunmamış sayısını sıfırla
-      await _firestore.collection('conversations').doc(chatId).set({
-        'unreadCount': { user.uid: 0 },
-        'unreadCounts': { user.uid: 0 },
-      }, SetOptions(merge: true));
+      // unreadCount canonical, unreadCounts eski kodla geriye uyumluluk için tutuluyor.
+      final updates = <String, dynamic>{
+        'unreadCount.$user.uid': 0,
+        'unreadCounts.$user.uid': 0,
+      };
+      await _firestore
+          .collection('conversations')
+          .doc(chatId)
+          .set(updates, SetOptions(merge: true));
 
-      // 2. Karşı tarafın gönderdiği okunmamış mesajları bellek içi filtreleme ile güncelle (Composite Index Hatasını önler)
+      // 2. Karşı tarafın gönderdiği okunmamış mesajları güncelle.
+      //    Sadece gerekli alanları update et; tüm belgeyi çekme.
       final unreadQuery = await _firestore
           .collection('conversations')
           .doc(chatId)
@@ -590,8 +648,8 @@ class ChatService {
       final batch = _firestore.batch();
       for (var doc in conversations.docs) {
         batch.set(doc.reference, {
-          'unreadCount': { user.uid: 0 },
-          'unreadCounts': { user.uid: 0 },
+          'unreadCount.${user.uid}': 0,
+          'unreadCounts.${user.uid}': 0,
         }, SetOptions(merge: true));
       }
       await batch.commit();
