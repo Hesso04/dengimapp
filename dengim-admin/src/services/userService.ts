@@ -5,6 +5,7 @@ import {
     doc,
     updateDoc,
     deleteDoc,
+    writeBatch,
     query,
     orderBy,
     limit,
@@ -38,33 +39,25 @@ export const UserService = {
                 const photoList = data.photoUrls || data.photos || (data.profileImageUrl ? [data.profileImageUrl] : []) || [];
                 
                 // Kayıt türü tespiti
-                let authProvider: 'google' | 'facebook' | 'phone' | 'email' = 'email';
-                const providerStr = (data.providerId || data.authProvider || data.provider || "").toString().toLowerCase();
-                const phoneStr = data.phoneNumber || data.phone;
-
-                if (providerStr.includes("google") || data.googleId) {
-                    authProvider = "google";
-                } else if (providerStr.includes("facebook") || data.facebookId) {
-                    authProvider = "facebook";
-                } else if (phoneStr || providerStr.includes("phone")) {
-                    authProvider = "phone";
-                }
+                let authProvider: User['authProvider'] = 'email';
+                if (data.email?.endsWith('@gmail.com') || data.googleId) authProvider = 'google';
+                if (data.appleId) authProvider = 'apple';
+                if (data.phoneNumber) authProvider = 'phone';
 
                 users.push({
                     id: docSnap.id,
-                    name: data.name || data.fullName || 'İsimsiz Kullanıcı',
-                    email: data.email || '',
-                    phone: phoneStr || undefined,
-                    authProvider,
-                    photos: photoList,
-                    credits: data.credits || 0,
-                    status: data.isBanned ? 'banned' : (data.status || (data.isVerified ? 'verified' : 'active')),
-                    lastActive: data.lastActive?.toDate ? data.lastActive.toDate() : new Date(),
+                    name: data.name || data.displayName || "İsimsiz Kullanıcı",
+                    email: data.email || "-",
+                    phone: data.phoneNumber || data.phone || "-",
+                    photoUrls: photoList.length > 0 ? photoList : ["https://ui-avatars.com/api/?name=User&background=random"],
                     isPremium: data.isPremium || false,
-                    premiumTier: data.premiumTier || undefined,
-                    gender: data.gender || 'Erkek',
-                    age: data.age || 18,
-                    location: data.location || { city: 'Belirtilmedi', country: 'Türkiye' },
+                    subscriptionTier: data.subscriptionTier || data.premiumTier || 'free',
+                    credits: data.credits || 0,
+                    status: data.isBanned ? 'banned' : (data.isFrozen ? 'suspended' : 'active'),
+                    createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : (data.createdAt ? new Date(data.createdAt) : new Date()),
+                    lastActive: data.lastActive?.toDate ? data.lastActive.toDate() : (data.lastActive ? new Date(data.lastActive) : new Date()),
+                    searchName: data.searchName || data.name?.toLowerCase() || '',
+                    authProvider: authProvider,
                     isVerified: data.isVerified || false,
                     reportCount: data.reportCount || 0,
                     matchCount: data.matchCount || 0,

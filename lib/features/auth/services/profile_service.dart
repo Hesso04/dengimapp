@@ -76,7 +76,7 @@ class ProfileService {
       'uid': user.uid,
       'email': user.email ?? '',
       'name': name,
-      'age': initialAge, // ← YENİ: Security rules için gerekli
+      'age': initialAge,
       'birthDate': birthDate != null ? Timestamp.fromDate(birthDate) : null,
       'gender': gender,
       'country': country,
@@ -90,12 +90,13 @@ class ProfileService {
       'subscriptionTier': 'free',
       'credits': initialCredits,
       'referralCode': myReferralCode,
-      'referredBy': inviterUid,
+      'referredBy': inviterUid ?? '',
+      'hasUsedReferralCode': inviterUid != null,
       'hasReceivedWelcomeBonus': true,
       'createdAt': FieldValue.serverTimestamp(),
       'lastActive': FieldValue.serverTimestamp(),
       'isOnline': true,
-      'blockedUsers': [], // Initialize empty
+      'blockedUsers': [], 
       'searchName': name.trim().toLowerCase(),
     };
 
@@ -105,6 +106,76 @@ class ProfileService {
     } catch (e) {
       LogService.e("Firestore error in createProfile", e);
       rethrow;
+    }
+  }
+
+  /// Sonradan Referans Kodu Uygula (Ayarlar Ekranından)
+  Future<Map<String, dynamic>> applyReferralCode(String code) async {
+    final user = _currentUser;
+    if (user == null) {
+      return {'success': false, 'message': 'Oturum açmanız gerekmektedir.'};
+    }
+    final cleanCode = code.trim().toUpperCase();
+    if (cleanCode.isEmpty) {
+      return {'success': false, 'message': 'Lütfen geçerli bir referans kodu giriniz.'};
+    }
+
+    try {
+      final userDocRef = _firestore.collection('users').doc(user.uid);
+      final userSnap = await userDocRef.get();
+
+      if (!userSnap.exists) {
+        return {'success': false, 'message': 'Kullanıcı profili bulunamadı.'};
+      }
+
+      final userData = userSnap.data()!;
+      if (userData['hasUsedReferralCode'] == true || (userData['referredBy'] != null && userData['referredBy'].toString().isNotEmpty)) {
+        return {'success': false, 'message': 'Zaten bir referans kodu kullandınız.'};
+      }
+
+      final myCode = userData['referralCode'] ?? '';
+      if (myCode == cleanCode) {
+        return {'success': false, 'message': 'Kendi referans kodunuzu kullanamazsınız.'};
+      }
+
+      final inviterQuery = await _firestore
+          .collection('users')
+          .where('referralCode', isEqualTo: cleanCode)
+          .limit(1)
+          .get();
+
+      if (inviterQuery.docs.isEmpty) {
+        return {'success': false, 'message': 'Geçersiz referans kodu.'};
+      }
+
+      final inviterDoc = inviterQuery.docs.first;
+      final inviterUid = inviterDoc.id;
+
+      if (inviterUid == user.uid) {
+        return {'success': false, 'message': 'Kendi referans kodunuzu kullanamazsınız.'};
+      }
+
+      // Kullanıcıya +10 Kredi ve referredBy güncelle
+      await userDocRef.update({
+        'credits': FieldValue.increment(10),
+        'referredBy': inviterUid,
+        'hasUsedReferralCode': true,
+      });
+
+      // Davet edene +15 Kredi ekle
+      await _firestore.collection('users').doc(inviterUid).update({
+        'credits': FieldValue.increment(CreditService.rewardInviteFriend),
+      });
+
+      LogService.i("Referral code applied manually: $cleanCode -> Inviter: $inviterUid");
+
+      return {
+        'success': true,
+        'message': 'Tebrikler! Davet kodunu kullandınız, +10 Kredi hesabınıza eklendi! 🎉'
+      };
+    } catch (e) {
+      LogService.e("Apply referral code error", e);
+      return {'success': false, 'message': 'Referans kodu uygulanırken bir hata oluştu: $e'};
     }
   }
 
@@ -264,16 +335,7 @@ class ProfileService {
   }
 
   Future<void> addCredits(int amount) async {
-    final uid = _currentUser?.uid;
-    if (uid == null) return;
-    
-    try {
-      await _firestore.collection('users').doc(uid).update({
-        'credits': FieldValue.increment(amount),
-      });
-    } catch (e) {
-      LogService.e("Add credits error", e);
-    }
+    await CreditService().addCredits(amount, 'system_reward');
   }
 
   /// Kullanıcı profilini güncelle

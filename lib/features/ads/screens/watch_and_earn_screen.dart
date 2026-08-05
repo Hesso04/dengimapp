@@ -251,7 +251,7 @@ class _WatchAndEarnScreenState extends State<WatchAndEarnScreen>
                   style: GoogleFonts.outfit(
                     fontSize: 14,
                     fontWeight: FontWeight.w900,
-                    color: textColor.withValues(alpha: 0.6),
+                    color: isDark ? Colors.white70 : const Color(0xFF333333),
                     letterSpacing: 1.0,
                   ),
                 ),
@@ -317,7 +317,7 @@ class _WatchAndEarnScreenState extends State<WatchAndEarnScreen>
                     style: GoogleFonts.outfit(
                       fontSize: 11,
                       fontWeight: FontWeight.w800,
-                      color: textColor.withValues(alpha: 0.5),
+                      color: isDark ? Colors.white70 : const Color(0xFF555555),
                     ),
                   ),
                 ],
@@ -328,20 +328,19 @@ class _WatchAndEarnScreenState extends State<WatchAndEarnScreen>
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
-                color: const Color(0xFFFF5722).withValues(alpha: 0.15),
+                color: const Color(0xFFFF5722),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFFF5722)),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.local_fire_department_rounded, color: Color(0xFFFF5722), size: 18),
+                  const Icon(Icons.local_fire_department_rounded, color: Colors.white, size: 18),
                   const SizedBox(width: 4),
                   Text(
                     '${creditProvider.streak} GÜN',
                     style: GoogleFonts.outfit(
                       fontSize: 12,
                       fontWeight: FontWeight.w900,
-                      color: const Color(0xFFFF5722),
+                      color: Colors.white,
                     ),
                   ),
                 ],
@@ -376,21 +375,21 @@ class _WatchAndEarnScreenState extends State<WatchAndEarnScreen>
                 style: GoogleFonts.outfit(
                   fontSize: 12,
                   fontWeight: FontWeight.w900,
-                  color: textColor.withValues(alpha: 0.6),
+                  color: isDark ? Colors.white70 : const Color(0xFF333333),
                 ),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.15),
+                  color: AppColors.primary,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
                   '$watched / $maxWatches İZLENDİ',
                   style: GoogleFonts.outfit(
-                    fontSize: 12,
+                    fontSize: 11,
                     fontWeight: FontWeight.w900,
-                    color: AppColors.primary,
+                    color: Colors.white,
                   ),
                 ),
               ),
@@ -414,7 +413,8 @@ class _WatchAndEarnScreenState extends State<WatchAndEarnScreen>
                 'Her reklam +3 Kredi kazandırır',
                 style: GoogleFonts.outfit(
                   fontSize: 12,
-                  color: textColor.withValues(alpha: 0.5),
+                  color: isDark ? Colors.white70 : const Color(0xFF555555),
+                  fontWeight: FontWeight.w600,
                 ),
               ),
               Text(
@@ -524,7 +524,7 @@ class _WatchAndEarnScreenState extends State<WatchAndEarnScreen>
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFD700).withValues(alpha: 0.2),
+                  color: const Color(0xFFFFD700),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
@@ -532,7 +532,7 @@ class _WatchAndEarnScreenState extends State<WatchAndEarnScreen>
                   style: GoogleFonts.outfit(
                     fontSize: 11,
                     fontWeight: FontWeight.w900,
-                    color: const Color(0xFFFFD700),
+                    color: Colors.black,
                   ),
                 ),
               ),
@@ -561,7 +561,9 @@ class _WatchAndEarnScreenState extends State<WatchAndEarnScreen>
               style: GoogleFonts.outfit(
                 fontSize: 13,
                 fontWeight: FontWeight.w900,
-                color: claimed ? textColor.withValues(alpha: 0.4) : Colors.white,
+                color: claimed
+                    ? (isDark ? Colors.white54 : Colors.black54)
+                    : Colors.white,
               ),
             ),
           ),
@@ -666,10 +668,10 @@ class _WatchAndEarnScreenState extends State<WatchAndEarnScreen>
                   actionFn,
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: isDark ? const Color(0xFF262934) : const Color(0xFFF0F2F5),
-                  foregroundColor: textColor,
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
                   elevation: 0,
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 child: FittedBox(
@@ -679,7 +681,7 @@ class _WatchAndEarnScreenState extends State<WatchAndEarnScreen>
                     style: GoogleFonts.outfit(
                       fontSize: 12,
                       fontWeight: FontWeight.w900,
-                      color: AppColors.primary,
+                      color: Colors.white,
                     ),
                   ),
                 ),

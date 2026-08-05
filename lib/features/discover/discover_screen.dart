@@ -22,6 +22,7 @@ import 'widgets/discover_header.dart';
 import 'widgets/discover_empty_state.dart';
 import 'widgets/match_overlay.dart';
 import 'widgets/discover_user_card.dart';
+import 'widgets/feature_action_modal.dart';
 import '../../core/widgets/shimmer_card.dart';
 
 class DiscoverScreen extends StatefulWidget {
@@ -160,21 +161,14 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     if (TierLimits.canSuperLike(userTier)) {
       await _performSuperLike(user);
     } else {
-      final creditProvider = context.read<CreditProvider>();
-      if (creditProvider.balance >= CreditService.costSuperLike) {
-        final success = await creditProvider.spendSuperLike();
-        if (success) {
-          await _performSuperLike(user);
-        }
-      } else {
-        if (mounted) {
-          PremiumRequiredModal.show(
-            context,
-            featureName: 'Super Like',
-            requiredTier: 'gold',
-            creditCost: CreditService.costSuperLike,
-          );
-        }
+      if (mounted) {
+        FeatureActionModal.show(
+          context: context,
+          featureType: DiscoverFeatureType.superLike,
+          onActivated: () {
+            _performSuperLike(user);
+          },
+        );
       }
     }
   }
@@ -245,21 +239,14 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     if (TierLimits.canUndo(tier)) {
       await _executeUndo();
     } else {
-      final creditProvider = context.read<CreditProvider>();
-      if (creditProvider.balance >= CreditService.costUndoSwipe) {
-        final success = await creditProvider.spendUndo();
-        if (success) {
-          await _executeUndo();
-        }
-      } else {
-        if (mounted) {
-          PremiumRequiredModal.show(
-            context,
-            featureName: 'Geri Alma (Undo)',
-            requiredTier: 'gold',
-            creditCost: CreditService.costUndoSwipe,
-          );
-        }
+      if (mounted) {
+        FeatureActionModal.show(
+          context: context,
+          featureType: DiscoverFeatureType.rewind,
+          onActivated: () {
+            _executeUndo();
+          },
+        );
       }
     }
   }
@@ -327,22 +314,14 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     if (TierLimits.canBoost(tier)) {
       _showBoostActivationDialog();
     } else {
-      // Free kullanıcı - kredi ile boost alabilir
-      final creditProvider = context.read<CreditProvider>();
-      if (creditProvider.balance >= CreditService.costBoost) {
-        final success = await creditProvider.spendBoost();
-        if (success) {
-          _showBoostActivationDialog();
-        }
-      } else {
-        if (mounted) {
-          PremiumRequiredModal.show(
-            context,
-            featureName: 'Boost',
-            requiredTier: 'gold',
-            creditCost: CreditService.costBoost,
-          );
-        }
+      if (mounted) {
+        FeatureActionModal.show(
+          context: context,
+          featureType: DiscoverFeatureType.boost,
+          onActivated: () {
+            _showBoostActivationDialog();
+          },
+        );
       }
     }
   }
@@ -459,96 +438,106 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   }
 
   Widget _buildNonPremiumBanner(BuildContext context, bool isDark) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 6, 16, 10),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isDark
-              ? [const Color(0xFF1E1B2E), const Color(0xFF121418)]
-              : [const Color(0xFFFFF7E6), Colors.white],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFFFFD700).withValues(alpha: isDark ? 0.35 : 0.6),
-          width: 1.2,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFFFD700).withValues(alpha: isDark ? 0.08 : 0.12),
-            blurRadius: 10,
-            spreadRadius: 1,
+    final user = context.watch<UserProvider>().currentUser;
+    final isGold = user?.subscriptionTier == 'gold';
+    
+    final title = isGold ? "Platinum Üyelik" : "Gold & Platinum Üyelik";
+    final subtitle = isGold 
+        ? "Sınırsız Süper Beğeni ve Geri Al ile öne geç!" 
+        : "Sınırsız beğeni ve Seni Beğenenleri gör!";
+    final buttonText = isGold ? "Süper Yükselt" : "Yükselt";
+
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const PremiumOfferScreen()),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(16, 6, 16, 10),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF8A2BE2), Color(0xFF4A00E0)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(7),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: const Color(0xFFFFD700).withValues(alpha: 0.6),
+            width: 1.5,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF8A2BE2).withValues(alpha: 0.35),
+              blurRadius: 14,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+                ),
+                shape: BoxShape.circle,
               ),
-              shape: BoxShape.circle,
+              child: const Icon(Icons.star_rounded, color: Colors.black, size: 18),
             ),
-            child: const Icon(Icons.star_rounded, color: Colors.white, size: 16),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  "Gold & Platinum Üyelik",
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.outfit(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                    color: isDark ? Colors.white : Colors.black,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.outfit(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                    ),
                   ),
-                ),
-                Text(
-                  "Sınırsız beğeni ve Seni Beğenenleri gör!",
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.outfit(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                    color: isDark ? Colors.white70 : Colors.black54,
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.outfit(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white70,
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              HapticFeedback.lightImpact();
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const PremiumOfferScreen()),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFFFD700),
-              foregroundColor: Colors.black,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              visualDensity: VisualDensity.compact,
-            ),
-            child: Text(
-              "Yükselt",
-              style: GoogleFonts.outfit(
-                fontSize: 11,
-                fontWeight: FontWeight.w900,
+                ],
               ),
             ),
-          ),
-        ],
+            ElevatedButton(
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const PremiumOfferScreen()),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFFD700),
+                foregroundColor: Colors.black,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              child: Text(buttonText, style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.w900)),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -597,7 +586,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                               setState(() => _filterSettings = settings);
                             },
                           ),
-                          if (!(context.watch<UserProvider>().currentUser?.isPremium ?? false))
+                          if ((context.watch<UserProvider>().currentUser?.subscriptionTier ?? 'free') != 'platinum')
                             _buildNonPremiumBanner(context, isDark),
                         ],
                       ),

@@ -287,6 +287,7 @@ class _PremiumOfferScreenState extends State<PremiumOfferScreen> {
   }
 
   Widget _buildTierToggle(bool isDark) {
+    final inactiveColor = isDark ? Colors.white54 : Colors.black54;
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
@@ -315,7 +316,7 @@ class _PremiumOfferScreenState extends State<PremiumOfferScreen> {
                   children: [
                     Icon(
                       Icons.star_rounded,
-                      color: _selectedTierIndex == 0 ? Colors.black : Colors.grey,
+                      color: _selectedTierIndex == 0 ? Colors.black : inactiveColor,
                       size: 20,
                     ),
                     const SizedBox(width: 8),
@@ -324,7 +325,7 @@ class _PremiumOfferScreenState extends State<PremiumOfferScreen> {
                       style: GoogleFonts.outfit(
                         fontWeight: FontWeight.w900,
                         fontSize: 15,
-                        color: _selectedTierIndex == 0 ? Colors.black : Colors.grey,
+                        color: _selectedTierIndex == 0 ? Colors.black : inactiveColor,
                       ),
                     ),
                   ],
@@ -352,7 +353,7 @@ class _PremiumOfferScreenState extends State<PremiumOfferScreen> {
                   children: [
                     Icon(
                       Icons.workspace_premium_rounded,
-                      color: Colors.white,
+                      color: _selectedTierIndex == 1 ? Colors.white : inactiveColor,
                       size: 20,
                     ),
                     const SizedBox(width: 8),
@@ -361,7 +362,7 @@ class _PremiumOfferScreenState extends State<PremiumOfferScreen> {
                       style: GoogleFonts.outfit(
                         fontWeight: FontWeight.w900,
                         fontSize: 15,
-                        color: _selectedTierIndex == 1 ? Colors.white : Colors.grey,
+                        color: _selectedTierIndex == 1 ? Colors.white : inactiveColor,
                       ),
                     ),
                   ],
@@ -383,7 +384,9 @@ class _PremiumOfferScreenState extends State<PremiumOfferScreen> {
     required SubscriptionProvider provider,
   }) {
     final isPlatinum = tierKey == 'platinum';
-    final accentColor = isPlatinum ? AppColors.primary : const Color(0xFFFFD700);
+    final accentColor = isPlatinum 
+        ? AppColors.primary 
+        : (isDark ? const Color(0xFFFFD700) : const Color(0xFFB58A18));
 
     final platinumFeatures = [
       '⚡ Beğenilerde En Üst Sırada Gösterim (Priority Likes)',
@@ -566,6 +569,8 @@ class _PremiumOfferScreenState extends State<PremiumOfferScreen> {
     required bool isDark,
     required VoidCallback onTap,
   }) {
+    final isPlatinum = accentColor == AppColors.primary;
+
     return GestureDetector(
       onTap: () {
         HapticFeedback.selectionClick();
@@ -597,7 +602,9 @@ class _PremiumOfferScreenState extends State<PremiumOfferScreen> {
                 style: GoogleFonts.outfit(
                   fontSize: 10,
                   fontWeight: FontWeight.w900,
-                  color: isSelected ? Colors.black : Colors.white,
+                  color: isSelected 
+                      ? (isPlatinum ? Colors.white : Colors.black) 
+                      : (isDark ? Colors.white70 : Colors.black87),
                 ),
               ),
             ),

@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/services/biometric_service.dart';
+import '../../core/providers/user_provider.dart';
+import 'services/auth_service.dart';
+import 'login_screen.dart';
 
 class BiometricLockScreen extends StatefulWidget {
   final VoidCallback onUnlocked;
@@ -19,7 +23,9 @@ class _BiometricLockScreenState extends State<BiometricLockScreen> {
   @override
   void initState() {
     super.initState();
-    _triggerAuth();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _triggerAuth();
+    });
   }
 
   Future<void> _triggerAuth() async {
@@ -28,6 +34,17 @@ class _BiometricLockScreenState extends State<BiometricLockScreen> {
       _isAuthenticating = true;
       _errorMessage = null;
     });
+
+    final available = await BiometricService().isBiometricAvailable();
+    if (!available) {
+      if (mounted) {
+        setState(() {
+          _isAuthenticating = false;
+          _errorMessage = 'Cihazınızda tanımlı biyometrik kimlik doğrulaması veya kilit şifresi bulunamadı.';
+        });
+      }
+      return;
+    }
 
     final success = await BiometricService().authenticate();
     if (mounted) {
@@ -44,11 +61,25 @@ class _BiometricLockScreenState extends State<BiometricLockScreen> {
     }
   }
 
+  Future<void> _logout() async {
+    try {
+      await BiometricService().setBiometricLockEnabled(false);
+      await AuthService().signOut();
+      if (mounted) {
+        context.read<UserProvider>().clearUser();
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+          (route) => false,
+        );
+      }
+    } catch (_) {}
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor = isDark ? const Color(0xFF090A0C) : const Color(0xFFF7F8FA);
-    final textColor = isDark ? Colors.white : Colors.black;
+    final bgColor = isDark ? AppColors.scaffoldDark : AppColors.scaffold;
+    final textColor = isDark ? Colors.white : Colors.black87;
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -84,32 +115,57 @@ class _BiometricLockScreenState extends State<BiometricLockScreen> {
                   textAlign: TextAlign.center,
                   style: GoogleFonts.outfit(
                     fontSize: 13,
-                    color: textColor.withValues(alpha: 0.6),
+                    color: isDark ? Colors.white70 : Colors.black54,
                     height: 1.5,
                   ),
                 ),
                 if (_errorMessage != null) ...[
                   const SizedBox(height: 20),
-                  Text(
-                    _errorMessage!,
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.outfit(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.error,
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: AppColors.error.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
+                    ),
+                    child: Text(
+                      _errorMessage!,
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.outfit(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.error,
+                      ),
                     ),
                   ),
                 ],
-                const SizedBox(height: 40),
+                const SizedBox(height: 36),
                 ElevatedButton.icon(
-                  onPressed: _triggerAuth,
-                  icon: const Icon(Icons.lock_open_rounded, size: 20),
-                  label: Text('KİLİDİ AÇ', style: GoogleFonts.outfit(fontWeight: FontWeight.w900)),
+                  onPressed: _isAuthenticating ? null : _triggerAuth,
+                  icon: _isAuthenticating
+                      ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                      : const Icon(Icons.lock_open_rounded, size: 20),
+                  label: Text(
+                    _isAuthenticating ? 'DOĞRULANIYOR...' : 'KİLİDİ AÇ',
+                    style: GoogleFonts.outfit(fontWeight: FontWeight.w900),
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
                     minimumSize: const Size(double.infinity, 52),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextButton(
+                  onPressed: _logout,
+                  child: Text(
+                    'Çıkış Yap / Hesabı Yeniden Aç',
+                    style: GoogleFonts.outfit(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white60 : Colors.black54,
+                    ),
                   ),
                 ),
               ],

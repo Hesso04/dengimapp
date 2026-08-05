@@ -10,7 +10,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
 
 class CreateProfileScreen extends StatefulWidget {
-  const CreateProfileScreen({super.key});
+  final String? initialReferralCode;
+  const CreateProfileScreen({super.key, this.initialReferralCode});
 
   @override
   State<CreateProfileScreen> createState() => _CreateProfileScreenState();
@@ -243,6 +244,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
         bio: _bioController.text.trim(),
         job: _jobController.text.trim(),
         education: _educationController.text.trim(),
+        referredByCode: widget.initialReferralCode,
       );
 
       await _fetchAndSaveLocation();
@@ -276,6 +278,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
         bio: _bioController.text.trim(),
         job: _jobController.text.trim(),
         education: '',
+        referredByCode: widget.initialReferralCode,
       );
       await _fetchAndSaveLocation();
       await userProvider.loadCurrentUser();

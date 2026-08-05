@@ -11,12 +11,15 @@ class BiometricService {
   final LocalAuthentication _auth = LocalAuthentication();
   static const String _prefKeyBiometricEnabled = 'biometric_lock_enabled';
 
-  /// Cihaz biyometrik kimlik doğrulamayı (Yüz / Parmak İzi) destekliyor mu?
+  /// Cihaz biyometrik kimlik doğrulamayı (Yüz / Parmak İzi) veya cihaz kilidini destekliyor mu?
   Future<bool> isBiometricAvailable() async {
     try {
       final bool canAuthenticateWithBiometrics = await _auth.canCheckBiometrics;
-      final bool canAuthenticate = canAuthenticateWithBiometrics || await _auth.isDeviceSupported();
-      return canAuthenticate;
+      final bool isDeviceSupported = await _auth.isDeviceSupported();
+      final List<BiometricType> availableBiometrics = await _auth.getAvailableBiometrics();
+      
+      // En az bir biyometrik yöntem (veya cihaz kilidi) tanımlı ve destekleniyor mu?
+      return (canAuthenticateWithBiometrics || isDeviceSupported) && (availableBiometrics.isNotEmpty || isDeviceSupported);
     } catch (e) {
       LogService.e("isBiometricAvailable error", e);
       return false;
@@ -40,12 +43,16 @@ class BiometricService {
   Future<bool> authenticate() async {
     try {
       final available = await isBiometricAvailable();
-      if (!available) return true; // Cihaz desteklemiyorsa kilit açılır
+      if (!available) {
+        LogService.w("Biometrics not available on device during authentication");
+        return false;
+      }
 
       final bool didAuthenticate = await _auth.authenticate(
         localizedReason: 'Dengim uygulamasına erişmek için kimliğinizi doğrulayın',
         options: const AuthenticationOptions(
           stickyAuth: true,
+          useErrorDialogs: true,
           biometricOnly: false,
         ),
       );

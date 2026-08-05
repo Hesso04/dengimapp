@@ -32,6 +32,7 @@ class UserProfile {
   final String role; // as String for easier mapping
   final String referralCode;
   final String? referredBy;
+  final bool hasUsedReferralCode; // YENİ
   final List<String> achievements;
   
   // Konum
@@ -77,6 +78,7 @@ class UserProfile {
     this.role = 'user',
     this.referralCode = '',
     this.referredBy,
+    this.hasUsedReferralCode = false, // YENİ
     this.achievements = const [],
     this.distance = 0,
     this.latitude,
@@ -177,6 +179,7 @@ class UserProfile {
       'role': role,
       'referralCode': referralCode,
       'referredBy': referredBy,
+      'hasUsedReferralCode': hasUsedReferralCode, // YENİ
       'achievements': achievements,
       'latitude': latitude,
       'longitude': longitude,
@@ -238,6 +241,7 @@ class UserProfile {
           ? map['referralCode']
           : generateReferralCode(map['uid'] ?? ''),
       referredBy: map['referredBy'],
+      hasUsedReferralCode: map['hasUsedReferralCode'] ?? false, // YENİ
       achievements: List<String>.from(map['achievements'] ?? []),
       latitude: map['latitude']?.toDouble(),
       longitude: map['longitude']?.toDouble(),

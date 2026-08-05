@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../utils/log_service.dart';
+import '../../features/auth/services/profile_service.dart';
 
 /// Kredi Sistemi Servisi
 /// Kullanıcılar kredi kazanabilir (reklam izleme, günlük giriş, başarımlar) 
@@ -84,57 +85,75 @@ class CreditService {
     }
   }
 
-  /// Mesaj kredisi kullan (1 adet düş)
+  /// Mesaj kredisi kullan (1 adet düş) - Transaction ile atomik
   Future<bool> useMessageCredit() async {
     if (_uid == null) return true;
     try {
-      final info = await getTodayMessageCreditInfo();
-      final current = info['remaining'] ?? 0;
-      if (current <= 0) return false;
-
       final now = DateTime.now();
       final dateKey = "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
-
-      await _firestore
+      final docRef = _firestore
           .collection('users').doc(_uid)
-          .collection('stats').doc('message_credits')
-          .update({
-        'remaining': current - 1,
-        'lastDate': dateKey,
+          .collection('stats').doc('message_credits');
+
+      return await _firestore.runTransaction<bool>((transaction) async {
+        final doc = await transaction.get(docRef);
+
+        int remaining = freeDefaultDailyMessageCredits;
+        int adWatches = 0;
+
+        if (doc.exists && doc.data()?['lastDate'] == dateKey) {
+          remaining = doc.data()?['remaining']?.toInt() ?? 0;
+          adWatches = doc.data()?['adWatches']?.toInt() ?? 0;
+        }
+
+        if (remaining <= 0) return false;
+
+        transaction.set(docRef, {
+          'lastDate': dateKey,
+          'remaining': remaining - 1,
+          'adWatches': adWatches,
+        });
+        return true;
       });
-      return true;
     } catch (e) {
       LogService.e("Use message credit error", e);
       return false;
     }
   }
 
-  /// Reklam izleyerek +1 mesaj kredisi kazan
+  /// Reklam izleyerek +1 mesaj kredisi kazan - Transaction ile atomik
   Future<bool> rewardForMessageCreditAd() async {
     if (_uid == null) return false;
     try {
-      final info = await getTodayMessageCreditInfo();
-      final adWatches = info['adWatches'] ?? 0;
-      final remaining = info['remaining'] ?? 0;
-
-      if (adWatches >= maxDailyMessageAdWatches) {
-        LogService.w("Daily message credit ad limit reached: $adWatches/$maxDailyMessageAdWatches");
-        return false;
-      }
-
       final now = DateTime.now();
       final dateKey = "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
-
-      await _firestore
+      final docRef = _firestore
           .collection('users').doc(_uid)
-          .collection('stats').doc('message_credits')
-          .set({
-        'lastDate': dateKey,
-        'remaining': remaining + 1,
-        'adWatches': adWatches + 1,
-        'lastWatchAt': FieldValue.serverTimestamp(),
+          .collection('stats').doc('message_credits');
+
+      return await _firestore.runTransaction<bool>((transaction) async {
+        final doc = await transaction.get(docRef);
+
+        int remaining = freeDefaultDailyMessageCredits;
+        int adWatches = 0;
+
+        if (doc.exists && doc.data()?['lastDate'] == dateKey) {
+          remaining = doc.data()?['remaining']?.toInt() ?? 0;
+          adWatches = doc.data()?['adWatches']?.toInt() ?? 0;
+        }
+
+        if (adWatches >= maxDailyMessageAdWatches) {
+          LogService.w("Daily message credit ad limit reached: $adWatches/$maxDailyMessageAdWatches");
+          return false;
+        }
+
+        transaction.set(docRef, {
+          'lastDate': dateKey,
+          'remaining': remaining + 1,
+          'adWatches': adWatches + 1,
+        });
+        return true;
       });
-      return true;
     } catch (e) {
       LogService.e("Reward for message credit ad error", e);
       return false;
@@ -183,7 +202,7 @@ class CreditService {
     }
   }
 
-  /// Promosyon kodu kullan (Admin panelden oluşturulan kodlar)
+  /// Promosyon kodu kullan (Admin panelden oluşturulan kodlar veya Referans Kodları)
   Future<Map<String, dynamic>> redeemPromoCode(String code) async {
     if (_uid == null) {
       return {'success': false, 'message': 'Oturum açmanız gerekmektedir.'};
@@ -202,7 +221,19 @@ class CreditService {
           .get();
 
       if (query.docs.isEmpty) {
-        return {'success': false, 'message': 'Geçersiz veya süresi dolmuş promosyon kodu.'};
+        // Promosyon kodu bulunamadıysa, referans kodu olarak dene!
+        try {
+          final refResult = await ProfileService().applyReferralCode(cleanCode);
+          if (refResult['success'] == true) {
+            return refResult;
+          }
+          // Eğer hata "Geçersiz referans kodu." değilse (yani kod geçerli ama iş mantığı hatası varsa),
+          // bu spesifik hatayı kullanıcıya göster.
+          if (refResult['message'] != 'Geçersiz referans kodu.') {
+            return refResult;
+          }
+        } catch (_) {}
+        return {'success': false, 'message': 'Geçersiz veya süresi dolmuş promosyon/referans kodu.'};
       }
 
       final promoDoc = query.docs.first;
@@ -211,28 +242,45 @@ class CreditService {
 
       final int creditAmount = promoData['creditAmount']?.toInt() ?? 0;
       final int maxUses = promoData['maxUses']?.toInt() ?? 999999;
-      final int usedCount = promoData['usedCount']?.toInt() ?? 0;
-      final List usedByUsers = List.from(promoData['usedByUsers'] ?? []);
 
-      if (usedByUsers.contains(_uid)) {
-        return {'success': false, 'message': 'Bu promosyon kodunu daha önce kullandınız.'};
-      }
+      final userRef = _firestore.collection('users').doc(_uid);
+      final promoRef = _firestore.collection('promo_codes').doc(promoId);
 
-      if (usedCount >= maxUses) {
-        return {'success': false, 'message': 'Bu promosyon kodunun kullanım limiti dolmuştur.'};
-      }
-
+      // Firestore transaction: ÖNCE OKUMA, SONRA YAZMA
       await _firestore.runTransaction((transaction) async {
-        final userRef = _firestore.collection('users').doc(_uid);
-        final promoRef = _firestore.collection('promo_codes').doc(promoId);
+        final userSnap = await transaction.get(userRef);
+        final promoSnap = await transaction.get(promoRef);
+
+        if (!userSnap.exists) {
+          throw Exception("Kullanıcı profili bulunamadı.");
+        }
+        if (!promoSnap.exists) {
+          throw Exception("Promosyon kuralı bulunamadı.");
+        }
+
+        final pData = promoSnap.data()!;
+        final int currentUsedCount = pData['usedCount']?.toInt() ?? 0;
+        final List usedByUsers = List.from(pData['usedByUsers'] ?? pData['usedBy'] ?? []);
+
+        if (usedByUsers.contains(_uid)) {
+          throw Exception("Bu promosyon kodunu daha önce kullandınız.");
+        }
+
+        if (currentUsedCount >= maxUses) {
+          throw Exception("Bu promosyon kodunun kullanım limiti dolmuştur.");
+        }
+
+        final int currentCredits = userSnap.data()?['credits']?.toInt() ?? 0;
 
         transaction.update(userRef, {
-          'credits': FieldValue.increment(creditAmount),
+          'credits': currentCredits + creditAmount,
         });
 
+        usedByUsers.add(_uid);
         transaction.update(promoRef, {
-          'usedCount': FieldValue.increment(1),
-          'usedByUsers': FieldValue.arrayUnion([_uid]),
+          'usedCount': currentUsedCount + 1,
+          'usedByUsers': usedByUsers,
+          'usedBy': usedByUsers,
         });
       });
 
@@ -242,11 +290,12 @@ class CreditService {
       return {
         'success': true,
         'amount': creditAmount,
-        'message': 'Tebrikler! +$creditAmount Kredi hesabınıza tanımlandı.'
+        'message': 'Tebrikler! +$creditAmount Kredi hesabınıza tanımlandı. 🎉'
       };
     } catch (e) {
       LogService.e("Redeem promo code error", e);
-      return {'success': false, 'message': 'Kod kullanılırken bir hata oluştu: $e'};
+      final msg = e.toString().replaceAll("Exception: ", "");
+      return {'success': false, 'message': msg.contains("FirebaseException") ? 'Kod işlenirken veritabanı hatası oluştu.' : msg};
     }
   }
 
@@ -315,33 +364,54 @@ class CreditService {
     }
   }
 
-  /// Reklam izleme sonrası kredi ver
+  /// Reklam izleme sonrası kredi ver - Transaction ile atomik
   Future<bool> rewardForAdWatch() async {
     if (_uid == null) return false;
     try {
-      // Günlük limit kontrolü
-      final todayCount = await getTodayAdWatchCount();
-      if (todayCount >= maxDailyAdWatches) {
-        LogService.w("Daily ad watch limit reached: $todayCount/$maxDailyAdWatches");
-        return false;
-      }
-
       final now = DateTime.now();
       final dateKey = "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
 
-      // Reklam izleme sayacını güncelle
-      await _firestore
+      final adDocRef = _firestore
           .collection('users').doc(_uid)
-          .collection('stats').doc('ad_watches')
-          .set({
-        'lastDate': dateKey,
-        'count': todayCount + 1,
-        'lastWatchAt': FieldValue.serverTimestamp(),
+          .collection('stats').doc('ad_watches');
+      final userRef = _firestore.collection('users').doc(_uid);
+
+      final success = await _firestore.runTransaction<bool>((transaction) async {
+        // READ PHASE - tüm okumalar önce
+        final adDoc = await transaction.get(adDocRef);
+        final userDoc = await transaction.get(userRef);
+
+        if (!userDoc.exists) return false;
+
+        int todayCount = 0;
+        if (adDoc.exists && adDoc.data()?['lastDate'] == dateKey) {
+          todayCount = adDoc.data()?['count']?.toInt() ?? 0;
+        }
+
+        if (todayCount >= maxDailyAdWatches) {
+          LogService.w("Daily ad watch limit reached: $todayCount/$maxDailyAdWatches");
+          return false;
+        }
+
+        // WRITE PHASE
+        transaction.set(adDocRef, {
+          'lastDate': dateKey,
+          'count': todayCount + 1,
+        });
+
+        final currentCredits = userDoc.data()?['credits']?.toInt() ?? 0;
+        transaction.update(userRef, {
+          'credits': currentCredits + rewardWatchAd,
+        });
+
+        return true;
       });
 
-      // Kredi ver
-      await addCredits(rewardWatchAd, 'ad_watch');
-      return true;
+      if (success) {
+        await _logTransaction(rewardWatchAd, 'ad_watch', 'earn');
+        LogService.i("Credits added: +$rewardWatchAd (ad_watch)");
+      }
+      return success;
     } catch (e) {
       LogService.e("Reward for ad watch error", e);
       return false;
@@ -352,7 +422,7 @@ class CreditService {
   //  GÜNLÜK GİRİŞ ÖDÜLÜ
   // ══════════════════════════════════════════
 
-  /// Günlük giriş ödülünü kontrol et ve ver
+  /// Günlük giriş ödülünü kontrol et ve ver - Transaction ile atomik
   Future<bool> claimDailyLoginReward() async {
     if (_uid == null) return false;
     try {
@@ -362,42 +432,62 @@ class CreditService {
       final statsRef = _firestore
           .collection('users').doc(_uid)
           .collection('stats').doc('daily_login');
+      final userRef = _firestore.collection('users').doc(_uid);
 
-      final doc = await statsRef.get();
-      
-      if (doc.exists && doc.data()?['lastClaimDate'] == dateKey) {
-        return false; // Zaten bugün alınmış
-      }
+      int finalReward = 0;
+      String rewardReason = 'daily_login';
 
-      // Streak hesapla
-      int currentStreak = 1;
-      if (doc.exists) {
-        final lastDate = doc.data()?['lastClaimDate'] as String?;
-        if (lastDate != null) {
-          final lastDateTime = DateTime.tryParse(lastDate);
-          if (lastDateTime != null) {
-            final diff = now.difference(lastDateTime).inDays;
-            if (diff == 1) {
-              currentStreak = (doc.data()?['streak']?.toInt() ?? 0) + 1;
+      final success = await _firestore.runTransaction<bool>((transaction) async {
+        final doc = await transaction.get(statsRef);
+        final userDoc = await transaction.get(userRef);
+
+        if (!userDoc.exists) return false;
+
+        if (doc.exists && doc.data()?['lastClaimDate'] == dateKey) {
+          return false; // Zaten bugün alınmış
+        }
+
+        int currentStreak = 1;
+        int totalLogins = 0;
+        if (doc.exists) {
+          totalLogins = doc.data()?['totalLogins']?.toInt() ?? 0;
+          final lastDate = doc.data()?['lastClaimDate'] as String?;
+          if (lastDate != null) {
+            final lastDateTime = DateTime.tryParse(lastDate);
+            if (lastDateTime != null) {
+              final diff = now.difference(lastDateTime).inDays;
+              if (diff == 1) {
+                currentStreak = (doc.data()?['streak']?.toInt() ?? 0) + 1;
+              }
             }
           }
         }
-      }
 
-      int reward = rewardDailyLogin;
-      // 7 gün streak bonusu
-      if (currentStreak > 0 && currentStreak % 7 == 0) {
-        reward += rewardStreakBonus;
-      }
+        finalReward = rewardDailyLogin;
+        if (currentStreak > 0 && currentStreak % 7 == 0) {
+          finalReward += rewardStreakBonus;
+          rewardReason = 'daily_login_streak';
+        }
 
-      await statsRef.set({
-        'lastClaimDate': dateKey,
-        'streak': currentStreak,
-        'totalLogins': FieldValue.increment(1),
+        transaction.set(statsRef, {
+          'lastClaimDate': dateKey,
+          'streak': currentStreak,
+          'totalLogins': totalLogins + 1,
+        });
+
+        final currentCredits = userDoc.data()?['credits']?.toInt() ?? 0;
+        transaction.update(userRef, {
+          'credits': currentCredits + finalReward,
+        });
+
+        return true;
       });
 
-      await addCredits(reward, currentStreak % 7 == 0 ? 'daily_login_streak' : 'daily_login');
-      return true;
+      if (success) {
+        await _logTransaction(finalReward, rewardReason, 'earn');
+        LogService.i("Daily login reward claimed: +$finalReward credits");
+      }
+      return success;
     } catch (e) {
       LogService.e("Daily login reward error", e);
       return false;

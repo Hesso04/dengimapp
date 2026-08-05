@@ -16,7 +16,7 @@ if (keystorePropertiesFile.exists()) {
 android {
     namespace = "com.dengim.dengim"
     compileSdk = 36
-    ndkVersion = "27.0.12077973"
+    // ndkVersion = "27.0.12077973"
 
     compileOptions {
         isCoreLibraryDesugaringEnabled = true
@@ -59,14 +59,21 @@ android {
     buildTypes {
         release {
             signingConfig = signingConfigs.getByName("release")
-            // R8 kod gizleme + resource shrinking AÇIK.
-            // APK boyutu düşer, reverse engineering zorlaşır.
             isMinifyEnabled = true
             isShrinkResources = true
+            ndk {
+                debugSymbolLevel = "NONE"
+            }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+        }
+    }
+
+    packaging {
+        jniLibs {
+            keepDebugSymbols.add("**/*.so")
         }
     }
 }
@@ -88,6 +95,12 @@ dependencies {
     implementation("androidx.window:window:1.2.0")
     implementation("androidx.window:window-java:1.2.0")
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+}
+
+tasks.configureEach {
+    if (name.contains("strip", ignoreCase = true) && name.contains("UnneededSymbols", ignoreCase = true)) {
+        enabled = false
+    }
 }
 
 tasks.withType<JavaCompile>().configureEach {

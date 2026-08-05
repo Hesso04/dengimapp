@@ -48,7 +48,7 @@ class UserProvider extends ChangeNotifier {
               await _profileService.updateProfile(
                 isPremium: true,
                 subscriptionTier: 'gold',
-                credits: 1000,
+                credits: profile.credits + 1000,
                 hasReceivedWelcomeBonus: true,
               );
             } catch (e) {

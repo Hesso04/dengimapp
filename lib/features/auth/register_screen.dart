@@ -18,10 +18,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _referralCodeController = TextEditingController();
   
   final FocusNode _emailFocusNode = FocusNode();
   final FocusNode _passwordFocusNode = FocusNode();
   final FocusNode _confirmPasswordFocusNode = FocusNode();
+  final FocusNode _referralCodeFocusNode = FocusNode();
 
   bool _isLoading = false;
   bool _obscurePassword = true;
@@ -32,9 +34,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _referralCodeController.dispose();
     _emailFocusNode.dispose();
     _passwordFocusNode.dispose();
     _confirmPasswordFocusNode.dispose();
+    _referralCodeFocusNode.dispose();
     super.dispose();
   }
 
@@ -90,7 +94,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
         );
 
         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => const CreateProfileScreen()),
+          MaterialPageRoute(
+            builder: (context) => CreateProfileScreen(
+              initialReferralCode: _referralCodeController.text.trim(),
+            ),
+          ),
           (route) => false,
         );
       }
@@ -289,12 +297,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 _buildInputField(
                   controller: _confirmPasswordController,
                   focusNode: _confirmPasswordFocusNode,
+                  nextFocusNode: _referralCodeFocusNode,
                   label: 'Şifre Tekrar',
                   hint: 'Şifreni doğrula',
                   icon: Icons.lock_reset_rounded,
                   isPassword: true,
                   obscureText: _obscureConfirmPassword,
                   onToggleObscure: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+                  textInputAction: TextInputAction.next,
+                  isDark: isDark,
+                  cardBgColor: cardBgColor,
+                  textColor: textColor,
+                  borderColor: borderColor,
+                ),
+                const SizedBox(height: 16),
+
+                _buildInputField(
+                  controller: _referralCodeController,
+                  focusNode: _referralCodeFocusNode,
+                  label: 'Referans / Davet Kodu (İsteğe Bağlı)',
+                  hint: 'Arkadaşının kodu (+10 Kredi)',
+                  icon: Icons.card_giftcard_rounded,
                   textInputAction: TextInputAction.done,
                   onSubmitted: (_) => _register(),
                   isDark: isDark,

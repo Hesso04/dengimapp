@@ -155,15 +155,20 @@ export default function LoginPage() {
     };
 
     const tryCreateAccount = async () => {
-        // Admin yetkisi kontrolü
-        const adminCheck = await checkAdminAccess(email);
-        if (!adminCheck.isAdmin) {
-            setError('E-posta veya şifre hatalı.');
-            return;
-        }
-
         try {
+            // 1. Önce Firebase Auth üzerinde hesabı oluştur (böylece istek atan kişi authenticated olur)
             const newUser = await createUserWithEmailAndPassword(auth, email, password);
+
+            // 2. Şimdi authenticated olduğumuz için checkAdminAccess Firestore sorgusu hatasız çalışır
+            const adminCheck = await checkAdminAccess(email);
+
+            if (!adminCheck.isAdmin) {
+                // Eğer admin listesinde değilse, oluşturulan auth hesabını geri siliyoruz
+                await newUser.user.delete();
+                setError('Bu e-posta adresi admin yetkisine sahip değil.');
+                return;
+            }
+
             const validRoles = ["super_admin", "admin", "moderator", "support"] as const;
             type Role = typeof validRoles[number];
             const role: Role = validRoles.includes(adminCheck.role as Role)
@@ -178,6 +183,7 @@ export default function LoginPage() {
             });
             router.push('/admin');
         } catch (createErr: any) {
+            console.error("Account Creation Error:", createErr);
             if (createErr.code === 'auth/email-already-in-use') {
                 setError('Bu e-posta adresi zaten kayıtlı fakat girilen şifre yanlış.');
             } else {

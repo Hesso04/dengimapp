@@ -20,6 +20,7 @@ import 'widgets/discover_header.dart';
 import 'widgets/discover_empty_state.dart';
 import 'widgets/match_overlay.dart';
 import 'widgets/discover_user_card.dart';
+import 'widgets/feature_action_modal.dart';
 import '../../core/widgets/shimmer_card.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
@@ -135,14 +136,63 @@ class _UnifiedDiscoverScreenState extends State<UnifiedDiscoverScreen> with Tick
     if (TierLimits.canSuperLike(userTier)) {
       await _performSuperLike(user);
     } else {
-      final creditProvider = context.read<CreditProvider>();
-      if (creditProvider.balance >= CreditService.costSuperLike) {
-        final success = await creditProvider.spendSuperLike();
-        if (success) await _performSuperLike(user);
-      } else {
-        if (mounted) PremiumRequiredModal.show(context, featureName: 'Super Like', requiredTier: 'gold', creditCost: CreditService.costSuperLike);
-      }
+      FeatureActionModal.show(
+        context: context,
+        featureType: DiscoverFeatureType.superLike,
+        onActivated: () => _performSuperLike(user),
+      );
     }
+  }
+
+  void _performUndo() {
+    final userProvider = context.read<UserProvider>();
+    final isPremium = userProvider.currentUser?.isPremium ?? false;
+
+    if (isPremium) {
+      _executeUndo();
+    } else {
+      FeatureActionModal.show(
+        context: context,
+        featureType: DiscoverFeatureType.rewind,
+        onActivated: _executeUndo,
+      );
+    }
+  }
+
+  void _executeUndo() {
+    if (_historyOfSwipedUserIds.isEmpty) return;
+    HapticFeedback.lightImpact();
+    setState(() {
+      final lastUid = _historyOfSwipedUserIds.removeLast();
+      _dismissedUserIds.remove(lastUid);
+      _animatingUserIds.remove(lastUid);
+    });
+  }
+
+  void _onBoost() {
+    final userProvider = context.read<UserProvider>();
+    final isPremium = userProvider.currentUser?.isPremium ?? false;
+
+    if (isPremium) {
+      _executeBoost();
+    } else {
+      FeatureActionModal.show(
+        context: context,
+        featureType: DiscoverFeatureType.boost,
+        onActivated: _executeBoost,
+      );
+    }
+  }
+
+  void _executeBoost() {
+    HapticFeedback.heavyImpact();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('🚀 PROFİLİNİZ 30 DAKİKA BOYUNCA ZİRVEYE TAŞINDI!', style: GoogleFonts.outfit(fontWeight: FontWeight.w900, color: Colors.white)),
+        backgroundColor: AppColors.primary,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   Future<void> _performSuperLike(UserProfile user) async => _performSwipeAction(user, 'super_like');
@@ -685,46 +735,86 @@ class _UnifiedDiscoverScreenState extends State<UnifiedDiscoverScreen> with Tick
   }
 
   Widget _buildNonPremiumBanner(BuildContext context, bool isDark) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 6, 16, 10),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isDark ? [const Color(0xFF1E1B2E), const Color(0xFF121418)] : [const Color(0xFFFFF7E6), Colors.white],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFFFD700).withValues(alpha: isDark ? 0.35 : 0.6), width: 1.2),
-        boxShadow: [BoxShadow(color: const Color(0xFFFFD700).withValues(alpha: isDark ? 0.08 : 0.12), blurRadius: 10, spreadRadius: 1)],
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(7),
-            decoration: const BoxDecoration(gradient: LinearGradient(colors: [Color(0xFFFFD700), Color(0xFFFFA500)]), shape: BoxShape.circle),
-            child: const Icon(Icons.star_rounded, color: Colors.white, size: 16),
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const PremiumOfferScreen()));
+      },
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(16, 6, 16, 10),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF8A2BE2), Color(0xFF4A00E0)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text("Gold & Platinum Üyelik", maxLines: 1, overflow: TextOverflow.ellipsis, style: GoogleFonts.outfit(fontSize: 13, fontWeight: FontWeight.w800, color: isDark ? Colors.white : Colors.black)),
-                Text("Sınırsız beğeni ve Seni Beğenenleri gör!", maxLines: 1, overflow: TextOverflow.ellipsis, style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.w500, color: isDark ? Colors.white70 : Colors.black54)),
-              ],
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFFFD700).withValues(alpha: 0.6), width: 1.5),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF8A2BE2).withValues(alpha: 0.35),
+              blurRadius: 14,
+              offset: const Offset(0, 4),
             ),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              HapticFeedback.lightImpact();
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const PremiumOfferScreen()));
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFFD700), foregroundColor: Colors.black, elevation: 0, padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-            child: Text("Yükselt", style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.w900)),
-          ),
-        ],
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(colors: [Color(0xFFFFD700), Color(0xFFFFA500)]),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.star_rounded, color: Colors.black, size: 18),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    "Gold & Platinum Üyelik",
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.outfit(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    "Sınırsız beğeni ve Seni Beğenenleri gör!",
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.outfit(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white70,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const PremiumOfferScreen()));
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFFD700),
+                foregroundColor: Colors.black,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              child: Text("Yükselt", style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.w900)),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -787,7 +877,9 @@ class _UnifiedDiscoverScreenState extends State<UnifiedDiscoverScreen> with Tick
     } else {
       final creditProvider = context.read<CreditProvider>();
       if (creditProvider.balance >= CreditService.costBoost) {
-        creditProvider.spendBoost().then((_) => _showBoostActivationDialog());
+        creditProvider.spendBoost().then((success) {
+          if (success && mounted) _showBoostActivationDialog();
+        });
       } else {
         if (mounted) PremiumRequiredModal.show(context, featureName: 'Boost', requiredTier: 'gold', creditCost: CreditService.costBoost);
       }

@@ -36,9 +36,9 @@ import 'features/ads/services/ad_service.dart';
 import 'package:geolocator/geolocator.dart';
 
 import 'core/widgets/maintenance_screen.dart';
+import 'dart:async';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
-import 'dart:ui' show PlatformDispatcher;
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -118,14 +118,14 @@ void main() async {
 
     // ConfigService, FeatureFlagService ve AdService'ı arka planda başlat
     // (Startup hızı için bloklama yok — fire-and-forget)
-    ConfigService().init();
-    FeatureFlagService().init();
-    AdService().init();
+    unawaited(ConfigService().init());
+    unawaited(FeatureFlagService().init());
+    unawaited(AdService().init());
 
     // Bildirim servisini arka planda başlat (bloklama yok)
     try {
       FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-      NotificationService().initialize();
+      unawaited(NotificationService().initialize());
     } catch (e) {
       LogService.w("Notification init warning: $e");
     }
@@ -331,10 +331,10 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
           // CreditProvider'i arka planda başlat (ekran yönlendirmesini beklemesin)
           final creditProvider = Provider.of<CreditProvider>(context, listen: false);
-          creditProvider.init().then((_) => creditProvider.claimDailyReward());
+          unawaited(creditProvider.init().then((_) => creditProvider.claimDailyReward()));
 
           Widget nextScreen = userProvider.currentUser != null 
-              ? const MainScaffold() 
+              ? MainScaffold(key: MainScaffold.scaffoldKey) 
               : const CreateProfileScreen();
 
           Navigator.of(context).pushReplacement(

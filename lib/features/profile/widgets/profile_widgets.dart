@@ -2,6 +2,12 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_colors.dart';
+import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import '../../../core/providers/credit_provider.dart';
+import '../../../core/providers/subscription_provider.dart';
+import '../../../core/services/credit_service.dart';
+import '../../ads/services/ad_service.dart';
 
 /// Kredi yükleme cüzdan kartı widget'ı
 class WalletCard extends StatelessWidget {
@@ -295,235 +301,238 @@ class WatchEarnDialog extends StatefulWidget {
 }
 
 class _WatchEarnDialogState extends State<WatchEarnDialog> {
-  int _watchedAds = 0;
   bool _isWatching = false;
 
-  void _watchAd() async {
-    if (_watchedAds >= 5) return;
-    
-    setState(() {
-      _isWatching = true;
-    });
-    
-    // Simüle edilmiş reklam izleme (2 saniye)
-    await Future.delayed(const Duration(seconds: 2));
-    
-    setState(() {
-      _watchedAds++;
-      _isWatching = false;
-    });
-
-    if (_watchedAds >= 5) {
-      // Tamamlandı animasyonu için kısa bir bekleme
-      await Future.delayed(const Duration(milliseconds: 500));
-      if (mounted) {
-        Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              '🎉 Tebrikler! 1 Mesaj Hakkı Kazandın!',
-              style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-              textAlign: TextAlign.center,
-            ),
-            backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+  void _watchAd() {
+    final creditProvider = context.read<CreditProvider>();
+    if (!creditProvider.canWatchAd) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Günlük reklam limitine ulaşıldı (10/10). Yarın tekrar gelin! 🎬',
+            style: GoogleFonts.outfit(fontWeight: FontWeight.w800, color: Colors.white),
           ),
-        );
-      }
+          backgroundColor: Colors.black,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
     }
+
+    setState(() => _isWatching = true);
+    final tier = context.read<SubscriptionProvider>().currentTier;
+
+    AdService().showRewardedAd(
+      tier: tier,
+      onReward: (amount) async {
+        final success = await creditProvider.rewardAdWatch();
+        if (mounted) {
+          setState(() => _isWatching = false);
+          if (success) {
+            HapticFeedback.heavyImpact();
+            Navigator.of(context).pop();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  '🎉 Tebrikler! +3 Kredi Hesabınıza Eklendi!',
+                  style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: Colors.white),
+                  textAlign: TextAlign.center,
+                ),
+                backgroundColor: AppColors.success,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Ödül işlenirken bir hata oluştu.'),
+                backgroundColor: AppColors.error,
+              ),
+            );
+          }
+        }
+      },
+    );
+
+    Future.delayed(const Duration(seconds: 4), () {
+      if (mounted && _isWatching) {
+        setState(() => _isWatching = false);
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(28),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-          child: Container(
-            padding: const EdgeInsets.all(28),
-            decoration: BoxDecoration(
-              color: AppColors.surface.withAlpha(242),
-              borderRadius: BorderRadius.circular(28),
-              border: Border.all(
-                color: Colors.white.withAlpha(26),
-                width: 1,
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? const Color(0xFF14161B) : Colors.white;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subtitleColor = isDark ? Colors.white70 : Colors.black54;
+
+    return Consumer<CreditProvider>(
+      builder: (context, creditProvider, child) {
+        final watched = creditProvider.todayAdWatches;
+        final maxWatches = CreditService.maxDailyAdWatches;
+
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(28),
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: cardColor,
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(
+                  color: isDark ? const Color(0xFF262934) : const Color(0xFFEEEEEE),
+                  width: 1.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.1),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
               ),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // İkon
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    gradient: AppColors.goldGradient,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.secondary.withAlpha(77),
-                        blurRadius: 20,
-                        spreadRadius: 2,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // İkon
+                  Container(
+                    width: 72,
+                    height: 72,
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+                      ),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.play_circle_filled_rounded,
+                      color: Colors.white,
+                      size: 44,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  // Başlık
+                  Text(
+                    'İzle & Kazan',
+                    style: GoogleFonts.outfit(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w900,
+                      color: textColor,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Her Reklam İzlemede +3 Kredi Kazan!',
+                    style: GoogleFonts.outfit(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: subtitleColor,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  // Progress Indicator
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1E212A) : const Color(0xFFF5F7FA),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Bugünkü İzleme:',
+                          style: GoogleFonts.outfit(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: subtitleColor,
+                          ),
+                        ),
+                        Text(
+                          '$watched / $maxWatches Hak',
+                          style: GoogleFonts.outfit(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w900,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+                  // Butonlar
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: Text(
+                            'Kapat',
+                            style: GoogleFonts.outfit(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: subtitleColor,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        flex: 2,
+                        child: ElevatedButton(
+                          onPressed: _isWatching || !creditProvider.canWatchAd
+                              ? null
+                              : _watchAd,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                            minimumSize: const Size(0, 48),
+                            disabledBackgroundColor: isDark ? const Color(0xFF262934) : const Color(0xFFE5E8EE),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              if (_isWatching)
+                                const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                )
+                              else ...[
+                                const Icon(Icons.play_arrow_rounded, size: 22),
+                                const SizedBox(width: 6),
+                                Text(
+                                  creditProvider.canWatchAd ? 'Reklam İzle' : 'Limit Doldu',
+                                  style: GoogleFonts.outfit(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
                       ),
                     ],
                   ),
-                  child: const Icon(
-                    Icons.play_circle_filled_rounded,
-                    color: Colors.white,
-                    size: 48,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                // Başlık
-                Text(
-                  'İzle & Kazan',
-                  style: GoogleFonts.poppins(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '5 Reklam İzle, 1 Mesaj Hakkı Kazan',
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    color: AppColors.textSecondary,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 32),
-                // Progress Bar
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(5, (index) {
-                    final isCompleted = index < _watchedAds;
-                    final isCurrent = index == _watchedAds;
-                    
-                    return Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 4),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        width: isCurrent && _isWatching ? 48 : 40,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: isCompleted
-                              ? AppColors.success
-                              : isCurrent && _isWatching
-                                  ? AppColors.primary
-                                  : AppColors.surfaceLight,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: isCurrent && !_isWatching
-                                ? AppColors.secondary
-                                : Colors.transparent,
-                            width: 2,
-                          ),
-                        ),
-                        child: Center(
-                          child: isCompleted
-                              ? const Icon(
-                                  Icons.check_rounded,
-                                  color: Colors.white,
-                                  size: 24,
-                                )
-                              : isCurrent && _isWatching
-                                  ? const SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: Colors.white,
-                                      ),
-                                    )
-                                  : Text(
-                                      '${index + 1}',
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        color: AppColors.textSecondary,
-                                      ),
-                                    ),
-                        ),
-                      ),
-                    );
-                  }),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  '$_watchedAds / 5 tamamlandı',
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.secondary,
-                  ),
-                ),
-                const SizedBox(height: 28),
-                // Butonlar
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: Text(
-                          'Kapat',
-                          style: GoogleFonts.poppins(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      flex: 2,
-                      child: ElevatedButton(
-                        onPressed: _isWatching || _watchedAds >= 5
-                            ? null
-                            : _watchAd,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.secondary,
-                          foregroundColor: Colors.black,
-                          minimumSize: const Size(0, 52),
-                          disabledBackgroundColor: AppColors.surfaceLight,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              _isWatching
-                                  ? Icons.hourglass_top_rounded
-                                  : Icons.play_arrow_rounded,
-                              size: 22,
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              _isWatching ? 'İzleniyor...' : 'Reklam İzle',
-                              style: GoogleFonts.poppins(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+                ],
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

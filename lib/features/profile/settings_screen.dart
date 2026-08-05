@@ -13,9 +13,12 @@ import '../../core/providers/theme_provider.dart';
 import 'verification_screen.dart';
 import '../auth/services/profile_service.dart';
 import '../payment/premium_offer_screen.dart';
-import '../../core/services/biometric_service.dart';
+import '../../core/services/pin_lock_service.dart';
+import '../auth/pin_lock_screen.dart';
 import 'widgets/invite_earn_modal.dart';
 import '../../core/widgets/promo_code_dialog.dart';
+import 'package:flutter/services.dart';
+import '../../core/providers/credit_provider.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -27,20 +30,20 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _isDeleting = false;
   bool _notificationsEnabled = true;
-  bool _biometricEnabled = false;
+  bool _pinLockEnabled = false;
 
   String get _userEmail => FirebaseAuth.instance.currentUser?.email ?? 'E-posta bağlı değil';
 
   @override
   void initState() {
     super.initState();
-    _loadBiometricStatus();
+    _loadPinLockStatus();
   }
 
-  Future<void> _loadBiometricStatus() async {
-    final enabled = await BiometricService().isBiometricLockEnabled();
+  Future<void> _loadPinLockStatus() async {
+    final enabled = await PinLockService().isPinLockEnabled();
     if (mounted) {
-      setState(() => _biometricEnabled = enabled);
+      setState(() => _pinLockEnabled = enabled);
     }
   }
 
@@ -225,22 +228,43 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 _buildSwitchItem(
                   context,
-                  "Biyometrik Kilit (Face ID / Parmak İzi)",
-                  Icons.fingerprint_rounded,
-                  _biometricEnabled,
+                  "4 Haneli PIN Kodu Kilidi",
+                  Icons.lock_outline_rounded,
+                  _pinLockEnabled,
                   (value) async {
-                    await BiometricService().setBiometricLockEnabled(value);
-                    setState(() => _biometricEnabled = value);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        backgroundColor: Colors.black,
-                        content: Text(
-                          value ? 'BİYOMETRİK KİLİT AKTİF' : 'BİYOMETRİK KİLİT KAPATILDI',
-                          style: GoogleFonts.outfit(fontWeight: FontWeight.w900, color: Colors.white),
+                    if (value) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => PinLockScreen(
+                            isSettingPinMode: true,
+                            onUnlocked: () async {
+                              Navigator.pop(context);
+                              setState(() => _pinLockEnabled = true);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  backgroundColor: AppColors.success,
+                                  content: Text('PIN KODU KİLİDİ AKTİF EDİLDİ 🔒', style: GoogleFonts.outfit(fontWeight: FontWeight.w900, color: Colors.white)),
+                                  duration: const Duration(seconds: 2),
+                                ),
+                              );
+                            },
+                          ),
                         ),
-                        duration: const Duration(seconds: 2),
-                      ),
-                    );
+                      );
+                    } else {
+                      await PinLockService().removePin();
+                      setState(() => _pinLockEnabled = false);
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            backgroundColor: Colors.black,
+                            content: Text('PIN KİLİDİ KAPATILDI', style: GoogleFonts.outfit(fontWeight: FontWeight.w900, color: Colors.white)),
+                            duration: const Duration(seconds: 2),
+                          ),
+                        );
+                      }
+                    }
                   },
                 ),
                 _buildSettingItem(context, "Dil Seçeneği", Icons.language, trailing: "Türkçe"),
@@ -269,15 +293,48 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                 const SizedBox(height: 32),
                 _buildSectionHeader("DESTEK & KAMPANYALAR"),
-                _buildSettingItem(
-                  context,
-                  "Davet Et & Kredi Kazan",
-                  Icons.card_giftcard_rounded,
-                  onTap: () {
-                    final user = context.read<UserProvider>().currentUser;
-                    if (user != null) {
-                      InviteEarnModal.show(context, user);
-                    }
+                Consumer<UserProvider>(
+                  builder: (context, provider, _) {
+                    final user = provider.currentUser;
+                    final hasUsed = user?.hasUsedReferralCode ?? false;
+                    return Column(
+                      children: [
+                        _buildSettingItem(
+                          context,
+                          "Davet Et & Kredi Kazan",
+                          Icons.card_giftcard_rounded,
+                          onTap: () {
+                            if (user != null) {
+                              InviteEarnModal.show(context, user);
+                            }
+                          },
+                        ),
+                        if (!hasUsed)
+                          _buildSettingItem(
+                            context,
+                            "Referans Kodu Gir (+10 Kredi)",
+                            Icons.group_add_outlined,
+                            onTap: () => _showReferralCodeDialog(context),
+                          )
+                        else
+                          _buildSettingItem(
+                            context,
+                            "Referans Kodu",
+                            Icons.group_add_outlined,
+                            trailing: "Uygulandı",
+                            onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  "Zaten bir referans kodu kullandınız.",
+                                  style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: Colors.white),
+                                ),
+                                backgroundColor: AppColors.primary,
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            ),
+                          ),
+                      ],
+                    );
                   },
                 ),
                 _buildSettingItem(
@@ -290,7 +347,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   context,
                   "Yardım ve Destek",
                   Icons.help_outline,
-                  onTap: () => _launchUrl("mailto:support@dengim.app"),
+                  onTap: () => _showHelpSupportModal(context),
                 ),
                 _buildSettingItem(
                   context,
@@ -997,6 +1054,323 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  void _showReferralCodeDialog(BuildContext context) {
+    final controller = TextEditingController();
+    bool isLoading = false;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setState) {
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+          final bgColor = Theme.of(context).colorScheme.surface;
+          final textColor = isDark ? Colors.white : Colors.black;
+          final borderColor = isDark ? const Color(0xFF262629) : const Color(0xFFEEEEEE);
+
+          return AlertDialog(
+            backgroundColor: bgColor,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(24),
+              side: BorderSide(color: borderColor, width: 1.0),
+            ),
+            title: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.card_giftcard_rounded, color: AppColors.primary, size: 22),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'REFERANS KODU GİR',
+                  style: GoogleFonts.outfit(
+                    color: textColor,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Seni Dengim\'e davet eden arkadaşının referans kodunu girerek +10 Hoş Geldin Kredisi kazan.',
+                  style: GoogleFonts.outfit(
+                    color: isDark ? Colors.white70 : Colors.black87,
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: controller,
+                  textCapitalization: TextCapitalization.characters,
+                  style: GoogleFonts.outfit(color: textColor, fontWeight: FontWeight.bold, letterSpacing: 1.2),
+                  decoration: InputDecoration(
+                    hintText: 'Örn: ABC12345',
+                    hintStyle: GoogleFonts.outfit(color: isDark ? Colors.white30 : Colors.black38, letterSpacing: 0),
+                    filled: true,
+                    fillColor: isDark ? const Color(0xFF191C24) : const Color(0xFFF2F4F7),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide(color: borderColor),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide(color: borderColor),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: Text('İPTAL', style: GoogleFonts.outfit(color: isDark ? Colors.white70 : Colors.black, fontWeight: FontWeight.bold)),
+              ),
+              ElevatedButton(
+                onPressed: isLoading
+                    ? null
+                    : () async {
+                        final code = controller.text.trim();
+                        if (code.isEmpty) return;
+
+                        setState(() => isLoading = true);
+                        final result = await ProfileService().applyReferralCode(code);
+                        if (dialogContext.mounted) {
+                          Navigator.pop(dialogContext);
+                        }
+                        if (result['success'] == true) {
+                          await HapticFeedback.heavyImpact();
+                          if (context.mounted) {
+                            await context.read<CreditProvider>().init();
+                            await context.read<UserProvider>().loadCurrentUser();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  result['message'],
+                                  style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: Colors.white),
+                                ),
+                                backgroundColor: AppColors.success,
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          }
+                        } else {
+                          await HapticFeedback.vibrate();
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  result['message'],
+                                  style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: Colors.white),
+                                ),
+                                backgroundColor: AppColors.error,
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          }
+                        }
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(110, 46),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: isLoading
+                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : Text('UYGULA', style: GoogleFonts.outfit(fontWeight: FontWeight.w900)),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildFaqTile(BuildContext context, {required String title, required String content}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Theme(
+      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+      child: ExpansionTile(
+        tilePadding: EdgeInsets.zero,
+        iconColor: AppColors.primary,
+        collapsedIconColor: isDark ? Colors.white60 : Colors.black54,
+        title: Text(
+          title,
+          style: GoogleFonts.outfit(fontSize: 13, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87),
+        ),
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Text(
+              content,
+              style: GoogleFonts.outfit(fontSize: 12, color: isDark ? Colors.white70 : Colors.black54, height: 1.4),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showHelpSupportModal(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (bottomSheetContext) {
+        final isDark = Theme.of(bottomSheetContext).brightness == Brightness.dark;
+        final cardColor = isDark ? const Color(0xFF14161B) : Colors.white;
+        final textColor = isDark ? Colors.white : Colors.black87;
+        final subtitleColor = isDark ? Colors.white70 : Colors.black54;
+
+        return Container(
+          decoration: BoxDecoration(
+            color: cardColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          padding: EdgeInsets.only(
+            left: 24,
+            right: 24,
+            top: 20,
+            bottom: MediaQuery.of(bottomSheetContext).padding.bottom + 20,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.white24 : Colors.black12,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.help_outline_rounded, color: AppColors.primary, size: 24),
+                    ),
+                    const SizedBox(width: 14),
+                    Text(
+                      'YARDIM VE DESTEK',
+                      style: GoogleFonts.outfit(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                        color: textColor,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Size nasıl yardımcı olabiliriz? Sorularınız, önerileriniz veya yaşadığınız sorunlar için destek ekibimiz 7/24 hizmetinizde.',
+                  style: GoogleFonts.outfit(fontSize: 13, color: subtitleColor, height: 1.4),
+                ),
+                const SizedBox(height: 24),
+
+                // E-posta Destek Kartı
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1E212A) : const Color(0xFFF5F7FA),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: isDark ? const Color(0xFF262934) : const Color(0xFFEEEEEE)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.email_outlined, color: AppColors.primary, size: 24),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('E-Posta Destek', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: textColor, fontSize: 14)),
+                            Text('support@dengim.app', style: GoogleFonts.outfit(color: subtitleColor, fontSize: 12)),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.copy_rounded, size: 20, color: AppColors.primary),
+                        onPressed: () {
+                          Clipboard.setData(const ClipboardData(text: "support@dengim.app"));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('E-posta adresi kopyalandı!', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: Colors.white)),
+                              backgroundColor: AppColors.success,
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.open_in_new_rounded, size: 20, color: AppColors.primary),
+                        onPressed: () => _launchUrl("mailto:support@dengim.app"),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+                Text('SIKÇA SORULAN SORULAR', style: GoogleFonts.outfit(fontSize: 12, fontWeight: FontWeight.w900, color: subtitleColor, letterSpacing: 1)),
+                const SizedBox(height: 10),
+
+                _buildFaqTile(
+                  context,
+                  title: 'Krediler nasıl yüklenir ve kullanılır?',
+                  content: 'Günlük giriş yaparak, reklam izleyerek veya arkadaşlarınızı davet ederek ücretsiz kredi kazanabilirsiniz. Kredilerinizle Süper Beğeni, Boost ve Profil Görüntüleme hakları satın alabilirsiniz.',
+                ),
+                _buildFaqTile(
+                  context,
+                  title: 'Hesabımı ve verilerimi nasıl silebilirim?',
+                  content: 'Ayarlar > Hesabı Sil seçeneğine tıklayarak tüm verilerinizi, eşleşmelerinizi ve mesajlarınızı kalıcı olarak silebilirsiniz.',
+                ),
+                _buildFaqTile(
+                  context,
+                  title: 'Konum izni ve gizlilik',
+                  content: 'Konum bilginiz yalnızca yakınınızdaki kişileri keşfetmeniz için kullanılır ve tam adresiniz diğer kullanıcılarla asla paylaşılmaz.',
+                ),
+
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(bottomSheetContext),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size(double.infinity, 50),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  child: Text('TAMAM', style: GoogleFonts.outfit(fontWeight: FontWeight.w900, fontSize: 14)),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

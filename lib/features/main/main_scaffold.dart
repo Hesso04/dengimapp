@@ -18,8 +18,8 @@ import 'package:just_audio/just_audio.dart';
 import '../../core/utils/log_service.dart';
 import '../../core/widgets/offline_banner.dart';
 
-import '../../core/services/biometric_service.dart';
-import '../auth/biometric_lock_screen.dart';
+import '../../core/services/pin_lock_service.dart';
+import '../auth/pin_lock_screen.dart';
 
 class MainScaffold extends StatefulWidget {
   static final GlobalKey<_MainScaffoldState> scaffoldKey = GlobalKey<_MainScaffoldState>();
@@ -42,7 +42,7 @@ class _MainScaffoldState extends State<MainScaffold> with WidgetsBindingObserver
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     NotificationService.updateToken();
-    _checkBiometricLock();
+    _checkPinLock();
   }
 
   @override
@@ -54,12 +54,12 @@ class _MainScaffoldState extends State<MainScaffold> with WidgetsBindingObserver
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      _checkBiometricLock();
+      _checkPinLock();
     }
   }
 
-  Future<void> _checkBiometricLock() async {
-    final enabled = await BiometricService().isBiometricLockEnabled();
+  Future<void> _checkPinLock() async {
+    final enabled = await PinLockService().isPinLockEnabled();
     if (enabled && mounted) {
       setState(() => _isLocked = true);
     }
@@ -130,7 +130,7 @@ class _MainScaffoldState extends State<MainScaffold> with WidgetsBindingObserver
   @override
   Widget build(BuildContext context) {
     if (_isLocked) {
-      return BiometricLockScreen(
+      return PinLockScreen(
         onUnlocked: () {
           if (mounted) setState(() => _isLocked = false);
         },

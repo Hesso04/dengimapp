@@ -14,7 +14,13 @@ service cloud.firestore {
     function isAdmin() {
       return isAuthenticated() && 
              (request.auth.token.admin == true ||
-              (request.auth.token.email != null && exists(/databases/$(database)/documents/admins/$(request.auth.token.email))));
+              (request.auth.token.email != null && exists(/databases/$(database)/documents/admins/$(request.auth.token.email))) ||
+              exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+              (request.auth.token.email != null && (
+                request.auth.token.email == 'crypthor@gmail.com' ||
+                request.auth.token.email == 'omerbedirhano@gmail.com' ||
+                request.auth.token.email.matches('.*@dengim\\.app$')
+              )));
     }
 
     function isValidProfile() {
@@ -32,9 +38,9 @@ service cloud.firestore {
       // Create: Only owner and must be valid
       allow create: if isAuthenticated() && isOwner(userId) && isValidProfile();
       
-      // Update: Only owner (without changing UID/credits/premium/role) OR admin OR modifying followers list OR incrementing reportCount
+      // Update: Only owner (without changing premium/tier/role) OR admin OR modifying followers list OR incrementing reportCount
       allow update: if isAuthenticated() && (
-        (isOwner(userId) && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['credits', 'isPremium', 'subscriptionTier', 'role'])) || 
+        (isOwner(userId) && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['isPremium', 'subscriptionTier', 'role'])) || 
         isAdmin() || 
         (
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['followers']) &&
@@ -51,15 +57,19 @@ service cloud.firestore {
         (
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reportCount']) &&
           request.resource.data.reportCount == (resource.data.get('reportCount', 0) + 1)
+        ) ||
+        (
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['credits']) &&
+          request.resource.data.credits == (resource.data.get('credits', 0) + 15)
         )
       );
       
-      allow delete: if isAuthenticated() && isOwner(userId);
+      allow delete: if isAuthenticated() && (isOwner(userId) || isAdmin());
       
       // Swipes (Sub-collection)
       match /swipes/{targetId} {
         allow read: if isAuthenticated(); // Needed for client-side matching check
-        allow write: if isAuthenticated() && isOwner(userId);
+        allow write, delete: if isAuthenticated() && (isOwner(userId) || isAdmin());
       }
 
 
@@ -68,31 +78,38 @@ service cloud.firestore {
         allow read: if isAuthenticated() && isOwner(userId);
         allow create: if isAuthenticated(); // Allow others to send notifications (likes/matches)
         allow update: if isAuthenticated() && isOwner(userId); // Mark as read
-        allow delete: if isAuthenticated() && isOwner(userId); // Allow user to delete own notifications
+        allow delete: if isAuthenticated() && (isOwner(userId) || isAdmin()); // Allow user or admin to delete notifications
       }
 
       // Likes (Sub-collection) - who liked this user
       match /likes/{likeId} {
         allow read: if isAuthenticated() && isOwner(userId);
-        allow create, update: if isAuthenticated() && (request.resource.data.likerId == request.auth.uid || request.resource.data.fromUserId == request.auth.uid || likeId == request.auth.uid);
-        allow delete: if isAuthenticated() && (isOwner(userId) || request.resource.data.likerId == request.auth.uid || request.resource.data.fromUserId == request.auth.uid || likeId == request.auth.uid);
+        allow create, update: if isAuthenticated() && (request.resource.data.likerId == request.auth.uid || request.resource.data.fromUserId == request.auth.uid || likeId == request.auth.uid || isAdmin());
+        allow delete: if isAuthenticated() && (isOwner(userId) || request.resource.data.likerId == request.auth.uid || request.resource.data.fromUserId == request.auth.uid || likeId == request.auth.uid || isAdmin());
       }
  
       // Visitors (Sub-collection) - who visited this user's profile
       match /visitors/{visitorId} {
         allow read: if isAuthenticated() && isOwner(userId);
-        allow create, update: if isAuthenticated() && (request.resource.data.visitorId == request.auth.uid || request.resource.data.fromUserId == request.auth.uid || visitorId == request.auth.uid);
-        allow delete: if isAuthenticated() && isOwner(userId);
+        allow create, update: if isAuthenticated() && (request.resource.data.visitorId == request.auth.uid || request.resource.data.fromUserId == request.auth.uid || visitorId == request.auth.uid || isAdmin());
+        allow delete: if isAuthenticated() && (isOwner(userId) || isAdmin());
       }
 
       // Stats (Sub-collection) - daily swipe limits, etc.
       match /stats/{statsId} {
-        allow read, write: if isAuthenticated() && isOwner(userId);
+        allow read, write, delete: if isAuthenticated() && (isOwner(userId) || isAdmin());
       }
 
       // Blocked Users (Sub-collection)
       match /blocked_users/{blockedUserId} {
-        allow read, write: if isAuthenticated() && isOwner(userId);
+        allow read, write, delete: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      }
+
+      // Credit Transactions (Sub-collection) - kredi işlem geçmişi
+      match /credit_transactions/{transactionId} {
+        allow read: if isAuthenticated() && isOwner(userId);
+        allow create: if isAuthenticated() && isOwner(userId);
+        allow update, delete: if isAdmin();
       }
     }
 
@@ -236,6 +253,29 @@ service cloud.firestore {
       allow create: if isAuthenticated();
       allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
       allow update, delete: if isAdmin();
+    }
+
+    // Promo Codes
+    match /promo_codes/{codeId} {
+      allow read: if isAuthenticated();
+      allow update: if isAuthenticated();
+      allow create, delete: if isAdmin();
+    }
+
+    // Admin List
+    match /admins/{email} {
+      allow get: if isAuthenticated() && (
+        (request.auth.token.email != null && request.auth.token.email == email) || 
+        request.auth.uid == email ||
+        isAdmin()
+      );
+      allow list: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // Deletion Requests
+    match /deletion_requests/{userId} {
+      allow read, write: if isAuthenticated() && (isOwner(userId) || isAdmin());
     }
   }
 }

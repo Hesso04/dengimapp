@@ -5,6 +5,7 @@ import '../../features/auth/services/discovery_service.dart';
 import '../../features/auth/services/profile_service.dart';
 import '../../features/map/models/nearby_user.dart';
 import '../utils/log_service.dart';
+import '../widgets/location_disclosure_dialog.dart';
 
 class MapProvider extends ChangeNotifier {
   final DiscoveryService _discoveryService = DiscoveryService();
@@ -50,13 +51,17 @@ class MapProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> determinePosition() async {
+  Future<void> determinePosition([BuildContext? context]) async {
     try {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) return;
 
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
+        if (context != null && context.mounted) {
+          final accepted = await LocationDisclosureDialog.show(context);
+          if (!accepted) return;
+        }
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) return;
       }

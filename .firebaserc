@@ -2,6 +2,17 @@
   "projects": {
     "default": "dengim-kim"
   },
-  "targets": {},
+  "targets": {
+    "dengim-kim": {
+      "hosting": {
+        "app": [
+          "dengim-kim"
+        ],
+        "admin": [
+          "dengim-kim-admin"
+        ]
+      }
+    }
+  },
   "etags": {}
 }

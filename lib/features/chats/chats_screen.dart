@@ -9,6 +9,7 @@ import 'screens/chat_detail_screen.dart';
 import 'services/chat_service.dart';
 import '../profile/blocked_users_screen.dart';
 import '../ads/widgets/dengim_banner_ad.dart';
+import '../main/main_scaffold.dart';
 
 import 'package:provider/provider.dart';
 import '../../core/providers/chat_provider.dart';
@@ -366,20 +367,8 @@ class _ChatsScreenState extends State<ChatsScreen> {
             const SizedBox(height: 32),
             GestureDetector(
               onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      'Keşfet sekmesine gidip yeni kişilerle eşleş!',
-                      style: GoogleFonts.outfit(fontWeight: FontWeight.w500, color: Colors.white),
-                    ),
-                    duration: const Duration(seconds: 2),
-                    backgroundColor: AppColors.primary,
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppColors.neoRadiusSmall),
-                    ),
-                  ),
-                );
+                HapticFeedback.lightImpact();
+                MainScaffold.navigateToTab(0);
               },
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),

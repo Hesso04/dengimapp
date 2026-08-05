@@ -116,11 +116,20 @@ class CreditProvider extends ChangeNotifier {
     return success;
   }
 
-  /// Kredi harca
+  /// Kredi harca (genel amaçlı)
   Future<bool> spend(int amount, String reason) async {
     if (_balance < amount) return false;
-    return await _creditService.spendCredits(amount, reason);
+    final success = await _creditService.spendCredits(amount, reason);
+    if (success) {
+      // Optimistic local update - stream will sync the real value
+      _balance -= amount;
+      notifyListeners();
+    }
+    return success;
   }
+
+  /// Kredi harca (FeatureActionModal uyumluluğu için alias)
+  Future<bool> spendCredits(int amount, String reason) => spend(amount, reason);
 
   /// Super Like harca
   Future<bool> spendSuperLike() => spend(CreditService.costSuperLike, 'super_like');
@@ -134,7 +143,6 @@ class CreditProvider extends ChangeNotifier {
   /// Geri al harca
   Future<bool> spendUndo() => spend(CreditService.costUndoSwipe, 'undo_swipe');
 
-  /// 10 ekstra swipe harca
   /// Promosyon kodu kullan
   Future<Map<String, dynamic>> redeemPromoCode(String code) async {
     final result = await _creditService.redeemPromoCode(code);
