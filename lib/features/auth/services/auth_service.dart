@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../../core/utils/log_service.dart';
+import 'profile_service.dart';
 
 class AuthService {
   static final AuthService _instance = AuthService._internal();
