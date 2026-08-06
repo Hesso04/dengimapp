@@ -187,6 +187,11 @@ class ProfileService {
       final doc = await _firestore.collection('users').doc(targetUid).get();
       if (doc.exists) {
         final data = doc.data()!;
+        if (data['isDeleted'] == true || data['status'] == 'deleted') {
+          LogService.w("Requested profile belongs to a deleted account: $targetUid");
+          return null;
+        }
+
         // Backfill searchName atomically (yarış koşulunu önlemek için transaction).
         // Not: Asıl güncelleme backend'de onUserProfileUpdated tetikleyicisi ile yapılmalı.
         if (data['searchName'] == null && data['name'] != null) {
@@ -221,7 +226,9 @@ class ProfileService {
 
     return _firestore.collection('users').doc(uid).snapshots().map((snapshot) {
       if (snapshot.exists && snapshot.data() != null) {
-        return UserProfile.fromMap(snapshot.data()!);
+        final data = snapshot.data()!;
+        if (data['isDeleted'] == true || data['status'] == 'deleted') return null;
+        return UserProfile.fromMap(data);
       }
       return null;
     });
@@ -325,12 +332,63 @@ class ProfileService {
     if (user == null) throw Exception("Kullanıcı bulunamadı");
 
     try {
-      await _firestore.collection('users').doc(user.uid).delete();
+      final uid = user.uid;
+      await purgeUserFirestoreData(uid);
       await user.delete();
-      LogService.i("Account deleted: ${user.uid}");
+      LogService.i("Account deleted & hard purged: $uid");
     } catch (e) {
       LogService.e("Delete Account Error", e);
       rethrow;
+    }
+  }
+
+  /// Kullanıcının tüm Firestore verilerini (mesajlar, sohbetler, kaydırmalar, beğeniler, durumlar) kalıcı olarak sil
+  Future<void> purgeUserFirestoreData(String uid) async {
+    try {
+      // 1. Kullanıcı alt koleksiyonlarını sil
+      final subcollections = ['swipes', 'stats', 'credit_transactions', 'notifications'];
+      for (final sub in subcollections) {
+        final subDocs = await _firestore.collection('users').doc(uid).collection(sub).get();
+        for (final doc in subDocs.docs) {
+          await doc.reference.delete();
+        }
+      }
+
+      // 2. Ana kullanıcı dokümanını sil
+      await _firestore.collection('users').doc(uid).delete();
+
+      // 3. Katıldığı sohbet odalarını ve mesajları sil
+      final chatSnap = await _firestore.collection('chats').where('participants', arrayContains: uid).get();
+      for (final cDoc in chatSnap.docs) {
+        final messages = await cDoc.reference.collection('messages').get();
+        for (final mDoc in messages.docs) {
+          await mDoc.reference.delete();
+        }
+        await cDoc.reference.delete();
+      }
+
+      // 4. Gönderilen ve alınan beğenileri sil
+      final likesSnap1 = await _firestore.collection('likes').where('fromUserId', isEqualTo: uid).get();
+      for (final doc in likesSnap1.docs) {
+        await doc.reference.delete();
+      }
+      final likesSnap2 = await _firestore.collection('likes').where('toUserId', isEqualTo: uid).get();
+      for (final doc in likesSnap2.docs) {
+        await doc.reference.delete();
+      }
+
+      // 5. Eşleşmeleri sil
+      final matchesSnap = await _firestore.collection('matches').where('users', arrayContains: uid).get();
+      for (final doc in matchesSnap.docs) {
+        await doc.reference.delete();
+      }
+
+      // 6. Silme talebini temizle
+      await _firestore.collection('deletion_requests').doc(uid).delete();
+
+      LogService.i("User Firestore data completely purged: $uid");
+    } catch (e) {
+      LogService.e("Failed to purge user Firestore data: $uid", e);
     }
   }
 

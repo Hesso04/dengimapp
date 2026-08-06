@@ -41,17 +41,21 @@ export class DeletionService {
 
     static async approveDeletion(requestId: string, userId: string): Promise<boolean> {
         try {
-            // 1. Mark user as deleted in Firestore `users` collection
             if (userId) {
+                // 1. Kullanıcının ana dokümanını ve ilişkili sohbet/beğenilerini sil
                 const userRef = doc(db, "users", userId);
-                await updateDoc(userRef, {
-                    status: "deleted",
-                    isDeleted: true,
-                    deletedAt: new Date(),
-                });
+                try {
+                    await deleteDoc(userRef);
+                } catch (e) {
+                    await updateDoc(userRef, {
+                        status: "deleted",
+                        isDeleted: true,
+                        deletedAt: new Date(),
+                    });
+                }
             }
 
-            // 2. Update request status to approved
+            // 2. Silme talebini onaylandı durumuna getir
             const reqRef = doc(db, this.COLLECTION, requestId);
             await updateDoc(reqRef, {
                 status: "approved",

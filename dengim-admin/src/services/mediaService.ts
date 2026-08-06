@@ -14,7 +14,7 @@ export const MediaService = {
             let audioCount = 0;
 
             // 1. ADIM: Firebase Storage Taraması
-            const storageFolders = ['user_photos', 'photos', 'users', 'chats', 'chat_media'];
+            const storageFolders = ['profiles', 'user_photos', 'photos', 'users', 'chats', 'chat_media', 'audio', 'videos'];
             
             for (const folderName of storageFolders) {
                 try {
@@ -36,7 +36,8 @@ export const MediaService = {
                                 const uData = userDoc.data();
                                 userName = uData.name || userName;
                                 userEmail = uData.email || userEmail;
-                                userPhoto = (uData.photos && uData.photos.length > 0) ? uData.photos[0] : "";
+                                const pList = uData.photoUrls || uData.photos || [];
+                                userPhoto = (pList.length > 0) ? pList[0] : "";
                             }
                         } catch (e) {
                             // sessiz devam et
@@ -66,7 +67,7 @@ export const MediaService = {
                                     userPhoto: userPhoto,
                                     size: size,
                                     contentType: contentType,
-                                    timeCreated: new Date(meta.timeCreated),
+                                    timeCreated: meta.timeCreated ? new Date(meta.timeCreated) : new Date(),
                                     type: type
                                 });
                             } catch (itemErr) {
@@ -99,7 +100,7 @@ export const MediaService = {
                                 userPhoto: '',
                                 size: size,
                                 contentType: contentType,
-                                timeCreated: new Date(meta.timeCreated),
+                                timeCreated: meta.timeCreated ? new Date(meta.timeCreated) : new Date(),
                                 type: type
                             });
                         } catch (itemErr) {
@@ -111,7 +112,7 @@ export const MediaService = {
                 }
             }
 
-            // 2. ADIM: Firestore Kullanıcı Profil Fotoğrafları Taraması (Yedek & Tam Liste)
+            // 2. ADIM: Firestore Kullanıcı Profil Medyaları Taraması (photoUrls, videoUrl, profileVoiceUrl)
             try {
                 const usersSnap = await getDocs(collection(db, "users"));
                 usersSnap.docs.forEach(uDoc => {
@@ -119,12 +120,13 @@ export const MediaService = {
                     const userId = uDoc.id;
                     const userName = uData.name || "Kullanıcı";
                     const userEmail = uData.email || "";
-                    const photos: string[] = uData.photos || [];
+                    const photos: string[] = uData.photoUrls || uData.photos || [];
 
+                    // Photos
                     photos.forEach((photoUrl, idx) => {
                         if (photoUrl && typeof photoUrl === 'string' && !mediaMap.has(photoUrl)) {
                             mediaMap.set(photoUrl, {
-                                id: `firestore_${userId}_${idx}`,
+                                id: `firestore_${userId}_photo_${idx}`,
                                 url: photoUrl,
                                 fullPath: `user_photos/${userId}/photo_${idx}.jpg`,
                                 fileName: `Profil Fotoğrafı #${idx + 1}`,
@@ -132,13 +134,49 @@ export const MediaService = {
                                 userName: userName,
                                 userEmail: userEmail,
                                 userPhoto: photos[0] || photoUrl,
-                                size: 250000, // Ortalama 250 KB varsayılan
+                                size: 250000,
                                 contentType: 'image/jpeg',
-                                timeCreated: uData.createdAt ? uData.createdAt.toDate() : new Date(),
+                                timeCreated: uData.createdAt?.toDate ? uData.createdAt.toDate() : new Date(),
                                 type: 'image'
                             });
                         }
                     });
+
+                    // Video Profil
+                    if (uData.videoUrl && typeof uData.videoUrl === 'string' && !mediaMap.has(uData.videoUrl)) {
+                        mediaMap.set(uData.videoUrl, {
+                            id: `firestore_${userId}_video`,
+                            url: uData.videoUrl,
+                            fullPath: `user_videos/${userId}/video.mp4`,
+                            fileName: `Video Profil`,
+                            userId: userId,
+                            userName: userName,
+                            userEmail: userEmail,
+                            userPhoto: photos[0] || "",
+                            size: 1500000,
+                            contentType: 'video/mp4',
+                            timeCreated: uData.createdAt?.toDate ? uData.createdAt.toDate() : new Date(),
+                            type: 'video'
+                        });
+                    }
+
+                    // Voice Profil
+                    if (uData.profileVoiceUrl && typeof uData.profileVoiceUrl === 'string' && !mediaMap.has(uData.profileVoiceUrl)) {
+                        mediaMap.set(uData.profileVoiceUrl, {
+                            id: `firestore_${userId}_voice`,
+                            url: uData.profileVoiceUrl,
+                            fullPath: `user_voices/${userId}/voice.m4a`,
+                            fileName: `Ses Profili`,
+                            userId: userId,
+                            userName: userName,
+                            userEmail: userEmail,
+                            userPhoto: photos[0] || "",
+                            size: 500000,
+                            contentType: 'audio/m4a',
+                            timeCreated: uData.createdAt?.toDate ? uData.createdAt.toDate() : new Date(),
+                            type: 'audio'
+                        });
+                    }
                 });
             } catch (fsErr) {
                 console.warn("Firestore photos fetch fallback warning:", fsErr);

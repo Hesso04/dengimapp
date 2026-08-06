@@ -102,11 +102,8 @@ class AuthService {
             'status': 'pending',
           });
 
-          await _firestore.collection('users').doc(uid).update({
-            'isDeleted': true,
-            'status': 'deleted',
-            'deletedAt': FieldValue.serverTimestamp(),
-          });
+          // Kullanıcının mesaj, profil, sohbet ve etkileşim verilerini kalıcı olarak temizle
+          await ProfileService().purgeUserFirestoreData(uid);
         } catch (e) {
           LogService.e("Failed to write deletion request to Firestore", e);
         }
