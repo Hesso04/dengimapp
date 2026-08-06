@@ -6,8 +6,8 @@ Dengim projesi için planlanan **v1.0.5 Sürümü** kapsamındaki tüm arka plan
 
 ## 📊 Derleme & Yayın Bilgileri (Güncel)
 
-- **Uygulama Sürüm Kodu**: `33`
-- **Uygulama Sürüm Adı**: `1.3.3`
+- **Uygulama Sürüm Kodu**: `34`
+- **Uygulama Sürüm Adı**: `1.3.4`
 - **Derleme Tipi**: Android App Bundle (Release AAB)
 - **Derleme Durumu**: `BUILD SUCCESSFUL` (Zaman: 4 dakika 5 saniye)
 - **Oluşturulan Dosya Yolları**:
