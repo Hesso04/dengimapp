@@ -44,10 +44,9 @@ Dengim projesi için planlanan **v1.0.5 Sürümü** kapsamındaki tüm arka plan
 
 ---
 
-### 6. 🛠️ Görsel Okunabilirlik, Düzen & Kredi Canlı Senkronizasyon Düzeltmeleri
-- **`CreditProvider` Otomatik Senkronizasyon (`credit_provider.dart`)**: `FirebaseAuth.instance.authStateChanges()` dinleyicisi eklenerek kullanıcının giriş yapması veya oturum değiştirmesi durumunda kredilerin ve istatistiklerin anında Firestore'dan çekilmesi sağlandı.
-- **`FeatureActionModal` Düzeni (`feature_action_modal.dart`)**: Modal açıldığında metinlerin dikeyde tek harflik sütunlara sıkışma sorunu `ListTile` yerine özel `Expanded` esnek `Row` mimarisi kurularak tamamen çözüldü.
-- **Keşfet Mor Bannerı (`discover_screen.dart`)**: Mor banner içerisindeki başlık ("Gold & Platinum Üyelik"), alt yazı ve butonun taşma yapmadan ve okunabilirlik kaybı yaşanmadan basılması sağlandı.
-- **İzle & Kazan Kartları (`watch_and_earn_screen.dart`)**: "KREDİLERİNİ KULLAN" ve "PROMOSYON KODU GİR" kartlarındaki eksik/boş kalan başlık, açıklama ve buton içerikleri yüksek kontrastlı metin renkleri ve `mainAxisSize: MainAxisSize.min` sınırlamaları ile düzeltildi.
-- **Gold/Platinum Reklam Ödülü Fix (`ad_service_mobile.dart`)**: Premium kullanıcılara özel reklam muafiyeti mantığında `onReward(3)` çağrısı eklenerek kilitlenmeler engellendi.
-- **Profil Kartları Metin Ölçekleme (`profile_screen.dart`)**: Profil ekranındaki kredi ve üyelik butonlarında (`_buildMiniBtn`) `FittedBox` küçültme sorunu giderilerek metinlerin tüm ekran genişliklerinde okunabilir boyutta kalması sağlandı.
+### 6. 🛠️ Görsel Okunabilirlik, Renk Paleti & Kredi Altyapısı Düzeltmeleri
+- **Profil Ekranı Renk Paleti Standartlaştırması**: Tüm modal, kart ve diyalog yüzeyleri Profil ekranı paletiyle (`isDark ? Color(0xFF14161B) : Colors.white`, Kenarlıklar: `Color(0xFF262934)`, Vurgu: `AppColors.primary`) birebir eşlendi.
+- **Kredi İle Boost Aktifleştirme Bağlantısı (`discovery_service.dart` & `credit_provider.dart`)**: `DiscoveryService` servisine `activateBoost({int durationMinutes = 30})` metodu yazıldı ve `CreditProvider.spendBoost()` çağrısına bağlandı. Artık 20 kredi harcandığında kullanıcının Firestore `boostUntil` zaman damgası otomatik olarak 30 dakika ileriye güncellenir.
+- **Dikey Karakter Kırılmaları & Taşmaların Önlenmesi**: `FeatureActionModal`, `WatchAndEarnScreen` ve `DiscoverScreen` üzerindeki metin blokları `Expanded(Column(children: [Text(..., maxLines: 1, overflow: TextOverflow.ellipsis)]))` mimarisi ile kırılmasız hale getirildi.
+- **Ödüllü Reklam Dinamik Teması (`watch_and_earn_screen.dart`)**: Ödül popup'ı light/dark moda duyarlı hale getirildi.
+- **`CreditProvider` Canlı Senkronizasyon (`credit_provider.dart`)**: Kullanıcı giriş durumundaki değişikliklerle bakiye ve streak verilerinin canlı akışı otomatik bağlanmıştır.

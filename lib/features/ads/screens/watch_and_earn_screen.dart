@@ -92,6 +92,11 @@ class _WatchAndEarnScreenState extends State<WatchAndEarnScreen>
 
   void _showRewardDialog(int amount) {
     HapticFeedback.heavyImpact();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final dialogBg = isDark ? const Color(0xFF14161B) : Colors.white;
+    final titleColor = isDark ? Colors.white : Colors.black;
+    final accentColor = isDark ? const Color(0xFFFFD700) : const Color(0xFFD4AF37);
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -100,7 +105,7 @@ class _WatchAndEarnScreenState extends State<WatchAndEarnScreen>
         child: Container(
           padding: const EdgeInsets.all(28),
           decoration: BoxDecoration(
-            color: const Color(0xFF14161B),
+            color: dialogBg,
             borderRadius: BorderRadius.circular(24),
             border: Border.all(color: AppColors.primary.withValues(alpha: 0.5), width: 2),
             boxShadow: [
@@ -129,7 +134,7 @@ class _WatchAndEarnScreenState extends State<WatchAndEarnScreen>
                 style: GoogleFonts.outfit(
                   fontSize: 22,
                   fontWeight: FontWeight.w900,
-                  color: Colors.white,
+                  color: titleColor,
                 ),
               ),
               const SizedBox(height: 8),
@@ -139,7 +144,7 @@ class _WatchAndEarnScreenState extends State<WatchAndEarnScreen>
                 style: GoogleFonts.outfit(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
-                  color: const Color(0xFFFFD700),
+                  color: accentColor,
                 ),
               ),
               const SizedBox(height: 24),
@@ -153,7 +158,7 @@ class _WatchAndEarnScreenState extends State<WatchAndEarnScreen>
                 ),
                 child: Text(
                   'HARCAMAYA BAŞLA',
-                  style: GoogleFonts.outfit(fontWeight: FontWeight.w900, fontSize: 14),
+                  style: GoogleFonts.outfit(fontWeight: FontWeight.w900, fontSize: 14, color: Colors.white),
                 ),
               ),
             ],

@@ -789,6 +789,23 @@ class DiscoveryService {
       return [];
     }
   }
+
+  /// Profil Boost özelliğini aktifleştir (30 Dk)
+  Future<bool> activateBoost({int durationMinutes = 30}) async {
+    final user = _currentUser;
+    if (user == null) return false;
+    try {
+      final boostUntil = DateTime.now().add(Duration(minutes: durationMinutes));
+      await _firestore.collection('users').doc(user.uid).update({
+        'boostUntil': Timestamp.fromDate(boostUntil),
+      });
+      LogService.i("Boost activated for user ${user.uid} until $boostUntil");
+      return true;
+    } catch (e) {
+      LogService.e("Activate boost error", e);
+      return false;
+    }
+  }
 }
 
 

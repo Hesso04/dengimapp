@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/credit_service.dart';
+import '../../features/auth/services/discovery_service.dart';
 import '../utils/log_service.dart';
 
 /// Kredi bakiyesini ve streak bilgisini yöneten Provider
@@ -149,7 +150,13 @@ class CreditProvider extends ChangeNotifier {
   Future<bool> spendSuperLike() => spend(CreditService.costSuperLike, 'super_like');
 
   /// Boost harca
-  Future<bool> spendBoost() => spend(CreditService.costBoost, 'boost');
+  Future<bool> spendBoost() async {
+    final success = await spend(CreditService.costBoost, 'boost');
+    if (success) {
+      await DiscoveryService().activateBoost();
+    }
+    return success;
+  }
 
   /// Beğenenleri gör harca
   Future<bool> spendSeeWhoLiked() => spend(CreditService.costSeeWhoLikedYou, 'see_who_liked');
