@@ -638,6 +638,7 @@ class _WatchAndEarnScreenState extends State<WatchAndEarnScreen>
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       item['title'] as String,
@@ -649,18 +650,20 @@ class _WatchAndEarnScreenState extends State<WatchAndEarnScreen>
                         color: textColor,
                       ),
                     ),
+                    const SizedBox(height: 2),
                     Text(
                       item['subtitle'] as String,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.outfit(
                         fontSize: 11,
-                        color: textColor.withValues(alpha: 0.5),
+                        color: isDark ? Colors.white70 : const Color(0xFF666666),
                       ),
                     ),
                   ],
                 ),
               ),
+              const SizedBox(width: 8),
               ElevatedButton(
                 onPressed: () => _handleSpendCredit(
                   item['title'] as String,
@@ -671,18 +674,17 @@ class _WatchAndEarnScreenState extends State<WatchAndEarnScreen>
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
                   elevation: 0,
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    '$cost Kredi',
-                    style: GoogleFonts.outfit(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.white,
-                    ),
+                child: Text(
+                  '$cost Kredi',
+                  style: GoogleFonts.outfit(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
                   ),
                 ),
               ),
@@ -716,6 +718,7 @@ class _WatchAndEarnScreenState extends State<WatchAndEarnScreen>
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   'PROMOSYON KODU GİR',
@@ -727,32 +730,37 @@ class _WatchAndEarnScreenState extends State<WatchAndEarnScreen>
                     color: textColor,
                   ),
                 ),
+                const SizedBox(height: 2),
                 Text(
                   'Kampanya kodun varsa hemen yükle',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.outfit(
                     fontSize: 11,
-                    color: textColor.withValues(alpha: 0.5),
+                    color: isDark ? Colors.white70 : const Color(0xFF666666),
                   ),
                 ),
               ],
             ),
           ),
+          const SizedBox(width: 8),
           ElevatedButton(
             onPressed: () => PromoCodeDialog.show(context),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
               elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             child: Text(
               'KODU GİR',
               style: GoogleFonts.outfit(
-                fontSize: 12,
+                fontSize: 11,
                 fontWeight: FontWeight.w900,
+                color: Colors.white,
               ),
             ),
           ),

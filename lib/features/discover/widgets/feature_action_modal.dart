@@ -229,77 +229,146 @@ class _FeatureActionModalState extends State<FeatureActionModal> {
 
           // 1. Seçenek: Kredi İle Kullan
           Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
               color: isDark ? const Color(0xFF1E212A) : const Color(0xFFF5F7FA),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: isDark ? const Color(0xFF262934) : const Color(0xFFEEEEEE)),
             ),
-            child: ListTile(
-              leading: const Icon(Icons.bolt_rounded, color: Color(0xFFFFD700), size: 28),
-              title: Text('Kredi İle Aktif Et', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: textColor, fontSize: 14)),
-              subtitle: Text('$_creditCost Kredi harcayarak tek seferlik kullanın', style: GoogleFonts.outfit(color: subtitleColor, fontSize: 12)),
-              trailing: ElevatedButton(
-                onPressed: _useWithCredits,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFFD700),
-                  foregroundColor: Colors.black,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            child: Row(
+              children: [
+                const Icon(Icons.bolt_rounded, color: Color(0xFFFFD700), size: 28),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Kredi İle Aktif Et',
+                        style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: textColor, fontSize: 14),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '$_creditCost Kredi harcayarak tek seferlik kullanın',
+                        style: GoogleFonts.outfit(color: subtitleColor, fontSize: 11),
+                      ),
+                    ],
+                  ),
                 ),
-                child: Text('-$_creditCost Kredi', style: GoogleFonts.outfit(fontWeight: FontWeight.w900, fontSize: 12)),
-              ),
+                const SizedBox(width: 8),
+                ElevatedButton(
+                  onPressed: _useWithCredits,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFFD700),
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: Text('-$_creditCost Kredi', style: GoogleFonts.outfit(fontWeight: FontWeight.w900, fontSize: 11)),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 12),
 
           // 2. Seçenek: Reklam İzleyerek Kullan
           Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
               color: isDark ? const Color(0xFF1E212A) : const Color(0xFFF5F7FA),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: isDark ? const Color(0xFF262934) : const Color(0xFFEEEEEE)),
             ),
-            child: ListTile(
-              leading: const Icon(Icons.play_circle_fill_rounded, color: AppColors.primary, size: 28),
-              title: Text('Ücretsiz Reklam İzle', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: textColor, fontSize: 14)),
-              subtitle: Text('Kısa bir video reklam izleyin, ücretsiz aktif olsun', style: GoogleFonts.outfit(color: subtitleColor, fontSize: 12)),
-              trailing: ElevatedButton(
-                onPressed: _isAdLoading ? null : _useWithAd,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            child: Row(
+              children: [
+                const Icon(Icons.play_circle_fill_rounded, color: AppColors.primary, size: 28),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Ücretsiz Reklam İzle',
+                        style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: textColor, fontSize: 14),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Kısa bir video reklam izleyin, ücretsiz aktif olsun',
+                        style: GoogleFonts.outfit(color: subtitleColor, fontSize: 11),
+                      ),
+                    ],
+                  ),
                 ),
-                child: _isAdLoading
-                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                    : Text('İZLE & AÇ', style: GoogleFonts.outfit(fontWeight: FontWeight.w900, fontSize: 12)),
-              ),
+                const SizedBox(width: 8),
+                ElevatedButton(
+                  onPressed: _isAdLoading ? null : _useWithAd,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: _isAdLoading
+                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                      : Text('İZLE & AÇ', style: GoogleFonts.outfit(fontWeight: FontWeight.w900, fontSize: 11)),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 12),
 
           // 3. Seçenek: Premium Pakete Geç
           Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
               color: isDark ? const Color(0xFF1E212A) : const Color(0xFFF5F7FA),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: isDark ? const Color(0xFF262934) : const Color(0xFFEEEEEE)),
             ),
-            child: ListTile(
-              leading: const Icon(Icons.workspace_premium_rounded, color: Color(0xFF9C27B0), size: 28),
-              title: Text('Sınırsız Premium Paket', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: textColor, fontSize: 14)),
-              subtitle: Text('Tüm ayrıcalıklara ve sınırsız haklara sahip olun', style: GoogleFonts.outfit(color: subtitleColor, fontSize: 12)),
-              trailing: ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const PremiumOfferScreen()));
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF9C27B0),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            child: Row(
+              children: [
+                const Icon(Icons.workspace_premium_rounded, color: Color(0xFF9C27B0), size: 28),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Sınırsız Premium Paket',
+                        style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: textColor, fontSize: 14),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Tüm ayrıcalıklara ve sınırsız haklara sahip olun',
+                        style: GoogleFonts.outfit(color: subtitleColor, fontSize: 11),
+                      ),
+                    ],
+                  ),
                 ),
-                child: Text('PAKETLER', style: GoogleFonts.outfit(fontWeight: FontWeight.w900, fontSize: 12)),
-              ),
+                const SizedBox(width: 8),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const PremiumOfferScreen()));
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF9C27B0),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: Text('PAKETLER', style: GoogleFonts.outfit(fontWeight: FontWeight.w900, fontSize: 11)),
+                ),
+              ],
             ),
           ),
 

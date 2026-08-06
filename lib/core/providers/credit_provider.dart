@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../services/credit_service.dart';
 import '../utils/log_service.dart';
 
@@ -16,6 +17,19 @@ class CreditProvider extends ChangeNotifier {
   bool _isLoading = false;
 
   StreamSubscription? _balanceSubscription;
+  StreamSubscription? _authSubscription;
+
+  CreditProvider() {
+    _authSubscription = FirebaseAuth.instance.authStateChanges().listen((user) {
+      if (user != null) {
+        init();
+      } else {
+        _balance = 0;
+        _balanceSubscription?.cancel();
+        notifyListeners();
+      }
+    });
+  }
 
   // Getters
   int get balance => _balance;
@@ -155,6 +169,7 @@ class CreditProvider extends ChangeNotifier {
   @override
   void dispose() {
     _balanceSubscription?.cancel();
+    _authSubscription?.cancel();
     super.dispose();
   }
 }

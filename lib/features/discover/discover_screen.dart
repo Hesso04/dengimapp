@@ -499,7 +499,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                     title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.outfit(
+                    style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w900,
                       color: Colors.white,
@@ -510,7 +510,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                     subtitle,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.outfit(
+                    style: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
                       color: Colors.white70,
@@ -519,6 +519,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                 ],
               ),
             ),
+            const SizedBox(width: 8),
             ElevatedButton(
               onPressed: () {
                 HapticFeedback.lightImpact();
@@ -531,10 +532,19 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                 backgroundColor: const Color(0xFFFFD700),
                 foregroundColor: Colors.black,
                 elevation: 0,
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
-              child: Text(buttonText, style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.w900)),
+              child: Text(
+                buttonText,
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.black,
+                ),
+              ),
             ),
           ],
         ),

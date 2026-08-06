@@ -68,11 +68,14 @@ class AdService {
   }
 
   void showRewardedAd({required String tier, required Function(int) onReward}) {
-    if (!FeatureFlagService().shouldShowAds(tier)) return;
+    if (!FeatureFlagService().shouldShowAds(tier)) {
+      onReward(3);
+      return;
+    }
 
     if (_rewardedAd == null) {
       _loadRewardedAd();
-      onReward(1);
+      onReward(3);
       return;
     }
 
